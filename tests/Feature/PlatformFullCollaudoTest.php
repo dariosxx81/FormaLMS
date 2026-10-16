@@ -361,7 +361,9 @@ class PlatformFullCollaudoTest extends TestCase
 
     public function test_07_white_label_settings_customization(): void
     {
+        Storage::fake('public');
         $admin = User::where('role', 'admin')->firstOrFail();
+        $fakeLogo = UploadedFile::fake()->create('logo-formacamera.png', 120, 'image/png');
 
         $this->actingAs($admin)->post(route('admin.settings.update'), [
             'platform_name' => 'FormaCamera VideoFAD',
@@ -372,6 +374,10 @@ class PlatformFullCollaudoTest extends TestCase
             'ateco_code' => '79.90',
             'cp_istat_code' => '3.4.1.5.2',
             'support_email' => 'fad@formacamera.it',
+            'primary_color' => '#0284c7',
+            'secondary_color' => '#0c4a6e',
+            'accent_color' => '#059669',
+            'logo_file' => $fakeLogo,
             'allow_public_registration' => '1',
             'auto_approve_registration' => '1',
         ])->assertSessionHasNoErrors();
@@ -379,6 +385,17 @@ class PlatformFullCollaudoTest extends TestCase
         $settings = PlatformSetting::getAllSettings();
         $this->assertEquals('FormaCamera VideoFAD', $settings['platform_name']);
         $this->assertEquals('FormaCamera - Azienda Speciale CCIAA Roma', $settings['provider_name']);
+        $this->assertEquals('#0284c7', $settings['primary_color']);
+        $this->assertEquals('#0c4a6e', $settings['secondary_color']);
+        $this->assertEquals('#059669', $settings['accent_color']);
+        $this->assertStringContainsString('/storage/brand-logos/', $settings['logo_url']);
+
+        // Verify uploaded logo and custom CSS variables appear immediately in the Admin Header
+        $this->actingAs($admin)->get(route('admin.dashboard'))
+            ->assertStatus(200)
+            ->assertSee($settings['logo_url'])
+            ->assertSee('--brand-primary: #0284c7')
+            ->assertSee('--brand-secondary: #0c4a6e');
 
         // Verify updated White-Label name appears immediately on Login page
         $this->post('/logout');

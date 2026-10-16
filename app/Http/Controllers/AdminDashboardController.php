@@ -691,7 +691,27 @@ class AdminDashboardController extends Controller
             'ateco_code' => ['required', 'string', 'max:30'],
             'cp_istat_code' => ['required', 'string', 'max:30'],
             'support_email' => ['required', 'email', 'max:150'],
+            'primary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'accent_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'logo_file' => ['nullable', 'file', 'mimes:png,jpg,jpeg,svg,webp', 'max:4096'],
+            'logo_url' => ['nullable', 'string', 'max:500'],
         ]);
+
+        unset($data['logo_file']);
+
+        if ($request->boolean('remove_logo')) {
+            $data['logo_url'] = '';
+        } elseif ($request->hasFile('logo_file')) {
+            $path = $request->file('logo_file')->store('brand-logos', 'public');
+            $data['logo_url'] = '/storage/' . $path;
+        } elseif (!$request->filled('logo_url')) {
+            unset($data['logo_url']);
+        }
+
+        $data['primary_color'] = $data['primary_color'] ?? '#4f46e5';
+        $data['secondary_color'] = $data['secondary_color'] ?? '#0f172a';
+        $data['accent_color'] = $data['accent_color'] ?? '#10b981';
 
         $data['allow_public_registration'] = $request->boolean('allow_public_registration') ? '1' : '0';
         $data['auto_approve_registration'] = $request->boolean('auto_approve_registration') ? '1' : '0';
@@ -700,10 +720,10 @@ class AdminDashboardController extends Controller
 
         ActivityLog::record(
             'settings_update',
-            'Aggiornati parametri White-Label dell\'Ente Erogatore',
+            'Aggiornati parametri White-Label (Logo, Colori Brand e Dati Ente Erogatore)',
             auth()->id()
         );
 
-        return back()->with('success', 'Impostazioni White-Label e dati Ente Erogatore salvati con successo.');
+        return back()->with('success', 'Impostazioni White-Label, Logo e Colori Brand salvati con successo.');
     }
 }

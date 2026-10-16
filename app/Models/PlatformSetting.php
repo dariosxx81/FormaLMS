@@ -22,6 +22,10 @@ class PlatformSetting extends Model
             'support_email' => 'segreteria@enteformazione.it',
             'allow_public_registration' => '1',
             'auto_approve_registration' => '1',
+            'logo_url' => '',
+            'primary_color' => '#4f46e5',
+            'secondary_color' => '#0f172a',
+            'accent_color' => '#10b981',
         ];
 
         try {

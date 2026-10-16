@@ -11,8 +11,20 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --brand-primary: #4f46e5;
+            --brand-secondary: #0f172a;
+            --brand-accent: #10b981;
+        }
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         [x-cloak] { display: none !important; }
+        /* Dynamic White-Label Color Overrides */
+        .bg-indigo-600 { background-color: var(--brand-primary) !important; }
+        .hover\:bg-indigo-500:hover, .hover\:bg-indigo-600:hover { background-color: var(--brand-primary) !important; filter: brightness(1.08); }
+        .text-indigo-600, .text-indigo-700 { color: var(--brand-primary) !important; }
+        .border-indigo-500, .border-indigo-600 { border-color: var(--brand-primary) !important; }
+        .bg-slate-900 { background-color: var(--brand-secondary) !important; }
+        .bg-emerald-600, .bg-emerald-500 { background-color: var(--brand-accent) !important; }
         /* Hide scrollbars on mobile horizontal tab bar */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -24,19 +36,19 @@
 <body x-data="formaFadPreview" class="min-h-full flex flex-col text-slate-800 antialiased">
 
     <!-- Top Status & Quick Reset Bar -->
-    <div class="bg-slate-950 text-slate-200 text-xs border-b border-slate-800 no-print">
+    <div class="text-slate-200 text-xs border-b border-slate-800 no-print" :style="'background-color: ' + settings.brandColor">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 truncate">
                 <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     DEMO INTERATTIVA
                 </span>
-                <span class="text-slate-300 truncate text-[11px]">
+                <span class="text-slate-200 truncate text-[11px]">
                     <strong class="text-white" x-text="settings.platformName"></strong> • <span x-text="settings.providerName"></span>
                 </span>
             </div>
             <button @click="resetDemoData()"
-                    class="px-2.5 py-1 rounded bg-slate-800 hover:bg-red-900/60 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-semibold shrink-0 cursor-pointer">
+                    class="px-2.5 py-1 rounded bg-slate-800/80 hover:bg-red-900/60 text-slate-200 hover:text-white border border-slate-700 text-[11px] font-semibold shrink-0 cursor-pointer">
                 Reset Dati
             </button>
         </div>
@@ -48,10 +60,15 @@
             <!-- Top Row: Brand + Active Student Selector -->
             <div class="h-14 flex items-center justify-between gap-2">
                 <div @click="currentView = 'student'" class="flex items-center gap-2.5 cursor-pointer min-w-0">
-                    <div class="w-9 h-9 rounded-xl text-white flex items-center justify-center font-extrabold text-sm shadow-xs shrink-0"
-                         :style="'background-color: ' + settings.brandColor">
-                        FAD
-                    </div>
+                    <template x-if="settings.logoUrl">
+                        <img :src="settings.logoUrl" alt="Logo Aziendale" class="h-9 w-auto max-w-[140px] object-contain rounded-xl border border-slate-200 bg-white p-1 shadow-2xs shrink-0">
+                    </template>
+                    <template x-if="!settings.logoUrl">
+                        <div class="w-9 h-9 rounded-xl text-white flex items-center justify-center font-extrabold text-sm shadow-xs shrink-0"
+                             :style="'background-color: ' + settings.primaryColor">
+                            FAD
+                        </div>
+                    </template>
                     <div class="truncate">
                         <div class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight truncate" x-text="settings.platformName"></div>
                         <div class="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate" x-text="settings.providerName"></div>
@@ -743,67 +760,195 @@
     </main>
 
     <!-- ===================================================================== -->
-    <!-- TAB 5: ADMIN — WHITE-LABEL CUSTOMIZATION PANEL                        -->
+    <!-- TAB 5: ADMIN — WHITE-LABEL CUSTOMIZATION PANEL (LOGO + COLORI BASE)   -->
     <!-- ===================================================================== -->
-    <main x-cloak x-show="currentView === 'admin_whitelabel'" class="flex-1 max-w-4xl w-full mx-auto py-6 px-3 sm:px-6 lg:px-8 no-print">
-        <div class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-2xs space-y-6">
+    <main x-cloak x-show="currentView === 'admin_whitelabel'" class="flex-1 max-w-5xl w-full mx-auto py-6 px-3 sm:px-6 lg:px-8 no-print">
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-8 shadow-2xs space-y-6">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
                 <div>
                     <span class="text-xs font-bold uppercase text-indigo-600">Pannello Admin &rarr; Impostazioni White-Label</span>
-                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900">Personalizzazione White-Label dell'Ente</h1>
+                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900">Logo Aziendale, Colori Base & Dati Ente Erogatore</h1>
                     <p class="text-xs text-slate-500 mt-0.5">
-                        Da questa schermata personalizzi Nome Piattaforma, Ente Erogatore, Rappresentante Legale, Codici Ministeriali e Colore Brand. Le modifiche si applicano subito all'interfaccia e agli Attestati PDF!
+                        Carica il Logo dell'azienda, cambia i colori base (Primario, Header/Secondario e Accento) o scegli una palette pronta con 1 click: tutta la piattaforma e gli Attestati si aggiornano in tempo reale!
                     </p>
                 </div>
-                <div class="flex gap-2 shrink-0">
+                <div class="flex flex-wrap gap-2 shrink-0">
                     <button @click="applyFormaCameraPreset()"
                             class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold cursor-pointer">
                         Preset: FormaCamera
                     </button>
                     <button @click="applyNeutralPreset()"
                             class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer">
-                        Preset: White-Label Neutro
+                        Reset White-Label
                     </button>
                 </div>
             </div>
 
+            <!-- LIVE PREVIEW BAR -->
+            <div class="rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+                <div class="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white flex items-center justify-between"
+                     :style="'background-color: ' + settings.brandColor">
+                    <span>Anteprima Live Header & Colori Scelti</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white"
+                          :style="'background-color: ' + settings.accentColor">
+                        ✓ Attestato Sbloccato (80%)
+                    </span>
+                </div>
+                <div class="p-4 bg-white flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <template x-if="settings.logoUrl">
+                            <img :src="settings.logoUrl" alt="Logo Preview" class="h-11 w-auto max-w-[160px] object-contain rounded-xl border border-slate-200 bg-white p-1">
+                        </template>
+                        <template x-if="!settings.logoUrl">
+                            <div class="w-11 h-11 rounded-xl text-white flex items-center justify-center font-extrabold text-base shadow-xs"
+                                 :style="'background-color: ' + settings.primaryColor">
+                                FAD
+                            </div>
+                        </template>
+                        <div>
+                            <div class="font-extrabold text-slate-900 text-sm sm:text-base" x-text="settings.platformName"></div>
+                            <div class="text-xs text-slate-500" x-text="settings.providerName"></div>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="px-3 py-1.5 rounded-xl text-white text-xs font-bold"
+                              :style="'background-color: ' + settings.primaryColor">
+                            Colore Primario
+                        </span>
+                        <span class="px-3 py-1.5 rounded-xl text-white text-xs font-bold"
+                              :style="'background-color: ' + settings.brandColor">
+                            Colore Header
+                        </span>
+                        <span class="px-3 py-1.5 rounded-xl text-white text-xs font-bold"
+                              :style="'background-color: ' + settings.accentColor">
+                            Colore Accento
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOX 1: CARICAMENTO LOGO AZIENDALE & SCELTA COLORI BASE -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
+                <!-- Colonna Sinistra: Caricamento Logo Aziendale -->
+                <div class="lg:col-span-5 space-y-3">
+                    <div class="font-extrabold text-sm text-slate-900">1. Carica Logo Aziendale / Ente</div>
+                    <p class="text-[11px] text-slate-500">
+                        Carica un'immagine dal tuo telefono o computer (PNG, JPG, SVG, WEBP) oppure prova il logo istituzionale demo con 1 click.
+                    </p>
+
+                    <div class="p-4 rounded-xl bg-white border border-dashed border-slate-300 flex flex-col items-center justify-center text-center gap-2.5">
+                        <template x-if="settings.logoUrl">
+                            <div class="space-y-2">
+                                <img :src="settings.logoUrl" alt="Logo Caricato" class="h-14 mx-auto object-contain">
+                                <button type="button" @click="removeLogo()" class="text-[11px] font-bold text-red-600 hover:underline cursor-pointer">
+                                    ✕ Rimuovi logo grafico e ripristina badge "FAD"
+                                </button>
+                            </div>
+                        </template>
+                        <template x-if="!settings.logoUrl">
+                            <div class="text-slate-400 text-[11px] py-1">Nessun logo grafico caricato (visibile badge "FAD")</div>
+                        </template>
+
+                        <div class="flex flex-wrap items-center justify-center gap-2 w-full">
+                            <label class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer transition">
+                                <span>📁 Carica Logo da Telefono / PC</span>
+                                <input type="file" accept="image/*" @change="onLogoFileUpload($event)" class="hidden">
+                            </label>
+                            <button type="button" @click="setDemoLogo()"
+                                    class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-xs cursor-pointer">
+                                ✨ Prova Logo Demo
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-slate-600 mb-1 text-[11px]">Oppure incolla URL diretto del Logo</label>
+                        <input type="text" x-model="settings.logoUrl" @input="saveToStorage()" placeholder="https://.../logo-azienda.png" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs">
+                    </div>
+                </div>
+
+                <!-- Colonna Destra: Colori Base & Palette Istituzionali -->
+                <div class="lg:col-span-7 space-y-4">
+                    <div class="font-extrabold text-sm text-slate-900">2. Cambia i Colori Base della Piattaforma</div>
+                    <p class="text-[11px] text-slate-500">
+                        Tocca una delle <strong>5 Palette Pronte</strong> qui sotto oppure clicca sui quadratini colorati per scegliere qualsiasi tonalità personalizzata.
+                    </p>
+
+                    <!-- 5 Preset Palette Buttons -->
+                    <div>
+                        <div class="text-[11px] font-bold text-slate-600 mb-1.5">Palette Colori Pronte (1-Click):</div>
+                        <div class="flex flex-wrap gap-2">
+                            <template x-for="p in colorPresets" :key="p.name">
+                                <button type="button"
+                                        @click="applyColorPreset(p)"
+                                        class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs text-[11px] font-bold text-slate-800 cursor-pointer transition">
+                                    <span class="flex items-center gap-0.5">
+                                        <span class="w-3 h-3 rounded-full" :style="'background-color:' + p.primary"></span>
+                                        <span class="w-3 h-3 rounded-full" :style="'background-color:' + p.secondary"></span>
+                                        <span class="w-3 h-3 rounded-full" :style="'background-color:' + p.accent"></span>
+                                    </span>
+                                    <span x-text="p.name"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- 3 Selettori Colore Base -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="p-3 rounded-xl bg-white border border-slate-200">
+                            <label class="block font-bold text-slate-700 text-[11px] mb-1.5">Colore Primario (Bottoni & Tab)</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" x-model="settings.primaryColor" @input="applyBrandCssVars(); saveToStorage()" class="h-9 w-10 rounded border border-slate-300 cursor-pointer shrink-0">
+                                <input type="text" x-model="settings.primaryColor" @input="applyBrandCssVars(); saveToStorage()" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-xs uppercase">
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-white border border-slate-200">
+                            <label class="block font-bold text-slate-700 text-[11px] mb-1.5">Colore Secondario (Header & Box)</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" x-model="settings.brandColor" @input="applyBrandCssVars(); saveToStorage()" class="h-9 w-10 rounded border border-slate-300 cursor-pointer shrink-0">
+                                <input type="text" x-model="settings.brandColor" @input="applyBrandCssVars(); saveToStorage()" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-xs uppercase">
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-xl bg-white border border-slate-200">
+                            <label class="block font-bold text-slate-700 text-[11px] mb-1.5">Colore Accento (Idoneità & Badge)</label>
+                            <div class="flex items-center gap-2">
+                                <input type="color" x-model="settings.accentColor" @input="applyBrandCssVars(); saveToStorage()" class="h-9 w-10 rounded border border-slate-300 cursor-pointer shrink-0">
+                                <input type="text" x-model="settings.accentColor" @input="applyBrandCssVars(); saveToStorage()" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-xs uppercase">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOX 2: ANAGRAFICA ENTE EROGATORE -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Nome Piattaforma (visibile nell'Header)</label>
                     <input type="text" x-model="settings.platformName" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 font-bold">
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Colore Primario Brand</label>
-                    <div class="flex items-center gap-2">
-                        <input type="color" x-model="settings.brandColor" @input="saveToStorage()" class="h-10 w-16 rounded border border-slate-300 cursor-pointer">
-                        <input type="text" x-model="settings.brandColor" @input="saveToStorage()" class="flex-1 rounded-xl border border-slate-300 px-3 py-2.5 font-mono">
-                    </div>
+                    <label class="block font-bold text-slate-700 mb-1">Rappresentante Legale Firmatario Attestati</label>
+                    <input type="text" x-model="settings.legalRep" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5">
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block font-bold text-slate-700 mb-1">Denominazione Ufficiale Ente di Formazione (stampata sugli Attestati Allegato 3 e 4)</label>
                     <input type="text" x-model="settings.providerName" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 font-bold">
                 </div>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Rappresentante Legale Firmatario Attestati</label>
-                    <input type="text" x-model="settings.legalRep" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5">
+                    <label class="block font-bold text-slate-700 mb-1">Codice ATECO (Linee Guida B)</label>
+                    <input type="text" x-model="settings.ateco" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 font-mono">
                 </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Codice ATECO</label>
-                        <input type="text" x-model="settings.ateco" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 font-mono">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Codice CP ISTAT</label>
-                        <input type="text" x-model="settings.cpIstat" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 font-mono">
-                    </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Codice CP ISTAT (Linee Guida B)</label>
+                    <input type="text" x-model="settings.cpIstat" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 font-mono">
                 </div>
             </div>
 
-            <div class="pt-4 border-t border-slate-200 flex items-center justify-between">
-                <span class="text-xs text-emerald-600 font-bold">✓ Modifiche salvate in tempo reale</span>
+            <div class="pt-4 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                <span class="text-xs text-emerald-600 font-bold">✓ Logo e Colori applicati istantaneamente a tutta l'anteprima</span>
                 <button @click="openCertificatePreview(activeStudent)"
-                        class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold cursor-pointer">
-                    Verifica Intestazione sull'Attestato Allegato 4 &rarr;
+                        class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold cursor-pointer">
+                    Verifica Logo e Intestazione sull'Attestato Allegato 4 &rarr;
                 </button>
             </div>
         </div>
@@ -978,14 +1123,20 @@
             </div>
 
             <template x-if="certPreviewStudent">
-                <div class="border-2 border-slate-800 p-6 sm:p-8 text-slate-900 space-y-4 font-serif leading-relaxed">
+                <div class="border-2 p-6 sm:p-8 text-slate-900 space-y-4 font-serif leading-relaxed"
+                     :style="'border-color: ' + settings.brandColor">
+                    <template x-if="settings.logoUrl">
+                        <div class="flex justify-center pb-2">
+                            <img :src="settings.logoUrl" alt="Logo Ente" class="h-12 object-contain">
+                        </div>
+                    </template>
                     <div class="text-center">
                         <div class="text-xl sm:text-2xl font-bold italic">Ministero del Turismo</div>
                         <div class="text-xs italic text-slate-600">Direzione Generale Controllo, Regolamentazione, Acquisti, Formazione e Professioni Turistiche</div>
                     </div>
                     <div class="text-right font-sans text-xs font-bold">Allegato 4</div>
                     <div class="text-center font-sans space-y-1">
-                        <div class="text-sm font-extrabold uppercase">ATTESTATO DI FREQUENZA DEL CORSO DI AGGIORNAMENTO PER GUIDA TURISTICA</div>
+                        <div class="text-sm font-extrabold uppercase" :style="'color: ' + settings.primaryColor">ATTESTATO DI FREQUENZA DEL CORSO DI AGGIORNAMENTO PER GUIDA TURISTICA</div>
                         <div class="text-xs font-bold pt-1">
                             Codice ATECO: <span x-text="settings.ateco"></span> &nbsp;&nbsp;•&nbsp;&nbsp; CP ISTAT: <span x-text="settings.cpIstat"></span>
                         </div>
@@ -1052,8 +1203,19 @@ document.addEventListener('alpine:init', () => {
             legalRep: 'Dott.ssa Paola Gentile',
             ateco: '79.90',
             cpIstat: '3.4.1.5.2',
-            brandColor: '#0f172a'
+            logoUrl: '',
+            primaryColor: '#4f46e5',
+            brandColor: '#0f172a',
+            accentColor: '#10b981'
         },
+
+        colorPresets: [
+            { name: 'Indigo FormaFAD', primary: '#4f46e5', secondary: '#0f172a', accent: '#10b981' },
+            { name: 'Blu Camera di Commercio', primary: '#0284c7', secondary: '#0c4a6e', accent: '#059669' },
+            { name: 'Smeraldo Turismo', primary: '#0d9488', secondary: '#134e4a', accent: '#16a34a' },
+            { name: 'Bordeaux Accademia', primary: '#be123c', secondary: '#4c0519', accent: '#d97706' },
+            { name: 'Blu & Oro Ministeriale', primary: '#1d4ed8', secondary: '#172554', accent: '#ca8a04' }
+        ],
 
         courses: [
             {
@@ -1135,10 +1297,11 @@ document.addEventListener('alpine:init', () => {
                 try {
                     const parsed = JSON.parse(saved);
                     if (parsed.students) this.students = parsed.students;
-                    if (parsed.settings) this.settings = parsed.settings;
+                    if (parsed.settings) this.settings = Object.assign(this.settings, parsed.settings);
                     if (parsed.courses) this.courses = parsed.courses;
                 } catch (e) {}
             }
+            this.applyBrandCssVars();
         },
 
         get activeCourse() {
@@ -1508,20 +1671,68 @@ document.addEventListener('alpine:init', () => {
             this.showToast(`Modulo ${nextOrder} (${mod.sourceType === 'youtube' ? 'YouTube Mascherato' : 'MP4'}) aggiunto!`);
         },
 
+        applyBrandCssVars() {
+            document.documentElement.style.setProperty('--brand-primary', this.settings.primaryColor || '#4f46e5');
+            document.documentElement.style.setProperty('--brand-secondary', this.settings.brandColor || '#0f172a');
+            document.documentElement.style.setProperty('--brand-accent', this.settings.accentColor || '#10b981');
+        },
+
+        applyColorPreset(p) {
+            this.settings.primaryColor = p.primary;
+            this.settings.brandColor = p.secondary;
+            this.settings.accentColor = p.accent;
+            this.applyBrandCssVars();
+            this.saveToStorage();
+            this.showToast(`Applicata palette colori: ${p.name}`);
+        },
+
+        onLogoFileUpload(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.settings.logoUrl = e.target.result;
+                this.saveToStorage();
+                this.showToast('Logo aziendale caricato con successo!');
+            };
+            reader.readAsDataURL(file);
+        },
+
+        setDemoLogo() {
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" width="220" height="60"><rect width="220" height="60" rx="12" fill="${this.settings.brandColor || '#0c4a6e'}"/><circle cx="32" cy="30" r="18" fill="${this.settings.primaryColor || '#0284c7'}"/><path d="M24 30l6 6 12-12" stroke="#ffffff" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="60" y="27" font-family="Plus Jakarta Sans, sans-serif" font-size="15" font-weight="800" fill="#ffffff">ENTE FORMAZIONE</text><text x="60" y="44" font-family="Plus Jakarta Sans, sans-serif" font-size="10" font-weight="600" fill="#93c5fd">ACCREDITATO MINISTERO</text></svg>`;
+            this.settings.logoUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+            this.saveToStorage();
+            this.showToast('Logo Demo Istituzionale applicato!');
+        },
+
+        removeLogo() {
+            this.settings.logoUrl = '';
+            this.saveToStorage();
+            this.showToast('Logo rimosso, ripristinato badge FAD');
+        },
+
         applyFormaCameraPreset() {
             this.settings.platformName = 'FormaCamera VideoFAD';
             this.settings.providerName = 'FormaCamera - Azienda Speciale Camera di Commercio di Roma';
             this.settings.legalRep = 'Dott.ssa Paola Gentile';
-            this.settings.brandColor = '#1e3a8a';
+            this.settings.primaryColor = '#0284c7';
+            this.settings.brandColor = '#0c4a6e';
+            this.settings.accentColor = '#059669';
+            this.setDemoLogo();
+            this.applyBrandCssVars();
             this.saveToStorage();
-            this.showToast('Applicato preset: FormaCamera VideoFAD');
+            this.showToast('Applicato preset: FormaCamera (con Logo & Colori Camera di Commercio)');
         },
 
         applyNeutralPreset() {
             this.settings.platformName = 'FormaFAD LMS';
             this.settings.providerName = 'Ente di Formazione Accreditato';
             this.settings.legalRep = 'Dott.ssa Paola Gentile';
+            this.settings.logoUrl = '';
+            this.settings.primaryColor = '#4f46e5';
             this.settings.brandColor = '#0f172a';
+            this.settings.accentColor = '#10b981';
+            this.applyBrandCssVars();
             this.saveToStorage();
             this.showToast('Ripristinato preset White-Label Neutro');
         },

@@ -11,8 +11,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --brand-primary: {{ $settings['primary_color'] ?? '#4f46e5' }};
+            --brand-secondary: {{ $settings['secondary_color'] ?? '#0f172a' }};
+            --brand-accent: {{ $settings['accent_color'] ?? '#10b981' }};
+        }
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         [x-cloak] { display: none !important; }
+        .bg-indigo-600 { background-color: var(--brand-primary) !important; }
+        .hover\:bg-indigo-500:hover, .hover\:bg-indigo-600:hover { background-color: var(--brand-primary) !important; filter: brightness(1.08); }
+        .text-indigo-600, .text-indigo-700 { color: var(--brand-primary) !important; }
+        .border-indigo-500, .border-indigo-600 { border-color: var(--brand-primary) !important; }
+        .bg-slate-900 { background-color: var(--brand-secondary) !important; }
+        .bg-emerald-600, .bg-emerald-500 { background-color: var(--brand-accent) !important; }
     </style>
 </head>
 <body class="min-h-full flex flex-col text-slate-800 antialiased">
@@ -65,9 +76,13 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
             <div class="flex items-center gap-6">
                 <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('student.dashboard') }}" class="flex items-center gap-3 group">
-                    <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-extrabold text-lg shadow-xs group-hover:bg-indigo-600 transition">
-                        FAD
-                    </div>
+                    @if(!empty($settings['logo_url']))
+                        <img src="{{ $settings['logo_url'] }}" alt="Logo {{ $settings['platform_name'] ?? 'Ente' }}" class="h-10 w-auto max-w-[160px] object-contain rounded-xl border border-slate-200 bg-white p-1 shadow-2xs">
+                    @else
+                        <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-extrabold text-lg shadow-xs group-hover:bg-indigo-600 transition">
+                            FAD
+                        </div>
+                    @endif
                     <div>
                         <div class="font-bold text-slate-900 text-base leading-tight">{{ $settings['platform_name'] ?? 'FormaFAD LMS' }}</div>
                         <div class="text-[11px] text-slate-500 font-medium">{{ $settings['provider_name'] ?? 'Piattaforma E-Learning Certificata' }}</div>
