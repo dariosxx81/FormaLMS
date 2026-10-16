@@ -68,14 +68,59 @@
                 <!-- HTML5 Video OR Masked YouTube Player -->
                 <div class="relative aspect-video bg-black flex items-center justify-center overflow-hidden select-none">
                     @if($activeModule->is_youtube && $activeModule->youtube_video_id)
-                        <div class="absolute inset-0 scale-[1.14] pointer-events-none">
-                            <iframe class="w-full h-full"
-                                    src="https://www.youtube-nocookie.com/embed/{{ $activeModule->youtube_video_id }}?controls=0&disablekb=1&rel=0&modestbranding=1&iv_load_policy=3&fs=0&playsinline=1"
-                                    allow="autoplay; encrypted-media"
-                                     referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                        <!-- Masked YouTube IFrame Container (scaled to crop top/bottom YT bars) -->
+                        <div class="absolute inset-0 scale-[1.16] pointer-events-none">
+                            <div id="yt-masked-player" class="w-full h-full"></div>
                         </div>
-                        <div class="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-full bg-slate-950/85 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold">
-                            🛡 YouTube No-Logo Shield Attivo
+
+                        <!-- Transparent Security Shield: blocks right-click & direct click on YouTube logo/links -->
+                        <div @click="togglePlay()"
+                             @contextmenu.prevent
+                             class="absolute inset-0 z-10 cursor-pointer flex items-center justify-center">
+                            <!-- Custom Institutional Cover when paused (hides YouTube's "More Videos" / Related grid) -->
+                            <div x-show="!isPlaying"
+                                 class="absolute inset-0 bg-slate-950/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center transition">
+                                <div class="w-16 h-16 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-2xl mb-3 transition transform hover:scale-105">
+                                    <svg class="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                </div>
+                                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold mb-1">
+                                    🛡 YouTube No-Logo Shield Attivo
+                                </span>
+                                <h4 class="text-white font-extrabold text-sm sm:text-base max-w-md">{{ $activeModule->title }}</h4>
+                                <p class="text-slate-400 text-xs mt-1">Clicca per avviare o riprendere la lezione dal secondo <span class="text-indigo-300 font-mono" x-text="formatSeconds(currentTime)"></span></p>
+                            </div>
+                        </div>
+
+                        <!-- Top-Right Badge -->
+                        <div class="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-full bg-slate-950/85 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold pointer-events-none">
+                            🛡 YouTube Mascherato (No-Logo / Anti-Skip)
+                        </div>
+
+                        <!-- Custom Anti-Skip Control Bar for Masked YouTube -->
+                        <div class="absolute bottom-0 inset-x-0 z-20 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent px-4 py-3 flex items-center gap-3">
+                            <button type="button"
+                                    @click.stop="togglePlay()"
+                                    class="w-8 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center font-bold text-xs cursor-pointer shrink-0">
+                                <span x-show="!isPlaying">&#9654;</span>
+                                <span x-show="isPlaying">&#10074;&#10074;</span>
+                            </button>
+                            <button type="button"
+                                    @click.stop="rewind10()"
+                                    class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold cursor-pointer shrink-0"
+                                    title="Torna indietro di 10 secondi">
+                                -10s
+                            </button>
+                            <div class="flex-1 flex items-center gap-2">
+                                <input type="range"
+                                       min="0"
+                                       :max="durationSeconds"
+                                       :value="currentTime"
+                                       @input.stop="onCustomSeek($event.target.value)"
+                                       class="w-full accent-indigo-500 cursor-pointer h-1.5 bg-slate-700 rounded-lg">
+                            </div>
+                            <span class="text-[11px] font-mono text-slate-300 shrink-0">
+                                <span x-text="formatSeconds(currentTime)"></span> / {{ $activeModule->formatted_duration }}
+                            </span>
                         </div>
                     @else
                         <video x-ref="videoPlayer"
@@ -99,14 +144,14 @@
                     <!-- Anti-Skip Warning Toast Overlay -->
                     <div x-cloak x-show="skipWarning"
                          x-transition
-                         class="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600/95 text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-bold flex items-center gap-2 border border-red-400 z-20">
+                         class="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600/95 text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-bold flex items-center gap-2 border border-red-400 z-30">
                         <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                         <span>Avanzamento rapido bloccato: per la validità ministeriale devi seguire la lezione senza saltare in avanti. Puoi solo tornare indietro.</span>
                     </div>
 
                     <!-- Tab Switch Auto-Pause Banner -->
                     <div x-cloak x-show="tabPausedBanner"
-                         class="absolute inset-0 bg-slate-950/85 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-20">
+                         class="absolute inset-0 bg-slate-950/85 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-30">
                         <div class="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mb-3">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </div>
@@ -119,7 +164,7 @@
 
                     <!-- Presence Verification Modal (Optional per Course) -->
                     <div x-cloak x-show="presenceModalOpen"
-                         class="absolute inset-0 bg-slate-950/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-30">
+                         class="absolute inset-0 bg-slate-950/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-40">
                         <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl">
                             <span class="px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold">Verifica Presenza Corsista</span>
                             <h3 class="text-white font-extrabold text-lg mt-3">Sei ancora presente davanti allo schermo?</h3>
@@ -190,9 +235,14 @@
             <!-- Module Details & Downloadable Dispense PDF -->
             <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
                 <div>
-                    <h2 class="text-lg font-extrabold text-slate-900">
-                        Modulo {{ $activeModule->sort_order }}: {{ $activeModule->title }}
-                    </h2>
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h2 class="text-lg font-extrabold text-slate-900">
+                            Modulo {{ $activeModule->sort_order }}: {{ $activeModule->title }}
+                        </h2>
+                        <span class="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-bold uppercase">
+                            Sorgente: {{ $activeModule->is_youtube ? 'YouTube No-Logo Shield' : ($activeModule->video_source_type === 'upload' ? 'File MP4 Locale' : 'Streaming MP4') }}
+                        </span>
+                    </div>
                     <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
                         {{ $activeModule->description ?: 'Lezione videoregistrata valida ai fini dell\'aggiornamento professionale obbligatorio (Art. 6 Linee Guida B - Ministero del Turismo).' }}
                     </p>
@@ -224,6 +274,53 @@
                             @endforeach
                         </div>
                     @endif
+                </div>
+            </div>
+
+            <!-- Registro Audit Personale del Corsista (Trasparenza Telemetria & Scarico PDF) -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                    <div>
+                        <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold uppercase">
+                            Trasparenza Certificata Corsista
+                        </span>
+                        <h3 class="text-base font-extrabold text-slate-900 mt-1">Il Tuo Registro Audit Personale (Log Sessioni e Telemetria)</h3>
+                        <p class="text-xs text-slate-500">Visualizza tutti gli heartbeat, i salvataggi e i download registrati sul tuo profilo con indirizzo IP e orario certificato.</p>
+                    </div>
+                    <a href="{{ route('student.enrollments.audit-pdf', $enrollment) }}"
+                       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold shadow-2xs transition shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <span>Scarica il Tuo Fascicolo Audit (PDF)</span>
+                    </a>
+                </div>
+
+                <div class="overflow-x-auto max-h-60 overflow-y-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-[10px] uppercase text-slate-400 font-extrabold">
+                                <th class="py-2 pr-3">Data / Ora</th>
+                                <th class="py-2 px-3">Evento</th>
+                                <th class="py-2 px-3">Dettaglio Attività</th>
+                                <th class="py-2 pl-3 text-right">IP Tracciato</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($studentAuditLogs ?? [] as $log)
+                                <tr>
+                                    <td class="py-2 pr-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">{{ $log->created_at->format('d/m/Y H:i:s') }}</td>
+                                    <td class="py-2 px-3">
+                                        <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px] font-bold">{{ $log->action_type }}</span>
+                                    </td>
+                                    <td class="py-2 px-3 text-slate-800 font-medium">{{ $log->description }}</td>
+                                    <td class="py-2 pl-3 text-right font-mono text-[11px] text-slate-500">{{ $log->ip_address }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="py-4 text-center text-slate-400">Avvia il player per generare i log di telemetria.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -303,6 +400,8 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('fadVideoPlayer', () => ({
         sessionToken: @json($sessionToken),
         heartbeatUrl: @json(route('student.modules.heartbeat', [$course, $activeModule])),
+        isYoutube: @json((bool) $activeModule->is_youtube),
+        youtubeVideoId: @json($activeModule->youtube_video_id),
         durationSeconds: {{ (int) $activeModule->duration_seconds }},
         watchedSeconds: {{ (int) $currentProgress->watched_seconds }},
         maxPositionSeconds: {{ (int) $currentProgress->max_position_seconds }},
@@ -328,14 +427,20 @@ document.addEventListener('alpine:init', () => {
         pendingPresenceConfirms: 0,
         heartbeatTimer: null,
         presenceTimer: null,
+        ytPlayer: null,
+        ytTickTimer: null,
 
         init() {
+            if (this.isYoutube && this.youtubeVideoId) {
+                this.initYouTubePlayer();
+            }
+
             // Visibility change listener (Auto-pause if strictTabPause is enabled on course)
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden && this.isPlaying) {
                     this.pendingTabSwitches++;
-                    if (this.strictTabPause && this.$refs.videoPlayer) {
-                        this.$refs.videoPlayer.pause();
+                    if (this.strictTabPause) {
+                        this.pauseMedia();
                         this.tabPausedBanner = true;
                     }
                 }
@@ -351,8 +456,8 @@ document.addEventListener('alpine:init', () => {
             // Optional presence check modal every X minutes
             if (this.presenceIntervalMinutes > 0) {
                 this.presenceTimer = setInterval(() => {
-                    if (this.isPlaying && this.$refs.videoPlayer) {
-                        this.$refs.videoPlayer.pause();
+                    if (this.isPlaying) {
+                        this.pauseMedia();
                         this.presenceModalOpen = true;
                     }
                 }, this.presenceIntervalMinutes * 60 * 1000);
@@ -363,6 +468,132 @@ document.addEventListener('alpine:init', () => {
                     this.sendHeartbeat('unload');
                 }
             });
+        },
+
+        initYouTubePlayer() {
+            const setupYT = () => {
+                this.ytPlayer = new YT.Player('yt-masked-player', {
+                    videoId: this.youtubeVideoId,
+                    host: 'https://www.youtube-nocookie.com',
+                    playerVars: {
+                        controls: 0,
+                        disablekb: 1,
+                        rel: 0,
+                        modestbranding: 1,
+                        iv_load_policy: 3,
+                        fs: 0,
+                        playsinline: 1,
+                        start: this.currentTime > 0 ? this.currentTime : 0,
+                    },
+                    events: {
+                        onStateChange: (event) => {
+                            if (event.data === YT.PlayerState.PLAYING) {
+                                this.onPlay();
+                                if (!this.ytTickTimer) {
+                                    this.ytTickTimer = setInterval(() => this.onYouTubeTick(), 1000);
+                                }
+                            } else if (event.data === YT.PlayerState.PAUSED) {
+                                this.onPause();
+                            } else if (event.data === YT.PlayerState.ENDED) {
+                                this.onEnded();
+                            }
+                        }
+                    }
+                });
+            };
+
+            if (window.YT && window.YT.Player) {
+                setupYT();
+            } else {
+                const tag = document.createElement('script');
+                tag.src = 'https://www.youtube.com/iframe_api';
+                window.onYouTubeIframeAPIReady = () => setupYT();
+                document.head.appendChild(tag);
+            }
+        },
+
+        onYouTubeTick() {
+            if (!this.isPlaying) return;
+            const now = Date.now();
+            if (this.lastTickTimestamp) {
+                const elapsed = Math.min(2, Math.max(0, (now - this.lastTickTimestamp) / 1000));
+                this.accumulatedDelta += elapsed;
+                this.currentTime = Math.min(this.durationSeconds, Math.round(this.currentTime + elapsed));
+                if (this.currentTime > this.maxPositionSeconds) {
+                    this.maxPositionSeconds = this.currentTime;
+                }
+                if (!this.isCompleted) {
+                    this.completionPercent = Math.min(100, Math.round((this.maxPositionSeconds / this.durationSeconds) * 1000) / 10);
+                }
+            }
+            this.lastTickTimestamp = now;
+        },
+
+        togglePlay() {
+            if (this.isYoutube) {
+                if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
+                    if (this.isPlaying) {
+                        this.ytPlayer.pauseVideo();
+                    } else {
+                        this.ytPlayer.playVideo();
+                    }
+                } else {
+                    // Fallback simulation if YT API is blocked offline
+                    this.isPlaying = !this.isPlaying;
+                    if (this.isPlaying) {
+                        this.onPlay();
+                        if (!this.ytTickTimer) {
+                            this.ytTickTimer = setInterval(() => this.onYouTubeTick(), 1000);
+                        }
+                    } else {
+                        this.onPause();
+                    }
+                }
+            } else if (this.$refs.videoPlayer) {
+                if (this.isPlaying) {
+                    this.$refs.videoPlayer.pause();
+                } else {
+                    this.$refs.videoPlayer.play();
+                }
+            }
+        },
+
+        pauseMedia() {
+            if (this.isYoutube && this.ytPlayer && typeof this.ytPlayer.pauseVideo === 'function') {
+                this.ytPlayer.pauseVideo();
+            } else if (this.$refs.videoPlayer) {
+                this.$refs.videoPlayer.pause();
+            }
+            this.isPlaying = false;
+        },
+
+        playMedia() {
+            if (this.isYoutube && this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
+                this.ytPlayer.playVideo();
+            } else if (this.$refs.videoPlayer) {
+                this.$refs.videoPlayer.play();
+            }
+        },
+
+        rewind10() {
+            const target = Math.max(0, this.currentTime - 10);
+            this.currentTime = target;
+            if (this.isYoutube && this.ytPlayer && typeof this.ytPlayer.seekTo === 'function') {
+                this.ytPlayer.seekTo(target, true);
+            }
+        },
+
+        onCustomSeek(val) {
+            const target = parseInt(val, 10) || 0;
+            if (!this.isCompleted && target > this.maxPositionSeconds + 2) {
+                this.skipWarning = true;
+                setTimeout(() => { this.skipWarning = false; }, 4000);
+                return;
+            }
+            this.currentTime = target;
+            if (this.isYoutube && this.ytPlayer && typeof this.ytPlayer.seekTo === 'function') {
+                this.ytPlayer.seekTo(target, true);
+            }
         },
 
         onLoadedMetadata() {
@@ -403,7 +634,7 @@ document.addEventListener('alpine:init', () => {
             if (!video || this.isCompleted) return;
 
             // Map real video duration to module formal duration if using a shorter sample video
-            const scale = this. getScaleFactor(video);
+            const scale = this.getScaleFactor(video);
             const scaledTarget = Math.round(video.currentTime * scale);
 
             if (scaledTarget > this.maxPositionSeconds + Math.ceil(3 * scale)) {
@@ -458,18 +689,14 @@ document.addEventListener('alpine:init', () => {
 
         resumeFromBanner() {
             this.tabPausedBanner = false;
-            if (this.$refs.videoPlayer) {
-                this.$refs.videoPlayer.play();
-            }
+            this.playMedia();
         },
 
         confirmPresence() {
             this.presenceModalOpen = false;
             this.pendingPresenceConfirms++;
             this.sendHeartbeat('presence_confirmed');
-            if (this.$refs.videoPlayer) {
-                this.$refs.videoPlayer.play();
-            }
+            this.playMedia();
         },
 
         async simulateCompleteModule() {

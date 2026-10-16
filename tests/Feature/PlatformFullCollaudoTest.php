@@ -384,4 +384,110 @@ class PlatformFullCollaudoTest extends TestCase
         $this->post('/logout');
         $this->get('/login')->assertStatus(200)->assertSee('FormaCamera VideoFAD');
     }
+
+    public function test_08_masked_youtube_player_and_video_id_extraction(): void
+    {
+        $admin = User::where('role', 'admin')->firstOrFail();
+        $student = User::where('email', 'elena.bianchi@guideroma.it')->firstOrFail();
+        $course = Course::where('code', 'AGG-GT-2026-01')->firstOrFail();
+
+        // 1. Verify seeded Module 2 is a Masked YouTube module and extracts the 11-char ID properly
+        $mod2 = CourseModule::where('course_id', $course->id)->where('sort_order', 2)->firstOrFail();
+        $this->assertTrue($mod2->is_youtube);
+        $this->assertEquals('M7lc1UVf-VE', $mod2->youtube_video_id);
+
+        // 2. Verify Admin can add a new Masked YouTube module using a standard youtube.com/watch?v= link
+        $this->actingAs($admin)->post(route('admin.courses.modules.store', $course), [
+            'sort_order' => 6,
+            'title' => 'Modulo 6 Extra - Approfondimento YouTube Mascherato',
+            'instructor_name' => 'Prof.ssa Giulia Riva',
+            'video_source_type' => 'youtube',
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&feature=youtu.be',
+            'duration_minutes' => 45,
+            'description' => 'Modulo con sorgente YouTube protetta da No-Logo Shield',
+        ])->assertSessionHasNoErrors();
+
+        $mod6 = CourseModule::where('course_id', $course->id)->where('sort_order', 6)->firstOrFail();
+        $this->assertTrue($mod6->is_youtube);
+        $this->assertEquals('dQw4w9WgXcQ', $mod6->youtube_video_id);
+
+        // 3. Verify Student Course Player renders the Masked YouTube Shield & Custom Anti-Skip Controls
+        $res = $this->actingAs($student)->get(route('student.courses.module', [$course, $mod2]));
+        $res->assertStatus(200)
+            ->assertSee('yt-masked-player')
+            ->assertSee('YouTube No-Logo Shield Attivo')
+            ->assertSee('YouTube Mascherato (No-Logo / Anti-Skip)');
+    }
+
+    public function test_09_single_module_100_percent_fad_course_flow(): void
+    {
+        $student = User::where('email', 'sara.lombardi@guideroma.it')->firstOrFail();
+        $monoCourse = Course::where('code', 'MONO-FAD-2026')->firstOrFail();
+
+        // 1. Verify course has 0 sync hours and 1 single module of 2 hours (7200s)
+        $this->assertEquals(0.0, (float) $monoCourse->sync_required_hours);
+        $this->assertEquals(2.0, (float) $monoCourse->async_required_hours);
+        $this->assertEquals(1, $monoCourse->modules()->count());
+
+        $onlyModule = $monoCourse->modules()->firstOrFail();
+
+        // 2. Student self-enrolls from dashboard
+        $this->actingAs($student)
+            ->post(route('student.courses.enroll', $monoCourse))
+            ->assertRedirect(route('student.courses.show', $monoCourse));
+
+        $enrollment = Enrollment::where('user_id', $student->id)
+            ->where('course_id', $monoCourse->id)
+            ->firstOrFail();
+
+        $this->assertEquals(0.0, (float) $enrollment->attendance_percent);
+        $this->assertFalse($enrollment->is_eligible_for_certificate);
+
+        // 3. Student completes the single module via heartbeat -> reaches 100% and unlocks certificate with 0 Zoom hours
+        $hb = $this->actingAs($student)->postJson(route('student.modules.heartbeat', [$monoCourse, $onlyModule]), [
+            'session_token' => 'mono_course_session_token_999',
+            'current_time' => 7200,
+            'delta_watched_seconds' => 60,
+            'event_type' => 'ended',
+        ]);
+
+        $hb->assertStatus(200)
+            ->assertJsonPath('ok', true)
+            ->assertJsonPath('module_progress.is_completed', true)
+            ->assertJsonPath('enrollment.async_hours_completed', 2)
+            ->assertJsonPath('enrollment.total_hours_completed', 2)
+            ->assertJsonPath('enrollment.attendance_percent', 100)
+            ->assertJsonPath('enrollment.is_eligible_for_certificate', true);
+
+        // 4. Student downloads the unlocked Allegato 4 PDF Certificate for the 1-module course
+        $certRes = $this->actingAs($student)->get(route('student.enrollments.certificate', $enrollment->fresh()));
+        $certRes->assertStatus(200);
+        $this->assertStringStartsWith('%PDF-', $certRes->getContent());
+    }
+
+    public function test_10_student_personal_audit_log_and_personal_audit_pdf_download(): void
+    {
+        $elena = User::where('email', 'elena.bianchi@guideroma.it')->firstOrFail();
+        $sara = User::where('email', 'sara.lombardi@guideroma.it')->firstOrFail();
+        $course = Course::where('code', 'AGG-GT-2026-01')->firstOrFail();
+
+        $enrElena = Enrollment::where('user_id', $elena->id)->where('course_id', $course->id)->firstOrFail();
+        $enrSara = Enrollment::where('user_id', $sara->id)->where('course_id', $course->id)->firstOrFail();
+
+        // 1. Student sees the Personal Audit Box and Download Button inside the Course Player
+        $playerRes = $this->actingAs($elena)->get(route('student.courses.show', $course));
+        $playerRes->assertStatus(200)
+            ->assertSee('Il Tuo Registro Audit Personale')
+            ->assertSee('Scarica il Tuo Fascicolo Audit (PDF)');
+
+        // 2. Student can download her own Personal Audit Dossier PDF
+        $auditPdf = $this->actingAs($elena)->get(route('student.enrollments.audit-pdf', $enrElena));
+        $auditPdf->assertStatus(200);
+        $this->assertStringStartsWith('%PDF-', $auditPdf->getContent());
+
+        // 3. Security Check: Student CANNOT download another student's Personal Audit PDF (403 Forbidden)
+        $this->actingAs($sara)
+            ->get(route('student.enrollments.audit-pdf', $enrElena))
+            ->assertStatus(403);
+    }
 }

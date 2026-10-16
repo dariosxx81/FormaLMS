@@ -78,6 +78,7 @@ class DatabaseSeeder extends Seeder
                 'title' => 'Riforma della Professione di Guida Turistica: Legge 190/2023 e D.M. 88/2024',
                 'instructor_name' => 'Prof. Avv. Roberto Ferretti',
                 'description' => 'Quadro normativo nazionale, Elenco Nazionale delle Guide Turistiche, obblighi di aggiornamento triennale e disciplina sanzionatoria.',
+                'video_source_type' => 'url',
                 'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
                 'attachment_title' => 'Dispensa Modulo 1 - Testo Coordinato Legge 190-2023 e DM 88-2024',
             ],
@@ -86,7 +87,8 @@ class DatabaseSeeder extends Seeder
                 'title' => 'Codice dei Beni Culturali e del Paesaggio: Nuovi Modelli di Valorizzazione Museale',
                 'instructor_name' => 'Prof.ssa Chiara Montanari',
                 'description' => 'Analisi della tutela e valorizzazione del patrimonio storico-artistico e museale italiano negli itinerari guidati contemporanei.',
-                'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+                'video_source_type' => 'youtube',
+                'video_url' => 'https://youtu.be/M7lc1UVf-VE',
                 'attachment_title' => 'Slide Modulo 2 - Valorizzazione Patrimonio Museale e Siti UNESCO',
             ],
             [
@@ -94,6 +96,7 @@ class DatabaseSeeder extends Seeder
                 'title' => 'Accessibilità e Inclusività dell\'Offerta Turistica per Persone con Disabilità',
                 'instructor_name' => 'Dott.ssa Laura Pellegrini',
                 'description' => 'Progettazione di visite guidate accessibili, superamento delle barriere sensoriali e cognitive e accoglienza inclusiva.',
+                'video_source_type' => 'url',
                 'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
                 'attachment_title' => 'Guida Operativa Modulo 3 - Protocolli di Accessibilità Turistica',
             ],
@@ -102,7 +105,8 @@ class DatabaseSeeder extends Seeder
                 'title' => 'Storytelling Digitale e Metodologie di Comunicazione del Patrimonio Monumentale',
                 'instructor_name' => 'Prof. Alessandro De Luca',
                 'description' => 'Tecniche narrative avanzate per la mediazione culturale, gestione di gruppi eterogenei e strumenti digitali di supporto.',
-                'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+                'video_source_type' => 'youtube',
+                'video_url' => 'https://www.youtube.com/watch?v=M7lc1UVf-VE',
                 'attachment_title' => 'Dispensa Modulo 4 - Tecniche di Mediazione Culturale e Storytelling',
             ],
             [
@@ -110,6 +114,7 @@ class DatabaseSeeder extends Seeder
                 'title' => 'Adempimenti Fiscali, Sicurezza dei Gruppi e Deontologia Professionale',
                 'instructor_name' => 'Dott. Stefano Marchetti',
                 'description' => 'Inquadramento ATECO 79.90, responsabilità civile della guida turistica, copertura assicurativa e gestione delle emergenze.',
+                'video_source_type' => 'url',
                 'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
                 'attachment_title' => 'Formulario Modulo 5 - Adempimenti Deontologici e Sicurezza Gruppi',
             ],
@@ -123,7 +128,7 @@ class DatabaseSeeder extends Seeder
                 'title' => $mData['title'],
                 'instructor_name' => $mData['instructor_name'],
                 'description' => $mData['description'],
-                'video_source_type' => 'url',
+                'video_source_type' => $mData['video_source_type'],
                 'video_url' => $mData['video_url'],
                 'duration_seconds' => 3600, // 1 ora (3600s)
                 'is_published' => true,
@@ -218,6 +223,48 @@ class DatabaseSeeder extends Seeder
                 'is_published' => true,
             ]);
         }
+
+        // Course 4: Single-Module 100% Asynchronous FAD Course (0h Zoom Sync + 2h Async Video FAD - 1 Single Module)
+        $course4 = Course::create([
+            'code' => 'MONO-FAD-2026',
+            'title' => 'Seminario Monografico (1 Modulo Unico 100% FAD): Sicurezza e Primo Soccorso nei Gruppi Turistici',
+            'course_type' => 'aggiornamento',
+            'thematic_area' => 'Sicurezza dei Gruppi, Gestione Emergenze e Deontologia Professionale',
+            'authorization_details' => 'Provv. Ministero del Turismo prot. n. 0048910 del 15/10/2026',
+            'training_center_name' => 'Polo Formativo Accreditato - Aula Telematica Nazionale',
+            'training_center_city' => 'Roma (RM)',
+            'description' => 'Corso monografico composto da 1 singolo modulo video da 2 ore (100% FAD Asincrono senza ore Zoom sincrone).',
+            'total_hours' => 2.00,
+            'sync_required_hours' => 0.00,
+            'async_required_hours' => 2.00,
+            'min_attendance_percent' => 80,
+            'strict_tab_pause' => true,
+            'presence_check_interval_minutes' => 0,
+            'allow_self_enrollment' => true,
+            'is_active' => true,
+            'starts_at' => now(),
+            'ends_at' => now()->addMonths(6),
+        ]);
+
+        $monoMod = CourseModule::create([
+            'course_id' => $course4->id,
+            'sort_order' => 1,
+            'title' => 'Modulo Unico — Protocolli di Sicurezza, Emergenze Sanitarie e Gestione del Gruppo in Visita',
+            'instructor_name' => 'Dott. Marco Santini',
+            'description' => 'Modulo unico autoconsistente da 2 ore con sorgente YouTube Mascherata (No-Logo Shield).',
+            'video_source_type' => 'youtube',
+            'video_url' => 'https://youtu.be/M7lc1UVf-VE',
+            'duration_seconds' => 7200,
+            'is_published' => true,
+        ]);
+
+        ModuleAttachment::create([
+            'course_module_id' => $monoMod->id,
+            'title' => 'Manuale Operativo Modulo Unico - Sicurezza e Primo Soccorso Gruppi',
+            'file_path' => 'demo-dispense/manuale-sicurezza-unico.pdf',
+            'file_size_kb' => 512,
+            'download_count' => 8,
+        ]);
 
         // Student 1: Elena Bianchi (100% completed -> Certificate ready!)
         $student1 = User::create([

@@ -32,6 +32,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/courses/{course}/modules/{module}/heartbeat', [StudentCourseController::class, 'heartbeat'])->name('student.modules.heartbeat');
     Route::get('/attachments/{attachment}/download', [StudentCourseController::class, 'downloadAttachment'])->name('student.attachments.download');
     Route::get('/enrollments/{enrollment}/certificate', [StudentCourseController::class, 'downloadCertificate'])->name('student.enrollments.certificate');
+    Route::get('/enrollments/{enrollment}/audit-pdf', [StudentCourseController::class, 'downloadPersonalAuditPdf'])->name('student.enrollments.audit-pdf');
 });
 
 // Admin Panel Routes

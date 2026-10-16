@@ -81,6 +81,13 @@
                                 </div>
 
                                 <div class="flex flex-wrap items-center gap-3 shrink-0">
+                                    <a href="{{ route('student.enrollments.audit-pdf', $enrollment) }}"
+                                       class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 text-xs font-bold transition"
+                                       title="Scarica il tuo Fascicolo Audit Personale certificato in PDF">
+                                        <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        <span>Audit Personale (PDF)</span>
+                                    </a>
+
                                     @if($enrollment->is_eligible_for_certificate)
                                         <a href="{{ route('student.enrollments.certificate', $enrollment) }}"
                                            class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition">

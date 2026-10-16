@@ -165,6 +165,14 @@ class StudentCourseController extends Controller
             $activeModule->id
         );
 
+        $studentAuditLogs = ActivityLog::where('user_id', $user->id)
+            ->where(function ($q) use ($course) {
+                $q->where('course_id', $course->id)->orWhereNull('course_id');
+            })
+            ->latest()
+            ->limit(15)
+            ->get();
+
         return view('student.course-player', compact(
             'user',
             'settings',
@@ -174,7 +182,8 @@ class StudentCourseController extends Controller
             'activeModule',
             'currentProgress',
             'progressMap',
-            'sessionToken'
+            'sessionToken',
+            'studentAuditLogs'
         ));
     }
 
@@ -379,5 +388,49 @@ class StudentCourseController extends Controller
         );
 
         return $pdf->download($filename);
+    }
+
+    public function downloadPersonalAuditPdf(Request $request, Enrollment $enrollment)
+    {
+        $user = auth()->user();
+        if ($enrollment->user_id !== $user->id && !$user->isAdmin()) {
+            abort(403);
+        }
+
+        $settings = PlatformSetting::getAllSettings();
+        $enrollment->load(['user', 'course.modules']);
+        $enrollment->recalculateProgress();
+
+        $moduleProgress = ModuleProgress::where('user_id', $enrollment->user_id)
+            ->where('course_id', $enrollment->course_id)
+            ->get()
+            ->keyBy('course_module_id');
+
+        $watchLogs = WatchLog::with('module')
+            ->where('user_id', $enrollment->user_id)
+            ->where('course_id', $enrollment->course_id)
+            ->orderBy('started_at')
+            ->get();
+
+        ActivityLog::record(
+            'student_audit_pdf',
+            "Scaricato Registro Audit Personale PDF per {$enrollment->user->full_name}",
+            $user->id,
+            $enrollment->course_id,
+            null,
+            ['enrollment_id' => $enrollment->id],
+            $request
+        );
+
+        $pdf = Pdf::loadView('pdf.student-dossier', [
+            'settings' => $settings,
+            'enrollment' => $enrollment,
+            'student' => $enrollment->user,
+            'course' => $enrollment->course,
+            'moduleProgress' => $moduleProgress,
+            'watchLogs' => $watchLogs,
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download('Audit_Personale_' . Str::slug($enrollment->user->full_name) . '.pdf');
     }
 }
