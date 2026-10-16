@@ -176,7 +176,7 @@ class AdminDashboardController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'instructor_name' => ['nullable', 'string', 'max:150'],
             'description' => ['nullable', 'string'],
-            'video_source_type' => ['required', 'in:url,upload'],
+            'video_source_type' => ['required', 'in:url,upload,youtube'],
             'video_url' => ['nullable', 'string', 'max:500'],
             'video_file' => ['nullable', 'file', 'mimes:mp4,webm,ogg', 'max:512000'],
             'duration_minutes' => ['required', 'numeric', 'min:1'],

@@ -351,6 +351,7 @@
                     <div>
                         <label class="block font-bold text-slate-700 mb-1">Modalità Sorgente Video *</label>
                         <select name="video_source_type" x-model="sourceType" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                            <option value="youtube">🛡 YouTube con Mascheramento Loghi (Link Non in Elenco)</option>
                             <option value="url">URL Diretto Video (.mp4 / Cloud / CDN)</option>
                             <option value="upload">Upload File .MP4 (scaricato da Zoom)</option>
                         </select>
@@ -361,9 +362,9 @@
                     </div>
                 </div>
 
-                <div x-show="sourceType === 'url'">
-                    <label class="block font-bold text-slate-700 mb-1">URL del file Video (.mp4)</label>
-                    <input type="url" name="video_url" value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" class="w-full rounded-xl border border-slate-300 px-3 py-2 font-mono">
+                <div x-show="sourceType === 'url' || sourceType === 'youtube'">
+                    <label class="block font-bold text-slate-700 mb-1" x-text="sourceType === 'youtube' ? 'Link o ID Video YouTube (Loghi e link esterni verranno mascherati)' : 'URL del file Video (.mp4)'"></label>
+                    <input type="text" name="video_url" value="https://youtu.be/M7lc1UVf-VE" class="w-full rounded-xl border border-slate-300 px-3 py-2 font-mono">
                 </div>
 
                 <div x-show="sourceType === 'upload'">

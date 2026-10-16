@@ -122,6 +122,28 @@
                 </form>
             </div>
         </div>
+
+        <!-- Mobile Navigation Bar (Visible on Smartphone/Tablet) -->
+        @if(auth()->user()->isAdmin())
+            <div class="md:hidden flex items-center gap-1.5 overflow-x-auto px-4 py-2 border-t border-slate-100 bg-slate-50">
+                <a href="{{ route('admin.dashboard') }}"
+                   class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap {{ request()->routeIs('admin.dashboard') || request()->routeIs('admin.courses.*') ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200' }}">
+                    Corsi & Moduli
+                </a>
+                <a href="{{ route('admin.users.index') }}"
+                   class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap {{ request()->routeIs('admin.users.*') ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200' }}">
+                    Utenti & Iscrizioni
+                </a>
+                <a href="{{ route('admin.logs.index') }}"
+                   class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap {{ request()->routeIs('admin.logs.*') ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200' }}">
+                    Audit Log
+                </a>
+                <a href="{{ route('admin.settings.index') }}"
+                   class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap {{ request()->routeIs('admin.settings.*') ? 'bg-slate-900 text-white' : 'bg-white text-slate-700 border border-slate-200' }}">
+                    White-Label
+                </a>
+            </div>
+        @endif
     </header>
     @endauth
 

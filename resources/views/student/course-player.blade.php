@@ -65,24 +65,36 @@
                     </div>
                 </div>
 
-                <!-- HTML5 Video Element -->
-                <div class="relative aspect-video bg-black flex items-center justify-center">
-                    <video x-ref="videoPlayer"
-                           class="w-full h-full object-contain"
-                           playsinline
-                           preload="metadata"
-                           @loadedmetadata="onLoadedMetadata()"
-                           @timeupdate="onTimeUpdate()"
-                           @seeking="onSeeking()"
-                           @ratechange="onRateChange()"
-                           @play="onPlay()"
-                           @pause="onPause()"
-                           @ended="onEnded()"
-                           controls
-                           controlsList="nodownload noplaybackrate">
-                        <source src="{{ $activeModule->video_url }}" type="video/mp4">
-                        Il tuo browser non supporta il player video HTML5.
-                    </video>
+                <!-- HTML5 Video OR Masked YouTube Player -->
+                <div class="relative aspect-video bg-black flex items-center justify-center overflow-hidden select-none">
+                    @if($activeModule->is_youtube && $activeModule->youtube_video_id)
+                        <div class="absolute inset-0 scale-[1.14] pointer-events-none">
+                            <iframe class="w-full h-full"
+                                    src="https://www.youtube-nocookie.com/embed/{{ $activeModule->youtube_video_id }}?controls=0&disablekb=1&rel=0&modestbranding=1&iv_load_policy=3&fs=0&playsinline=1"
+                                    allow="autoplay; encrypted-media"
+                                     referrerpolicy="strict-origin-when-cross-origin"></iframe>
+                        </div>
+                        <div class="absolute top-3 right-3 z-10 px-2.5 py-1 rounded-full bg-slate-950/85 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold">
+                            🛡 YouTube No-Logo Shield Attivo
+                        </div>
+                    @else
+                        <video x-ref="videoPlayer"
+                               class="w-full h-full object-contain"
+                               playsinline
+                               preload="metadata"
+                               @loadedmetadata="onLoadedMetadata()"
+                               @timeupdate="onTimeUpdate()"
+                               @seeking="onSeeking()"
+                               @ratechange="onRateChange()"
+                               @play="onPlay()"
+                               @pause="onPause()"
+                               @ended="onEnded()"
+                               controls
+                               controlsList="nodownload noplaybackrate">
+                            <source src="{{ $activeModule->video_url }}" type="video/mp4">
+                            Il tuo browser non supporta il player video HTML5.
+                        </video>
+                    @endif
 
                     <!-- Anti-Skip Warning Toast Overlay -->
                     <div x-cloak x-show="skipWarning"

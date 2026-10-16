@@ -3,233 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FormaFAD LMS — Anteprima Interattiva Piattaforma FAD (Linee Guida B)</title>
+    <title>FormaFAD LMS — Anteprima Completa Mobile & Desktop (Linee Guida B)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         [x-cloak] { display: none !important; }
+        /* Hide scrollbars on mobile horizontal tab bar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @media print {
             .no-print { display: none !important; }
-            .print-only { display: block !important; }
         }
     </style>
 </head>
 <body x-data="formaFadPreview" class="min-h-full flex flex-col text-slate-800 antialiased">
 
-    <!-- Top Interactive Demo Control Bar -->
-    <div class="bg-slate-900 text-slate-200 text-xs border-b border-slate-800 no-print">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-2.5">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+    <!-- Top Status & Quick Reset Bar -->
+    <div class="bg-slate-950 text-slate-200 text-xs border-b border-slate-800 no-print">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 truncate">
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Anteprima Live Interattiva
+                    DEMO INTERATTIVA
                 </span>
-                <span class="text-slate-300 hidden md:inline">
-                    Ente: <strong class="text-white" x-text="settings.providerName"></strong>
-                    (ATECO <span x-text="settings.ateco"></span> • CP ISTAT <span x-text="settings.cpIstat"></span>)
+                <span class="text-slate-300 truncate text-[11px]">
+                    <strong class="text-white" x-text="settings.platformName"></strong> • <span x-text="settings.providerName"></span>
                 </span>
             </div>
-
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="text-slate-400 font-medium">Vista attiva:</span>
-                <button @click="currentView = 'student'"
-                        :class="currentView === 'student' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'"
-                        class="px-3 py-1 rounded-lg font-bold transition cursor-pointer">
-                    &#9654; Area Corsista & Player Anti-Skip
-                </button>
-                <button @click="currentView = 'admin_courses'"
-                        :class="currentView.startsWith('admin') ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700'"
-                        class="px-3 py-1 rounded-lg font-bold transition cursor-pointer">
-                    &#9881; Pannello Admin (Corsi, Utenti, Ore Zoom & PDF)
-                </button>
-                <button @click="resetDemoData()"
-                        class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-200 border border-slate-700 transition cursor-pointer"
-                        title="Ripristina i dati iniziali della demo">
-                    Reset Demo
-                </button>
-            </div>
+            <button @click="resetDemoData()"
+                    class="px-2.5 py-1 rounded bg-slate-800 hover:bg-red-900/60 text-slate-300 hover:text-white border border-slate-700 text-[11px] font-semibold shrink-0 cursor-pointer">
+                Reset Dati
+            </button>
         </div>
     </div>
 
-    <!-- Main Navigation Header -->
+    <!-- Main Header + Mobile-First Always-Visible Navigation Bar -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs no-print">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-            <div class="flex items-center gap-6">
-                <div @click="currentView = 'student'" class="flex items-center gap-3 cursor-pointer group">
-                    <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-extrabold text-lg shadow-xs group-hover:bg-indigo-600 transition">
+        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <!-- Top Row: Brand + Active Student Selector -->
+            <div class="h-14 flex items-center justify-between gap-2">
+                <div @click="currentView = 'student'" class="flex items-center gap-2.5 cursor-pointer min-w-0">
+                    <div class="w-9 h-9 rounded-xl text-white flex items-center justify-center font-extrabold text-sm shadow-xs shrink-0"
+                         :style="'background-color: ' + settings.brandColor">
                         FAD
                     </div>
-                    <div>
-                        <div class="font-extrabold text-slate-900 text-base leading-tight" x-text="settings.platformName"></div>
-                        <div class="text-[11px] text-slate-500 font-medium" x-text="settings.providerName"></div>
+                    <div class="truncate">
+                        <div class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight truncate" x-text="settings.platformName"></div>
+                        <div class="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate" x-text="settings.providerName"></div>
                     </div>
                 </div>
 
-                <!-- Navigation Tabs -->
-                <nav class="hidden lg:flex items-center gap-1 ml-2">
-                    <button @click="currentView = 'student'"
-                            :class="currentView === 'student' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'"
-                            class="px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer">
-                        Aula Video FAD (Vista Corsista)
-                    </button>
-                    <button @click="currentView = 'admin_courses'"
-                            :class="currentView === 'admin_courses' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'"
-                            class="px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer">
-                        Admin: Corsi, Moduli & Registro Zoom+FAD
-                    </button>
-                    <button @click="currentView = 'admin_users'"
-                            :class="currentView === 'admin_users' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'"
-                            class="px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer">
-                        Admin: Anagrafica Corsisti & Import CSV
-                    </button>
-                    <button @click="currentView = 'admin_logs'"
-                            :class="currentView === 'admin_logs' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'"
-                            class="px-3.5 py-2 rounded-lg text-xs font-bold transition cursor-pointer">
-                        Admin: Log Telemetrici & White-Label
-                    </button>
-                </nav>
-            </div>
-
-            <!-- Active Student Switcher (when in Student View) -->
-            <div class="flex items-center gap-3">
-                <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-                    <span class="text-[11px] font-bold text-slate-500 hidden sm:inline">Corsista attivo:</span>
+                <!-- Active Student Selector -->
+                <div class="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1.5 rounded-xl border border-slate-200 shrink-0">
+                    <span class="text-[10px] font-bold text-slate-500 hidden sm:inline">Corsista:</span>
                     <select x-model.number="activeStudentId" @change="onStudentChange()"
-                            class="bg-transparent text-xs font-extrabold text-slate-900 outline-none cursor-pointer">
+                            class="bg-transparent text-xs font-extrabold text-slate-900 outline-none cursor-pointer max-w-[165px] sm:max-w-none">
                         <template x-for="s in students" :key="s.id">
                             <option :value="s.id" x-text="s.firstName + ' ' + s.lastName + ' (' + getStudentPercentage(s) + '%)'"></option>
                         </template>
                     </select>
                 </div>
             </div>
+
+            <!-- Second Row: Scrollable Mobile & Desktop 5-Tab Bar (Always Visible on Smartphone!) -->
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-2 border-t border-slate-100">
+                <button @click="currentView = 'student'"
+                        :class="currentView === 'student' ? 'bg-slate-900 text-white shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0">
+                    1. ▶ Aula Corsista & Player (MP4 / YouTube)
+                </button>
+                <button @click="currentView = 'register_page'"
+                        :class="currentView === 'register_page' ? 'bg-slate-900 text-white shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0">
+                    2. 📝 Modulo Registrazione Utente
+                </button>
+                <button @click="currentView = 'admin_courses'"
+                        :class="currentView === 'admin_courses' ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0">
+                    3. ⚙ Admin: Corsi (1..N Moduli) & Opzioni
+                </button>
+                <button @click="currentView = 'admin_users'"
+                        :class="currentView === 'admin_users' ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0">
+                    4. 👥 Admin: Iscritti, Ore Zoom & Audit
+                </button>
+                <button @click="currentView = 'admin_whitelabel'"
+                        :class="currentView === 'admin_whitelabel' ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0">
+                    5. 🎨 Admin: White-Label Ente
+                </button>
+            </div>
         </div>
     </header>
 
     <!-- Notification Toast -->
     <div x-cloak x-show="toastMessage" x-transition
-         class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-3 text-xs font-bold no-print">
-        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+         class="fixed bottom-4 right-4 left-4 sm:left-auto z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-3 text-xs font-bold no-print">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
         <span x-text="toastMessage"></span>
     </div>
 
     <!-- ===================================================================== -->
-    <!-- VIEW 1: STUDENT PORTAL & SMART ANTI-SKIP VIDEO PLAYER                  -->
+    <!-- TAB 1: STUDENT PORTAL, MASKED YOUTUBE / MP4 PLAYER & PERSONAL AUDIT    -->
     <!-- ===================================================================== -->
-    <main x-show="currentView === 'student'" class="flex-1 max-w-7xl w-full mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-6 no-print">
+    <main x-show="currentView === 'student'" class="flex-1 max-w-7xl w-full mx-auto py-5 px-3 sm:px-6 lg:px-8 space-y-6 no-print">
 
-        <!-- Student Summary & Unified Progress Banner (20h Zoom + 5h FAD = 25h) -->
-        <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-800">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-800">
+        <!-- Course Selector Bar (Allows testing multi-module vs 1-module courses!) -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-xs">
+                <span class="font-extrabold text-slate-700">Corso selezionato:</span>
+                <select x-model.number="activeCourseId" @change="onCourseChange()"
+                        class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-900">
+                    <template x-for="c in courses" :key="c.id">
+                        <option :value="c.id" x-text="'[' + c.code + '] ' + c.title + ' (' + c.modules.length + (c.modules.length === 1 ? ' modulo)' : ' moduli)')"></option>
+                    </template>
+                </select>
+            </div>
+            <div class="flex items-center gap-2 text-[11px]">
+                <span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-bold border border-indigo-200"
+                      x-text="activeCourse.hasSyncHours ? 'Corso Misto (' + activeCourse.syncHours + 'h Sincrone + ' + activeCourse.asyncHours + 'h FAD)' : 'Corso 100% Asincrono FAD (' + activeCourse.asyncHours + 'h)'"></span>
+                <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-bold"
+                      x-text="activeCourse.modules.length + (activeCourse.modules.length === 1 ? ' Modulo Video' : ' Moduli Video')"></span>
+            </div>
+        </div>
+
+        <!-- Student Summary & Unified Progress Banner -->
+        <div class="bg-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-md border border-slate-800">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800">
                 <div>
-                    <div class="flex flex-wrap items-center gap-2 mb-2">
-                        <span class="px-2.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono text-xs font-bold border border-indigo-500/30" x-text="activeCourse.code"></span>
-                        <span class="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30">
-                            Fruizione Asincrona H24 Tracciata
+                    <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                        <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono text-xs font-bold border border-indigo-500/30" x-text="activeCourse.code"></span>
+                        <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30">
+                            Tracciamento Ministeriale Attivo
                         </span>
-                        <span class="text-xs text-slate-400" x-text="activeCourse.authorization"></span>
                     </div>
-                    <h1 class="text-xl sm:text-2xl font-extrabold" x-text="activeCourse.title"></h1>
+                    <h1 class="text-lg sm:text-xl font-extrabold" x-text="activeCourse.title"></h1>
                     <p class="text-xs text-slate-300 mt-1">
                         Corsista: <strong class="text-white" x-text="activeStudent.firstName + ' ' + activeStudent.lastName"></strong>
                         • CF: <strong class="font-mono text-indigo-300" x-text="activeStudent.fiscalCode"></strong>
-                        • Nato/a il <span x-text="formatDateIT(activeStudent.birthDate)"></span> a <span x-text="activeStudent.birthCity + ' (' + activeStudent.birthProvince + ')'"></span>
                     </p>
                 </div>
 
-                <!-- Certificate Button (Unlocked when >= 80%) -->
-                <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                <!-- Certificate Button -->
+                <div class="flex flex-wrap items-center gap-2 shrink-0">
                     <template x-if="getStudentPercentage(activeStudent) >= activeCourse.minPercent">
                         <div class="flex flex-wrap items-center gap-2">
                             <button @click="openCertificatePreview(activeStudent)"
                                     class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-sm transition cursor-pointer">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                <span>Visualizza Attestato Allegato 4</span>
+                                <span>🎓 Apri Attestato Allegato 4</span>
                             </button>
                             <a href="./pdf/Attestato_Allegato4_Elena_Bianchi.pdf" download
-                               class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 text-xs font-bold transition">
-                                <span>PDF Ufficiale &darr;</span>
+                               class="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-slate-700 text-xs font-bold transition">
+                                <span>PDF &darr;</span>
                             </a>
                         </div>
                     </template>
                     <template x-if="getStudentPercentage(activeStudent) < activeCourse.minPercent">
-                        <div class="px-4 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold">
-                            🔒 Attestato Allegato 4 sbloccato al raggiungimento dell'80% (20h su 25h) — Ti mancano <span x-text="Math.max(0, (20 - getStudentTotalHours(activeStudent))).toFixed(1)"></span>h
+                        <div class="px-3.5 py-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold">
+                            🔒 Attestato sbloccato all'<span x-text="activeCourse.minPercent"></span>% — Completa il modulo qui sotto col pulsante Demo!
                         </div>
                     </template>
                 </div>
             </div>
 
-            <!-- 4 KPI Columns for Sync (Zoom) + Async (FAD) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-5">
-                <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3.5">
-                    <div class="text-[11px] font-bold uppercase text-slate-400">1. Ore Sincrone (Report Zoom)</div>
-                    <div class="text-xl font-extrabold text-white mt-0.5">
-                        <span x-text="activeStudent.syncHours"></span>h
-                        <span class="text-xs font-normal text-slate-400">/ <span x-text="activeCourse.syncHours"></span>h previste (80%)</span>
+            <!-- KPI Columns -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 pt-4">
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3" x-show="activeCourse.hasSyncHours">
+                    <div class="text-[10px] font-bold uppercase text-slate-400">Ore Sincrone (Zoom)</div>
+                    <div class="text-base sm:text-lg font-extrabold text-white mt-0.5">
+                        <span x-text="activeStudent.syncHours"></span>h <span class="text-xs font-normal text-slate-400">/ <span x-text="activeCourse.syncHours"></span>h</span>
                     </div>
                 </div>
-                <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3.5">
-                    <div class="text-[11px] font-bold uppercase text-slate-400">2. Ore Asincrone (Video FAD)</div>
-                    <div class="text-xl font-extrabold text-indigo-400 mt-0.5">
-                        <span x-text="getStudentAsyncHours(activeStudent)"></span>h
-                        <span class="text-xs font-normal text-slate-400">/ <span x-text="activeCourse.asyncHours"></span>h (<span x-text="getCompletedModulesCount(activeStudent)"></span>/5 moduli)</span>
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3">
+                    <div class="text-[10px] font-bold uppercase text-slate-400">Ore Asincrone (FAD)</div>
+                    <div class="text-base sm:text-lg font-extrabold text-indigo-400 mt-0.5">
+                        <span x-text="getStudentAsyncHours(activeStudent)"></span>h <span class="text-xs font-normal text-slate-400">/ <span x-text="activeCourse.asyncHours"></span>h</span>
                     </div>
                 </div>
-                <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3.5">
-                    <div class="text-[11px] font-bold uppercase text-slate-400">3. Totale Ore Certificate</div>
-                    <div class="text-xl font-extrabold text-white mt-0.5">
-                        <span x-text="getStudentTotalHours(activeStudent)"></span>h
-                        <span class="text-xs font-normal text-slate-400">su <span x-text="activeCourse.totalHours"></span>h complessive</span>
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3">
+                    <div class="text-[10px] font-bold uppercase text-slate-400">Totale Ore Maturate</div>
+                    <div class="text-base sm:text-lg font-extrabold text-white mt-0.5">
+                        <span x-text="getStudentTotalHours(activeStudent)"></span>h <span class="text-xs font-normal text-slate-400">/ <span x-text="activeCourse.totalHours"></span>h</span>
                     </div>
                 </div>
-                <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3.5">
-                    <div class="flex items-center justify-between text-xs font-bold mb-1.5">
-                        <span class="text-slate-300">Frequenza Complessiva</span>
-                        <span :class="getStudentPercentage(activeStudent) >= 80 ? 'text-emerald-400' : 'text-amber-400'"
+                <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3">
+                    <div class="flex items-center justify-between text-xs font-bold mb-1">
+                        <span class="text-slate-300">% Frequenza</span>
+                        <span :class="getStudentPercentage(activeStudent) >= activeCourse.minPercent ? 'text-emerald-400' : 'text-amber-400'"
                               x-text="getStudentPercentage(activeStudent) + '%'"></span>
                     </div>
-                    <div class="w-full h-2.5 bg-slate-950 rounded-full overflow-hidden">
+                    <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden">
                         <div class="h-full transition-all duration-500 rounded-full"
-                             :class="getStudentPercentage(activeStudent) >= 80 ? 'bg-emerald-500' : 'bg-indigo-500'"
+                             :class="getStudentPercentage(activeStudent) >= activeCourse.minPercent ? 'bg-emerald-500' : 'bg-indigo-500'"
                              :style="'width: ' + Math.min(100, getStudentPercentage(activeStudent)) + '%'"></div>
                     </div>
-                    <div class="text-[10px] text-slate-400 mt-1">Soglia minima ministeriale: 80% (20 ore)</div>
                 </div>
             </div>
         </div>
 
-        <!-- Main Player & 5-Module Playlist Grid -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <!-- Player + Playlist Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-            <!-- Left Column (8 cols): Smart Anti-Skip Video Player -->
+            <!-- Left Column (8 cols): Video Player (MP4 OR Masked YouTube) + Personal Student Audit -->
             <div class="lg:col-span-8 space-y-6">
+
                 <div class="bg-slate-950 rounded-2xl overflow-hidden shadow-xl border border-slate-800 relative">
 
-                    <!-- Player Top Telemetry Header -->
+                    <!-- Player Mode Switcher Header (MP4 vs Masked YouTube!) -->
                     <div class="bg-slate-900 px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
-                        <div class="flex items-center gap-2">
-                            <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30"
-                                  x-text="'MODULO ' + activeModule.order"></span>
-                            <span class="font-bold text-white truncate max-w-md" x-text="activeModule.title"></span>
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30 shrink-0"
+                                  x-text="'MODULO ' + activeModule.order + '/' + activeCourse.modules.length"></span>
+                            <span class="font-bold text-white truncate" x-text="activeModule.title"></span>
                         </div>
-                        <div class="flex items-center gap-3 text-[11px]">
-                            <span class="inline-flex items-center gap-1 text-emerald-400 font-bold">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-                                Anti-Skip Attivo
-                            </span>
-                            <span class="text-slate-400" x-show="lastHeartbeatTime">
-                                Heartbeat: <strong class="text-white" x-text="lastHeartbeatTime"></strong>
-                            </span>
+
+                        <!-- Switcher to test Masked YouTube vs Direct MP4 right from mobile! -->
+                        <div class="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                            <button type="button"
+                                    @click="setPlayerSourceMode('mp4')"
+                                    :class="playerSourceMode === 'mp4' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'"
+                                    class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer">
+                                Sorgente .MP4
+                            </button>
+                            <button type="button"
+                                    @click="setPlayerSourceMode('youtube')"
+                                    :class="playerSourceMode === 'youtube' ? 'bg-red-600 text-white' : 'text-slate-400 hover:text-white'"
+                                    class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer">
+                                ▶ YouTube (Loghi Mascherati)
+                            </button>
                         </div>
                     </div>
 
-                    <!-- HTML5 Video Container -->
-                    <div class="relative aspect-video bg-black flex items-center justify-center">
-                        <video x-ref="videoEl"
+                    <!-- VIDEO CONTAINER -->
+                    <div class="relative aspect-video bg-black flex items-center justify-center overflow-hidden select-none">
+
+                        <!-- MODE A: HTML5 .MP4 VIDEO -->
+                        <video x-show="playerSourceMode === 'mp4'"
+                               x-ref="videoEl"
                                class="w-full h-full object-contain"
                                playsinline
                                preload="metadata"
@@ -244,39 +259,98 @@
                             <source :src="activeModule.videoUrl" type="video/mp4">
                         </video>
 
-                        <!-- Anti-Skip Warning Toast -->
-                        <div x-cloak x-show="skipBlockedWarning" x-transition
-                             class="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600/95 text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-bold flex items-center gap-2 border border-red-400 z-20 w-11/12 max-w-lg">
-                            <span>⛔ Avanzamento rapido bloccato! Per la conformità ministeriale non puoi saltare avanti oltre il punto già visualizzato. Puoi solo tornare indietro.</span>
+                        <!-- MODE B: YOUTUBE PLAYER WITH LOGO MASKING SHIELD & CUSTOM ANTI-SKIP CONTROLS -->
+                        <div x-cloak x-show="playerSourceMode === 'youtube'" class="relative w-full h-full overflow-hidden bg-black">
+                            <!-- Slightly scaled iframe + pointer-events-none shield so native YouTube top title, watch-later, share, and bottom YouTube watermark CANNOT be clicked or seen -->
+                            <div class="absolute inset-0 scale-[1.14] pointer-events-none">
+                                <div id="yt-masked-player" class="w-full h-full"></div>
+                            </div>
+
+                            <!-- Protective Transparent Click Shield (Toggles Play/Pause without exposing YouTube links/context menu) -->
+                            <div @click="toggleYoutubePlay()"
+                                 @contextmenu.prevent
+                                 class="absolute inset-0 z-10 cursor-pointer flex items-center justify-center">
+                                <!-- Custom Pause Cover (Masks YouTube's "More Videos / Suggested Videos" popup when paused!) -->
+                                <div x-show="!ytIsPlaying"
+                                     class="absolute inset-0 bg-slate-950/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center">
+                                    <div class="w-16 h-16 rounded-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center shadow-2xl mb-3 transition transform hover:scale-105">
+                                        <svg class="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    </div>
+                                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold mb-1">
+                                        YouTube No-Logo Shield Attivo
+                                    </span>
+                                    <div class="text-white font-extrabold text-sm sm:text-base" x-text="activeModule.title"></div>
+                                    <p class="text-slate-400 text-xs mt-1 max-w-md">
+                                        Loghi YouTube, link esterni e video suggeriti sono oscurati e disabilitati. Tocca per avviare la riproduzione controllata.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Custom Anti-Skip Control Bar for Masked YouTube -->
+                            <div class="absolute bottom-0 inset-x-0 z-20 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent px-4 py-3 flex flex-col gap-2">
+                                <!-- Anti-Skip Progress Scrubber -->
+                                <div @click="onYoutubeCustomSeek($event)"
+                                     class="w-full h-2 bg-slate-800 rounded-full overflow-hidden cursor-pointer relative"
+                                     title="Puoi cliccare indietro per riascoltare, ma non oltre il punto già visto">
+                                    <div class="h-full bg-red-600 transition-all duration-200"
+                                         :style="'width: ' + ytPercent + '%'"></div>
+                                </div>
+
+                                <div class="flex items-center justify-between text-xs text-white">
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" @click="toggleYoutubePlay()"
+                                                class="px-3 py-1 rounded-lg bg-white/15 hover:bg-white/25 font-bold cursor-pointer"
+                                                x-text="ytIsPlaying ? '⏸ Pausa' : '▶ Play'"></button>
+                                        <button type="button" @click="rewindYoutube15s()"
+                                                class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold cursor-pointer">
+                                            ↺ -15s
+                                        </button>
+                                        <span class="font-mono text-[11px] text-slate-300">
+                                            <span x-text="formatSec(ytCurrentSec)"></span> / <span x-text="formatSec(ytDurationSec)"></span>
+                                        </span>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                                        🛡 Loghi & Link YouTube Mascherati
+                                    </span>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Presence Check Modal Overlay -->
+                        <!-- Anti-Skip Warning Toast -->
+                        <div x-cloak x-show="skipBlockedWarning" x-transition
+                             class="absolute top-3 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-bold flex items-center gap-2 border border-red-400 z-30 w-11/12 max-w-lg">
+                            <span>⛔ Avanzamento rapido bloccato! Non puoi saltare oltre il punto massimo già visto. Puoi solo tornare indietro.</span>
+                        </div>
+
+                        <!-- Presence Verification Modal Overlay -->
                         <div x-cloak x-show="presenceModalOpen"
-                             class="absolute inset-0 bg-slate-950/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-30">
+                             class="absolute inset-0 bg-slate-950/95 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-40">
                             <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl">
-                                <span class="px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold">Controllo Presenza Attivo</span>
+                                <span class="px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold">Verifica Presenza Attiva</span>
                                 <h3 class="text-white font-extrabold text-lg mt-3">Sei ancora presente davanti allo schermo?</h3>
-                                <p class="text-slate-300 text-xs mt-1">Conferma la presenza per proseguire il conteggio certificato del modulo.</p>
+                                <p class="text-slate-300 text-xs mt-1">Conferma per proseguire il conteggio certificato delle ore FAD.</p>
                                 <button @click="confirmPresenceCheck()"
                                         class="mt-5 w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer">
-                                    Sì, sono presente — Riprendi il video
+                                    Sì, sono presente — Continua la lezione
                                 </button>
                             </div>
                         </div>
                     </div>
 
                     <!-- Player Telemetry Controls & Demo Simulator Footer -->
-                    <div class="p-4 sm:p-5 bg-slate-900 text-white space-y-3">
+                    <div class="p-4 bg-slate-900 text-white space-y-3">
                         <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
                             <div class="flex items-center gap-2">
-                                <span class="text-slate-400">Avanzamento Modulo <span x-text="activeModule.order"></span>:</span>
+                                <span class="text-slate-400">Stato Modulo <span x-text="activeModule.order"></span>:</span>
                                 <span class="px-2.5 py-0.5 rounded-full font-bold"
                                       :class="getModulePercent(activeStudent, activeModule.id) >= 100 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'"
-                                      x-text="getModulePercent(activeStudent, activeModule.id) >= 100 ? 'Completato 100% (1h certificata)' : getModulePercent(activeStudent, activeModule.id) + '% svolto'">
+                                      x-text="getModulePercent(activeStudent, activeModule.id) >= 100 ? 'Completato 100%' : getModulePercent(activeStudent, activeModule.id) + '% svolto'">
                                 </span>
                             </div>
-                            <div class="text-slate-400 font-mono text-xs">
-                                Docente: <strong class="text-slate-200" x-text="activeModule.instructor"></strong> • Durata: 1h 00m
+                            <div class="text-slate-400 text-[11px]">
+                                Opzioni Corso:
+                                <strong class="text-slate-200" x-text="activeCourse.strictTabPause ? 'Auto-Pausa Tab ON' : 'Auto-Pausa Tab OFF'"></strong> •
+                                <strong class="text-slate-200" x-text="activeCourse.presenceInterval > 0 ? 'Popup ogni ' + activeCourse.presenceInterval + 'm' : 'Popup OFF'"></strong>
                             </div>
                         </div>
 
@@ -286,297 +360,379 @@
                                  :style="'width: ' + getModulePercent(activeStudent, activeModule.id) + '%'"></div>
                         </div>
 
-                        <!-- Interactive Demo Action Buttons -->
-                        <div class="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-                            <div class="flex flex-wrap items-center gap-3">
-                                <label class="inline-flex items-center gap-1.5 text-slate-300 cursor-pointer">
-                                    <input type="checkbox" x-model="strictTabPause" class="rounded text-indigo-600">
-                                    <span>Auto-Pausa Cambio Scheda</span>
-                                </label>
-                                <button type="button" @click="triggerPresenceModalDemo()"
-                                        class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 font-semibold cursor-pointer">
-                                    Testa Popup "Sei presente?"
-                                </button>
-                            </div>
+                        <div class="pt-2 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+                            <button type="button" @click="triggerPresenceModalDemo()"
+                                    class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 font-semibold cursor-pointer">
+                                🔔 Testa Popup "Sei presente?"
+                            </button>
 
                             <div class="flex items-center gap-2">
                                 <button type="button"
                                         @click="advanceModuleBy25Percent()"
                                         x-show="getModulePercent(activeStudent, activeModule.id) < 100"
                                         class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold cursor-pointer">
-                                    +15 min (+25%)
+                                    +25%
                                 </button>
                                 <button type="button"
                                         @click="simulateCompleteCurrentModule()"
                                         class="px-3.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-extrabold transition cursor-pointer">
-                                    ⚡ Simula Fine Modulo (100% = +1h FAD)
+                                    ⚡ Demo: Completa Modulo (100%)
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Module Details & Downloadable Dispensa PDF -->
-                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
+                <!-- Module Details & Dispensa PDF -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 class="text-lg font-extrabold text-slate-900" x-text="'Modulo ' + activeModule.order + ': ' + activeModule.title"></h2>
-                        <p class="text-xs text-slate-600 mt-1" x-text="activeModule.description"></p>
+                        <h2 class="text-base font-extrabold text-slate-900" x-text="'Modulo ' + activeModule.order + ': ' + activeModule.title"></h2>
+                        <p class="text-xs text-slate-500 mt-0.5" x-text="'Docente: ' + activeModule.instructor + ' • Dispensa allegata: ' + activeModule.attachmentTitle"></p>
                     </div>
-                    <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center font-extrabold text-xs">
-                                PDF
-                            </div>
-                            <div>
-                                <div class="text-xs font-bold text-slate-900" x-text="activeModule.attachmentTitle"></div>
-                                <div class="text-[11px] text-slate-500">Materiale didattico ufficiale scaricabile • Download tracciato nel registro</div>
-                            </div>
+                    <a href="./pdf/Dispensa_Modulo_1.pdf" download
+                       @click="logDownloadDispensa()"
+                       class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold shrink-0">
+                        Scarica Dispensa PDF &darr;
+                    </a>
+                </div>
+
+                <!-- PERSONAL AUDIT LOG OF THE CURRENT STUDENT (Clearly visible on Mobile & Desktop!) -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase text-indigo-600">Tracciamento Individuale Certificato</span>
+                            <h3 class="text-sm sm:text-base font-extrabold text-slate-900">
+                                Registro Audit Personale del Corsista (<span x-text="activeStudent.firstName + ' ' + activeStudent.lastName"></span>)
+                            </h3>
                         </div>
-                        <a href="./pdf/Dispensa_Modulo_1.pdf" download
-                           @click="logDownloadDispensa()"
-                           class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition shrink-0">
-                            Scarica Dispensa PDF &darr;
+                        <a href="./pdf/Fascicolo_Probante_Elena_Bianchi.pdf" download
+                           class="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-[11px] font-bold shrink-0">
+                            Scarica Audit PDF &darr;
                         </a>
                     </div>
-                </div>
-            </div>
 
-            <!-- Right Column (4 cols): 5-Module Playlist & Quick Student Scenario Switcher -->
-            <div class="lg:col-span-4 space-y-6">
-
-                <!-- Quick Scenario Box for Client Presentation -->
-                <div class="bg-indigo-950 text-white rounded-2xl p-5 border border-indigo-800 shadow-sm space-y-3">
-                    <div class="text-xs font-extrabold uppercase tracking-wider text-indigo-300">
-                        Prova i 3 Scenari Corsista (1-Click)
-                    </div>
-                    <div class="space-y-2 text-xs">
-                        <template x-for="stu in students" :key="stu.id">
-                            <button @click="activeStudentId = stu.id; onStudentChange()"
-                                    :class="activeStudentId === stu.id ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-indigo-900/50 border-indigo-800/80 text-indigo-100 hover:bg-indigo-900'"
-                                    class="w-full text-left p-2.5 rounded-xl border transition flex items-center justify-between cursor-pointer">
+                    <div class="space-y-2 max-h-60 overflow-y-auto pr-1 text-xs">
+                        <template x-for="(item, idx) in getStudentAuditLogs(activeStudent)" :key="idx">
+                            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-start justify-between gap-2">
                                 <div>
-                                    <div class="font-bold" x-text="stu.firstName + ' ' + stu.lastName"></div>
-                                    <div class="text-[11px] opacity-80" x-text="stu.syncHours + 'h Zoom + ' + getStudentAsyncHours(stu) + 'h FAD = ' + getStudentTotalHours(stu) + 'h / 25h'"></div>
+                                    <span class="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 font-mono font-bold text-[10px] uppercase" x-text="item.type"></span>
+                                    <span class="font-semibold text-slate-800 ml-1" x-text="item.desc"></span>
                                 </div>
-                                <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold"
-                                      :class="getStudentPercentage(stu) >= 80 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'"
-                                      x-text="getStudentPercentage(stu) + '%'"></span>
-                            </button>
+                                <div class="text-right font-mono text-[10px] text-slate-400 shrink-0">
+                                    <div x-text="item.time"></div>
+                                    <div x-text="'IP ' + item.ip"></div>
+                                </div>
+                            </div>
                         </template>
                     </div>
                 </div>
 
-                <!-- 5 Video Modules List -->
+            </div>
+
+            <!-- Right Column (4 cols): Modules Playlist (Supports 1 module or N modules!) -->
+            <div class="lg:col-span-4 space-y-6">
                 <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
                     <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
                         <div>
-                            <h3 class="text-sm font-extrabold text-slate-900">I 5 Moduli Asincroni del Corso</h3>
-                            <p class="text-[11px] text-slate-500">1 Modulo = 1 Ora • Fruibili di giorno e di notte H24</p>
+                            <h3 class="text-sm font-extrabold text-slate-900">Moduli del Corso (<span x-text="activeCourse.modules.length"></span>)</h3>
+                            <p class="text-[11px] text-slate-500">Un corso può avere da 1 a infiniti moduli</p>
                         </div>
-                        <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 text-xs font-bold">5 Ore FAD</span>
+                        <button @click="currentView = 'admin_courses'; addModuleModal = true"
+                                class="text-xs font-bold text-indigo-600 hover:underline cursor-pointer">
+                            + Aggiungi
+                        </button>
                     </div>
 
                     <div class="space-y-2.5">
                         <template x-for="mod in activeCourse.modules" :key="mod.id">
                             <div @click="selectModule(mod)"
-                                 :class="activeModule.id === mod.id ? 'bg-indigo-50/90 border-indigo-500 ring-2 ring-indigo-500/20' : (getModulePercent(activeStudent, mod.id) >= 100 ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-white border-slate-200 hover:border-slate-300')"
+                                 :class="activeModule.id === mod.id ? 'bg-indigo-50 border-indigo-500 ring-2 ring-indigo-500/20' : (getModulePercent(activeStudent, mod.id) >= 100 ? 'bg-emerald-50/40 border-emerald-200' : 'bg-white border-slate-200')"
                                  class="p-3.5 rounded-xl border transition cursor-pointer">
-                                <div class="flex items-start justify-between gap-2">
-                                    <div class="flex items-center gap-2">
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2 min-w-0">
                                         <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                                              :class="getModulePercent(activeStudent, mod.id) >= 100 ? 'bg-emerald-500 text-white' : (activeModule.id === mod.id ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700')"
+                                              :class="getModulePercent(activeStudent, mod.id) >= 100 ? 'bg-emerald-500 text-white' : 'bg-indigo-600 text-white'"
                                               x-text="getModulePercent(activeStudent, mod.id) >= 100 ? '✓' : mod.order"></span>
-                                        <span class="text-xs font-bold text-slate-900" x-text="'Modulo ' + mod.order + ': ' + mod.title"></span>
+                                        <span class="text-xs font-bold text-slate-900 truncate" x-text="'Modulo ' + mod.order + ': ' + mod.title"></span>
                                     </div>
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold shrink-0"
+                                          :class="mod.sourceType === 'youtube' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'"
+                                          x-text="mod.sourceType === 'youtube' ? 'YouTube No-Logo' : 'MP4'"></span>
                                 </div>
                                 <div class="mt-2 flex items-center justify-between text-[11px] text-slate-500">
                                     <span x-text="mod.instructor"></span>
-                                    <span class="font-bold"
-                                          :class="getModulePercent(activeStudent, mod.id) >= 100 ? 'text-emerald-600' : 'text-indigo-600'"
-                                          x-text="getModulePercent(activeStudent, mod.id) + '%'"></span>
-                                </div>
-                                <div class="mt-1.5 w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                                    <div class="h-full transition-all duration-300"
-                                         :class="getModulePercent(activeStudent, mod.id) >= 100 ? 'bg-emerald-500' : 'bg-indigo-600'"
-                                         :style="'width: ' + getModulePercent(activeStudent, mod.id) + '%'"></div>
+                                    <span class="font-bold text-indigo-600" x-text="getModulePercent(activeStudent, mod.id) + '%'"></span>
                                 </div>
                             </div>
                         </template>
                     </div>
                 </div>
-
             </div>
+
         </div>
     </main>
 
     <!-- ===================================================================== -->
-    <!-- VIEW 2: ADMIN PANEL — MULTI-COURSE CATALOG & UNIFIED REGISTER          -->
+    <!-- TAB 2: DEDICATED PUBLIC USER SELF-REGISTRATION PAGE (`/register`)     -->
     <!-- ===================================================================== -->
-    <main x-cloak x-show="currentView === 'admin_courses'" class="flex-1 max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8 no-print">
-
-        <!-- Admin Header & Quick Downloads -->
-        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            <div>
-                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Pannello di Controllo Ente Formatore</span>
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Catalogo Multi-Corso & Registro Unificato Zoom + FAD</h1>
-                <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
-                    Monitora in tempo reale le ore sincrone (Zoom) e asincrone (Video FAD), carica nuovi moduli e scarica i Registri e gli Attestati Allegato 4 in PDF.
+    <main x-cloak x-show="currentView === 'register_page'" class="flex-1 max-w-3xl w-full mx-auto py-6 px-3 sm:px-6 lg:px-8 no-print">
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+            <div class="border-b border-slate-200 pb-4 mb-6">
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Pagina Pubblica Dedicata al Corsista (/register)</span>
+                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">Modulo di Auto-Registrazione e Iscrizione Corso</h1>
+                <p class="text-xs text-slate-500 mt-1">
+                    L'utente compila in autonomia i propri dati anagrafici (richiesti per la generazione automatica dell'Attestato Ministeriale Allegato 3/4) e sceglie a quale corso iscriversi.
                 </p>
             </div>
-            <div class="flex flex-wrap items-center gap-2.5">
-                <a href="./pdf/Registro_Presenze_AGG-GT-2026-01.pdf" download
-                   class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-xs transition">
-                    Scarica Registro Presenze Ufficiale (PDF) &darr;
-                </a>
-                <button @click="exportCsvRegister()"
-                        class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition cursor-pointer">
-                    Esporta Registro Excel / CSV &darr;
+
+            <form @submit.prevent="addNewStudent(); currentView = 'student'" class="space-y-5 text-xs">
+                <div class="bg-indigo-50/70 border border-indigo-200 rounded-xl p-4">
+                    <label class="block font-bold text-indigo-950 mb-1.5">Seleziona il Corso a cui iscriverti *</label>
+                    <select x-model.number="activeCourseId" class="w-full rounded-xl border border-indigo-300 bg-white px-3 py-2.5 text-xs font-bold text-slate-900">
+                        <template x-for="c in courses" :key="c.id">
+                            <option :value="c.id" x-text="'[' + c.code + '] ' + c.title + ' (' + c.totalHours + 'h)'"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Nome *</label>
+                        <input type="text" x-model="newStudentForm.firstName" required placeholder="Es. Giulia" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Cognome *</label>
+                        <input type="text" x-model="newStudentForm.lastName" required placeholder="Es. De Santis" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Codice Fiscale *</label>
+                        <input type="text" x-model="newStudentForm.fiscalCode" required placeholder="DSNGLI85E55H501Z" class="w-full rounded-xl border border-slate-300 px-3 py-2 uppercase font-mono">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Data di Nascita *</label>
+                        <input type="date" x-model="newStudentForm.birthDate" required class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Comune di Nascita *</label>
+                        <input type="text" x-model="newStudentForm.birthCity" required placeholder="Roma" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Provincia (Sigla) *</label>
+                        <input type="text" x-model="newStudentForm.birthProvince" required maxlength="2" placeholder="RM" class="w-full rounded-xl border border-slate-300 px-3 py-2 uppercase">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Indirizzo Email *</label>
+                        <input type="email" x-model="newStudentForm.email" required placeholder="giulia.desantis@email.it" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">N. Iscrizione Elenco Nazionale (opzionale)</label>
+                        <input type="text" x-model="newStudentForm.nationalList" placeholder="ENGT-RM-00812" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-200 flex justify-end">
+                    <button type="submit" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-extrabold text-xs transition cursor-pointer">
+                        Completa Registrazione e Accedi subito all'Aula FAD &rarr;
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- TAB 3: ADMIN — COURSES (1 OR N MODULES) & CONFIGURABLE OPTIONS        -->
+    <!-- ===================================================================== -->
+    <main x-cloak x-show="currentView === 'admin_courses'" class="flex-1 max-w-7xl w-full mx-auto py-6 px-3 sm:px-6 lg:px-8 space-y-6 no-print">
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <span class="text-xs font-bold uppercase text-indigo-600">Configurazione Flessibile per Singolo Corso</span>
+                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900">Gestione Corsi (da 1 a N Moduli) & Opzioni Player</h1>
+                <p class="text-xs text-slate-500">Ogni corso può avere 1 solo modulo oppure N moduli, essere Misto (con ore Sincrone Zoom) o 100% FAD, e avere Popup Presenza / YouTube Mascherato.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button @click="newCourseModal = true" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold cursor-pointer">
+                    + Crea Nuovo Corso (1 o N Moduli)
                 </button>
-                <button @click="newCourseModal = true"
-                        class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold shadow-xs transition cursor-pointer">
-                    + Nuovo Corso FAD
+                <button @click="addModuleModal = true" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold cursor-pointer">
+                    + Aggiungi Modulo (MP4 / YouTube)
                 </button>
             </div>
         </div>
 
-        <!-- KPI Strip -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
-                <div class="text-xs font-semibold text-slate-500">Corsi Attivi a Catalogo</div>
-                <div class="text-2xl font-extrabold text-slate-900 mt-1" x-text="courses.length"></div>
-                <div class="text-[11px] text-emerald-600 font-semibold mt-1">Architettura Multi-Corso</div>
+        <!-- Configurable Switches for the Active Course -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                <div>
+                    <span class="text-xs font-mono font-bold text-indigo-600" x-text="activeCourse.code"></span>
+                    <h2 class="text-base font-extrabold text-slate-900" x-text="'Opzioni Configurabili del Corso: ' + activeCourse.title"></h2>
+                </div>
+                <select x-model.number="activeCourseId" class="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-bold">
+                    <template x-for="c in courses" :key="c.id">
+                        <option :value="c.id" x-text="c.code + ' (' + c.modules.length + ' moduli)'"></option>
+                    </template>
+                </select>
             </div>
-            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
-                <div class="text-xs font-semibold text-slate-500">Corsisti Tracciati</div>
-                <div class="text-2xl font-extrabold text-slate-900 mt-1" x-text="students.length"></div>
-                <div class="text-[11px] text-slate-400 mt-1">Fino a 80–1000+ utenti/corso</div>
-            </div>
-            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
-                <div class="text-xs font-semibold text-slate-500">Idonei Attestato (&ge;80%)</div>
-                <div class="text-2xl font-extrabold text-emerald-600 mt-1" x-text="students.filter(s => getStudentPercentage(s) >= 80).length + ' / ' + students.length"></div>
-                <div class="text-[11px] text-emerald-700 font-medium mt-1">Soglia 20h su 25h superata</div>
-            </div>
-            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
-                <div class="text-xs font-semibold text-slate-500">Documentazione Probante</div>
-                <div class="text-2xl font-extrabold text-indigo-600 mt-1">100%</div>
-                <div class="text-[11px] text-slate-400 mt-1">Conforme Art. 6 Linee Guida B</div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <!-- Toggle 1: Enable/Disable Synchronous (Zoom) Hours -->
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between gap-3">
+                    <div>
+                        <div class="font-extrabold text-slate-900">1. Gestione Ore Sincrone (Zoom)</div>
+                        <p class="text-[11px] text-slate-500 mt-1">Attiva se il corso prevede una quota di ore sincrone su Zoom da sommare alle ore video FAD. Disattiva se il corso è 100% video asincrono.</p>
+                    </div>
+                    <label class="inline-flex items-center gap-2 font-bold text-indigo-700 cursor-pointer">
+                        <input type="checkbox" x-model="activeCourse.hasSyncHours" @change="saveToStorage(); showToast('Impostazione Ore Sincrone aggiornata')" class="rounded text-indigo-600 w-4 h-4">
+                        <span x-text="activeCourse.hasSyncHours ? 'ATTIVO (Misto Zoom + FAD)' : 'DISATTIVO (100% Solo Video FAD)'"></span>
+                    </label>
+                </div>
+
+                <!-- Toggle 2: Auto-Pause on Tab Switch -->
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between gap-3">
+                    <div>
+                        <div class="font-extrabold text-slate-900">2. Auto-Pausa Cambio Scheda</div>
+                        <p class="text-[11px] text-slate-500 mt-1">Se attivo, mette automaticamente in pausa il video quando il corsista riduce a icona il browser o cambia scheda.</p>
+                    </div>
+                    <label class="inline-flex items-center gap-2 font-bold text-indigo-700 cursor-pointer">
+                        <input type="checkbox" x-model="activeCourse.strictTabPause" @change="strictTabPause = activeCourse.strictTabPause; saveToStorage(); showToast('Auto-Pausa Cambio Scheda aggiornata')" class="rounded text-indigo-600 w-4 h-4">
+                        <span x-text="activeCourse.strictTabPause ? 'ATTIVO (Ferma video se cambia tab)' : 'DISATTIVO (Scorre in background)'"></span>
+                    </label>
+                </div>
+
+                <!-- Toggle 3: Presence Check Popup Interval -->
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between gap-3">
+                    <div>
+                        <div class="font-extrabold text-slate-900">3. Popup Verifica Presenza</div>
+                        <p class="text-[11px] text-slate-500 mt-1">Imposta ogni quanti minuti mostrare il popup obbligatorio "Sei ancora presente a schermo?" (0 = disattivato).</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" min="0" max="60" x-model.number="activeCourse.presenceInterval" @change="saveToStorage(); showToast('Intervallo Popup Presenza salvato')"
+                               class="w-20 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 font-extrabold">
+                        <span class="text-slate-600 font-semibold" x-text="activeCourse.presenceInterval > 0 ? 'minuti (Attivo)' : '0 = Disattivato'"></span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Multi-Course Catalog Cards -->
-        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs">
-            <h2 class="text-base font-extrabold text-slate-900 mb-4">1. Catalogo Corsi Attivi (Clicca su un corso o aggiungi nuovi moduli video)</h2>
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <template x-for="c in courses" :key="c.id">
-                    <div class="p-4 rounded-xl border transition flex flex-col justify-between"
-                         :class="activeCourse.id === c.id ? 'bg-indigo-50/60 border-indigo-500 ring-2 ring-indigo-500/20' : 'bg-white border-slate-200'">
+        <!-- Modules List of Active Course (1 or Multiple Modules) -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900">
+                        Moduli Didattici di <span class="text-indigo-600" x-text="activeCourse.code"></span>
+                        (<span x-text="activeCourse.modules.length"></span> <span x-text="activeCourse.modules.length === 1 ? 'modulo' : 'moduli'"></span>)
+                    </h3>
+                    <p class="text-xs text-slate-500">Puoi comporre un corso con 1 singolo modulo (es. 1 webinar registrato) oppure con 5, 10 o più moduli, usando file MP4 o YouTube con loghi mascherati.</p>
+                </div>
+                <button @click="addModuleModal = true" class="px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold cursor-pointer">
+                    + Aggiungi Modulo
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <template x-for="mod in activeCourse.modules" :key="mod.id">
+                    <div class="p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                         <div>
-                            <div class="flex items-center justify-between gap-2 mb-2">
-                                <span class="px-2 py-0.5 rounded bg-slate-900 text-white font-mono text-[11px] font-bold" x-text="c.code"></span>
-                                <span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[10px] font-bold uppercase" x-text="c.type"></span>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded bg-slate-900 text-white text-[11px] font-bold" x-text="'MODULO ' + mod.order"></span>
+                                <span class="px-2 py-0.5 rounded text-[11px] font-bold"
+                                      :class="mod.sourceType === 'youtube' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'"
+                                      x-text="mod.sourceType === 'youtube' ? '🛡 YouTube Mascherato (No-Logo)' : '🎬 File Video .MP4'"></span>
                             </div>
-                            <h3 class="font-extrabold text-sm text-slate-900" x-text="c.title"></h3>
-                            <p class="text-[11px] text-slate-500 mt-1" x-text="c.authorization"></p>
+                            <div class="font-extrabold text-sm text-slate-900 mt-1" x-text="mod.title"></div>
+                            <div class="text-xs text-slate-500" x-text="'Docente: ' + mod.instructor"></div>
                         </div>
-                        <div class="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs">
-                            <span class="font-bold text-slate-700" x-text="c.totalHours + 'h (' + c.syncHours + 'h Zoom + ' + c.asyncHours + 'h FAD)'"></span>
-                            <button @click="addModuleModal = true" class="text-indigo-600 hover:underline font-bold cursor-pointer">+ Modulo Video</button>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button @click="selectModule(mod); currentView = 'student'"
+                                    class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold cursor-pointer">
+                                ▶ Apri nel Player
+                            </button>
                         </div>
                     </div>
                 </template>
             </div>
         </div>
+    </main>
 
-        <!-- Unified Attendance Register Table (Editable Zoom Hours + Live FAD Modules) -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                    <h2 class="text-base font-extrabold text-slate-900">
-                        2. Registro Unificato Presenze — <span class="text-indigo-600" x-text="activeCourse.code"></span>
-                    </h2>
-                    <p class="text-xs text-slate-500">Modifica direttamente le ore Sincrone (Zoom) nella casella numerica per vedere il ricalcolo istantaneo della percentuale e dello sblocco Attestato.</p>
-                </div>
-                <button @click="currentView = 'admin_users'; newUserModal = true"
-                        class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shrink-0 cursor-pointer">
-                    + Iscrivi Nuovo Corsista
-                </button>
+    <!-- ===================================================================== -->
+    <!-- TAB 4: ADMIN — ENROLLED STUDENTS, ZOOM SYNC HOURS & STUDENT AUDIT      -->
+    <!-- ===================================================================== -->
+    <main x-cloak x-show="currentView === 'admin_users'" class="flex-1 max-w-7xl w-full mx-auto py-6 px-3 sm:px-6 lg:px-8 space-y-6 no-print">
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <span class="text-xs font-bold uppercase text-indigo-600">Registro Presenze & Audit Individuale</span>
+                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900">Iscritti, Caricamento Ore Sincrone (Zoom) & Audit Corsista</h1>
+                <p class="text-xs text-slate-500">Modifica le ore Zoom, importa da CSV o clicca su "Audit Corsista" per ispezionare tutti i log di quel singolo partecipante.</p>
             </div>
+            <div class="flex flex-wrap gap-2">
+                <button @click="csvImportModal = true" class="px-3.5 py-2 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold cursor-pointer">
+                    Importa CSV Iscritti / Zoom
+                </button>
+                <a href="./pdf/Registro_Presenze_AGG-GT-2026-01.pdf" download class="px-3.5 py-2 rounded-xl bg-red-600 text-white text-xs font-bold">
+                    PDF Registro Corso &darr;
+                </a>
+            </div>
+        </div>
 
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
-                            <th class="py-3.5 px-4">Corsista & Anagrafica</th>
+                            <th class="py-3.5 px-4">Corsista & CF</th>
                             <th class="py-3.5 px-4">Ore Sincrone (Zoom)</th>
-                            <th class="py-3.5 px-4">Stato 5 Moduli Video FAD</th>
-                            <th class="py-3.5 px-4">Ore FAD</th>
+                            <th class="py-3.5 px-4">Moduli FAD</th>
                             <th class="py-3.5 px-4">Totale & %</th>
-                            <th class="py-3.5 px-4 text-right">Documenti Ufficiali (PDF)</th>
+                            <th class="py-3.5 px-4 text-right">Audit & Attestato</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200">
                         <template x-for="stu in students" :key="stu.id">
-                            <tr class="hover:bg-slate-50/80 transition">
+                            <tr class="hover:bg-slate-50">
                                 <td class="py-4 px-4">
                                     <div class="font-extrabold text-sm text-slate-900" x-text="stu.firstName + ' ' + stu.lastName"></div>
-                                    <div class="text-[11px] text-slate-500 font-mono" x-text="'CF: ' + stu.fiscalCode + ' • ' + stu.email"></div>
-                                    <div class="text-[11px] text-slate-400" x-text="'Nato/a il ' + formatDateIT(stu.birthDate) + ' a ' + stu.birthCity + ' (' + stu.birthProvince + ')'"></div>
+                                    <div class="text-[11px] font-mono text-slate-500" x-text="stu.fiscalCode + ' • ' + stu.email"></div>
                                 </td>
-
-                                <!-- Editable Zoom Sync Hours -->
                                 <td class="py-4 px-4">
                                     <div class="flex items-center gap-1.5">
-                                        <input type="number" step="0.5" min="0" max="25"
-                                               x-model.number="stu.syncHours"
-                                               @change="saveToStorage(); showToast('Ore Sincrone Zoom aggiornate per ' + stu.firstName + ' ' + stu.lastName)"
-                                               class="w-16 rounded-lg border border-slate-300 px-2 py-1 text-xs font-extrabold text-slate-900">
-                                        <span class="text-slate-400">/ 20h</span>
+                                        <input type="number" step="0.5" min="0" max="50" x-model.number="stu.syncHours"
+                                               @change="saveToStorage(); showToast('Ore Sincrone aggiornate per ' + stu.firstName)"
+                                               class="w-16 rounded-lg border border-slate-300 px-2 py-1 font-extrabold">
+                                        <span class="text-slate-400">h</span>
                                     </div>
                                 </td>
-
-                                <!-- 5 Modules Progress Pills (Clickable to toggle 100% in Admin Demo!) -->
                                 <td class="py-4 px-4">
-                                    <div class="flex flex-wrap items-center gap-1.5">
-                                        <template x-for="m in [1,2,3,4,5]" :key="m">
-                                            <button type="button"
-                                                    @click="toggleModuleCompletionAdmin(stu, m)"
-                                                    :class="getModulePercent(stu, m) >= 100 ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : (getModulePercent(stu, m) > 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-300' : 'bg-slate-100 text-slate-500 border-slate-200')"
-                                                    class="px-2 py-1 rounded-md text-[10px] font-bold border transition cursor-pointer"
-                                                    title="Clicca per simulare completamento/reset del modulo">
-                                                <span x-text="'M' + m + ': ' + getModulePercent(stu, m) + '%'"></span>
-                                            </button>
+                                    <div class="flex flex-wrap gap-1">
+                                        <template x-for="m in activeCourse.modules" :key="m.id">
+                                            <button @click="toggleModuleCompletionAdmin(stu, m.id)"
+                                                    :class="getModulePercent(stu, m.id) >= 100 ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-600 border-slate-200'"
+                                                    class="px-2 py-0.5 rounded text-[10px] font-bold border cursor-pointer"
+                                                    x-text="'M' + m.order + ':' + getModulePercent(stu, m.id) + '%'"></button>
                                         </template>
                                     </div>
                                 </td>
-
                                 <td class="py-4 px-4">
-                                    <div class="font-extrabold text-indigo-600 text-sm" x-text="getStudentAsyncHours(stu) + 'h'"></div>
-                                    <div class="text-[10px] text-slate-400">su 5h FAD</div>
+                                    <span class="font-extrabold text-slate-900" x-text="getStudentTotalHours(stu) + 'h'"></span>
+                                    <span class="ml-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
+                                          :class="getStudentPercentage(stu) >= 80 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                                          x-text="getStudentPercentage(stu) + '%'"></span>
                                 </td>
-
-                                <td class="py-4 px-4">
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-extrabold text-sm text-slate-900" x-text="getStudentTotalHours(stu) + 'h'"></span>
-                                        <span class="px-2 py-0.5 rounded-full text-[11px] font-bold"
-                                              :class="getStudentPercentage(stu) >= 80 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
-                                              x-text="getStudentPercentage(stu) + '%'"></span>
-                                    </div>
-                                    <div class="text-[10px] mt-0.5 font-semibold"
-                                         :class="getStudentPercentage(stu) >= 80 ? 'text-emerald-600' : 'text-amber-600'"
-                                         x-text="getStudentPercentage(stu) >= 80 ? '✓ IDONEO ATTESTATO' : 'In corso (min. 80%)'"></div>
-                                </td>
-
-                                <td class="py-4 px-4 text-right">
-                                    <div class="inline-flex flex-wrap items-center justify-end gap-1.5">
-                                        <button @click="openCertificatePreview(stu)"
-                                                class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition cursor-pointer">
-                                            Attestato Allegato 4
-                                        </button>
-                                        <a href="./pdf/Fascicolo_Probante_Elena_Bianchi.pdf" download
-                                           class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] transition">
-                                            Fascicolo PDF
-                                        </a>
-                                    </div>
+                                <td class="py-4 px-4 text-right space-x-1">
+                                    <button @click="auditModalStudent = stu"
+                                            class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold cursor-pointer">
+                                        🔍 Audit Corsista
+                                    </button>
+                                    <button @click="openCertificatePreview(stu)"
+                                            class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold cursor-pointer">
+                                        Attestato
+                                    </button>
                                 </td>
                             </tr>
                         </template>
@@ -587,226 +743,125 @@
     </main>
 
     <!-- ===================================================================== -->
-    <!-- VIEW 3: ADMIN USERS DIRECTORY, HYBRID REGISTRATION & CSV IMPORT       -->
+    <!-- TAB 5: ADMIN — WHITE-LABEL CUSTOMIZATION PANEL                        -->
     <!-- ===================================================================== -->
-    <main x-cloak x-show="currentView === 'admin_users'" class="flex-1 max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-6 no-print">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Flusso Ibrido Iscrizioni</span>
-                <h1 class="text-2xl font-extrabold text-slate-900">Anagrafica Corsisti, Auto-Registrazione & Import CSV</h1>
-                <p class="text-xs text-slate-500 mt-0.5">Registra un nuovo corsista con anagrafica ministeriale completa oppure incolla un elenco CSV/Excel di iscritti.</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2.5">
-                <button @click="csvImportModal = true"
-                        class="px-4 py-2.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold cursor-pointer">
-                    Importazione Massiva CSV / Excel
-                </button>
-                <button @click="newUserModal = true"
-                        class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold cursor-pointer">
-                    + Registra Nuovo Corsista
-                </button>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-            <table class="w-full text-left border-collapse text-xs">
-                <thead>
-                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
-                        <th class="py-3.5 px-5">Cognome e Nome</th>
-                        <th class="py-3.5 px-4">Codice Fiscale</th>
-                        <th class="py-3.5 px-4">Data e Luogo di Nascita (per Allegato 4)</th>
-                        <th class="py-3.5 px-4">Email & Elenco Nazionale</th>
-                        <th class="py-3.5 px-4">Avanzamento Corso</th>
-                        <th class="py-3.5 px-5 text-right">Azioni</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-200">
-                    <template x-for="stu in students" :key="stu.id">
-                        <tr class="hover:bg-slate-50">
-                            <td class="py-4 px-5 font-extrabold text-sm text-slate-900" x-text="stu.firstName + ' ' + stu.lastName"></td>
-                            <td class="py-4 px-4 font-mono font-bold text-slate-700" x-text="stu.fiscalCode"></td>
-                            <td class="py-4 px-4" x-text="formatDateIT(stu.birthDate) + ' — ' + stu.birthCity + ' (' + stu.birthProvince + ')'"></td>
-                            <td class="py-4 px-4">
-                                <div x-text="stu.email"></div>
-                                <div class="text-[10px] text-indigo-600 font-semibold" x-text="'Elenco Naz.: ' + (stu.nationalList || 'ENGT-RM-00482')"></div>
-                            </td>
-                            <td class="py-4 px-4">
-                                <span class="px-2.5 py-1 rounded-full font-bold text-[11px]"
-                                      :class="getStudentPercentage(stu) >= 80 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
-                                      x-text="getStudentTotalHours(stu) + 'h / 25h (' + getStudentPercentage(stu) + '%)'"></span>
-                            </td>
-                            <td class="py-4 px-5 text-right space-x-1.5">
-                                <button @click="activeStudentId = stu.id; currentView = 'student'"
-                                        class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-indigo-600 text-white font-bold cursor-pointer">
-                                    Apri Aula Corsista &rarr;
-                                </button>
-                                <button @click="openCertificatePreview(stu)"
-                                        class="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold cursor-pointer">
-                                    Attestato
-                                </button>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
-        </div>
-    </main>
-
-    <!-- ===================================================================== -->
-    <!-- VIEW 4: TELEMETRY LOGS & WHITE-LABEL SETTINGS                         -->
-    <!-- ===================================================================== -->
-    <main x-cloak x-show="currentView === 'admin_logs'" class="flex-1 max-w-7xl w-full mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8 no-print">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-            <!-- White-Label Configurator (5 cols) -->
-            <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <span class="text-[11px] font-bold uppercase text-indigo-600">Configurazione White-Label</span>
-                        <h2 class="text-lg font-extrabold text-slate-900">Personalizza Ente Erogatore</h2>
-                    </div>
+    <main x-cloak x-show="currentView === 'admin_whitelabel'" class="flex-1 max-w-4xl w-full mx-auto py-6 px-3 sm:px-6 lg:px-8 no-print">
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-2xs space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
+                <div>
+                    <span class="text-xs font-bold uppercase text-indigo-600">Pannello Admin &rarr; Impostazioni White-Label</span>
+                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900">Personalizzazione White-Label dell'Ente</h1>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        Da questa schermata personalizzi Nome Piattaforma, Ente Erogatore, Rappresentante Legale, Codici Ministeriali e Colore Brand. Le modifiche si applicano subito all'interfaccia e agli Attestati PDF!
+                    </p>
+                </div>
+                <div class="flex gap-2 shrink-0">
                     <button @click="applyFormaCameraPreset()"
-                            class="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-[11px] font-bold cursor-pointer">
+                            class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold cursor-pointer">
                         Preset: FormaCamera
                     </button>
+                    <button @click="applyNeutralPreset()"
+                            class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer">
+                        Preset: White-Label Neutro
+                    </button>
                 </div>
+            </div>
 
-                <div class="space-y-3 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Nome Piattaforma (visibile nell'Header)</label>
+                    <input type="text" x-model="settings.platformName" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 font-bold">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Colore Primario Brand</label>
+                    <div class="flex items-center gap-2">
+                        <input type="color" x-model="settings.brandColor" @input="saveToStorage()" class="h-10 w-16 rounded border border-slate-300 cursor-pointer">
+                        <input type="text" x-model="settings.brandColor" @input="saveToStorage()" class="flex-1 rounded-xl border border-slate-300 px-3 py-2.5 font-mono">
+                    </div>
+                </div>
+                <div class="sm:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Denominazione Ufficiale Ente di Formazione (stampata sugli Attestati Allegato 3 e 4)</label>
+                    <input type="text" x-model="settings.providerName" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 font-bold">
+                </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Rappresentante Legale Firmatario Attestati</label>
+                    <input type="text" x-model="settings.legalRep" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Nome Piattaforma</label>
-                        <input type="text" x-model="settings.platformName" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        <label class="block font-bold text-slate-700 mb-1">Codice ATECO</label>
+                        <input type="text" x-model="settings.ateco" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 font-mono">
                     </div>
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Denominazione Ente di Formazione (su Attestato Allegato 4)</label>
-                        <input type="text" x-model="settings.providerName" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Rappresentante Legale Firmatario</label>
-                        <input type="text" x-model="settings.legalRep" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-bold text-slate-700 mb-1">Codice ATECO</label>
-                            <input type="text" x-model="settings.ateco" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3 py-2 font-mono">
-                        </div>
-                        <div>
-                            <label class="block font-bold text-slate-700 mb-1">Codice CP ISTAT</label>
-                            <input type="text" x-model="settings.cpIstat" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3 py-2 font-mono">
-                        </div>
+                        <label class="block font-bold text-slate-700 mb-1">Codice CP ISTAT</label>
+                        <input type="text" x-model="settings.cpIstat" @input="saveToStorage()" class="w-full rounded-xl border border-slate-300 px-3 py-2.5 font-mono">
                     </div>
                 </div>
             </div>
 
-            <!-- Live Audit & Telemetry Log Stream (7 cols) -->
-            <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs">
-                <h2 class="text-lg font-extrabold text-slate-900">Registro Telemetrico Sessioni & Audit Log</h2>
-                <p class="text-xs text-slate-500 mt-0.5">Ogni azione eseguita in questa anteprima viene registrata in tempo reale qui sotto.</p>
-
-                <div class="mt-4 space-y-2.5 max-h-96 overflow-y-auto pr-1">
-                    <template x-for="(log, idx) in activityLogs" :key="idx">
-                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-start justify-between gap-3">
-                            <div>
-                                <span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 font-mono font-bold text-[10px] uppercase" x-text="log.type"></span>
-                                <span class="font-bold text-slate-900 ml-1.5" x-text="log.user"></span>
-                                <div class="text-slate-600 mt-1" x-text="log.desc"></div>
-                            </div>
-                            <div class="text-right font-mono text-[10px] text-slate-400 shrink-0">
-                                <div x-text="log.time"></div>
-                                <div x-text="'IP ' + log.ip"></div>
-                            </div>
-                        </div>
-                    </template>
-                </div>
+            <div class="pt-4 border-t border-slate-200 flex items-center justify-between">
+                <span class="text-xs text-emerald-600 font-bold">✓ Modifiche salvate in tempo reale</span>
+                <button @click="openCertificatePreview(activeStudent)"
+                        class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold cursor-pointer">
+                    Verifica Intestazione sull'Attestato Allegato 4 &rarr;
+                </button>
             </div>
-
         </div>
     </main>
 
     <!-- ===================================================================== -->
-    <!-- MODAL: OFFICIAL ALLEGATO 4 MINISTERIAL CERTIFICATE PREVIEW & PRINT    -->
+    <!-- MODAL: INDIVIDUAL STUDENT AUDIT DOSSIER                               -->
     <!-- ===================================================================== -->
-    <div x-cloak x-show="certPreviewStudent !== null"
-         class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-        <div @click.away="certPreviewStudent = null" class="bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-10 shadow-2xl border border-slate-300 my-8">
-
-            <!-- Modal Top Action Bar -->
-            <div class="flex flex-wrap items-center justify-between gap-3 pb-4 mb-6 border-b border-slate-200 no-print">
-                <div>
-                    <span class="text-xs font-bold uppercase text-emerald-600">Modello Ufficiale Conforme Linee Guida B</span>
-                    <h3 class="text-base font-extrabold text-slate-900">Anteprima Attestato di Frequenza (Allegato 4 - D.M. 26/06/2024 n. 88)</h3>
-                </div>
-                <div class="flex items-center gap-2">
-                    <a href="./pdf/Attestato_Allegato4_Elena_Bianchi.pdf" download
-                       class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">
-                        Scarica PDF Generato &darr;
-                    </a>
-                    <button @click="window.print()"
-                            class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold cursor-pointer">
-                        Stampa / Salva PDF
-                    </button>
-                    <button @click="certPreviewStudent = null" class="text-slate-400 hover:text-slate-700 text-2xl font-bold px-2 cursor-pointer">&times;</button>
-                </div>
-            </div>
-
-            <!-- Official Certificate Frame -->
-            <template x-if="certPreviewStudent">
-                <div class="border-2 border-slate-800 p-6 sm:p-10 text-slate-900 space-y-5 font-serif leading-relaxed">
-                    <div class="text-center">
-                        <div class="text-2xl font-bold italic">Ministero del Turismo</div>
-                        <div class="text-xs italic text-slate-600">Direzione Generale Controllo, Regolamentazione, Acquisti, Formazione e Professioni Turistiche</div>
-                    </div>
-
-                    <div class="text-right font-sans text-xs font-bold">Allegato 4</div>
-
-                    <div class="text-center font-sans space-y-1">
-                        <div class="text-sm sm:text-base font-extrabold uppercase">ATTESTATO DI FREQUENZA DEL CORSO DI AGGIORNAMENTO PER GUIDA TURISTICA</div>
-                        <div class="text-xs text-slate-700">
-                            Ai sensi dell'articolo 23 comma 3 del Decreto Ministeriale 26 giugno 2024, n. 88, recante disposizione applicative della legge 13 dicembre 2023, n. 190
-                        </div>
-                        <div class="text-xs font-bold pt-2">
-                            Codice ATECO: <span x-text="settings.ateco"></span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CP ISTAT: <span x-text="settings.cpIstat"></span>
-                        </div>
-                        <div class="text-xs font-bold pt-1">
-                            Rilasciato in esito alla partecipazione con accertamento di presenza di almeno l'80% delle ore di corso di aggiornamento
-                        </div>
-                    </div>
-
-                    <div class="text-center font-sans text-xs font-extrabold">DA</div>
-
-                    <p class="text-sm text-justify leading-7">
-                        <strong class="underline" x-text="settings.providerName"></strong>
-                        autorizzato all'erogazione del corso dal Ministero del turismo con
-                        <strong class="underline" x-text="activeCourse.authorization"></strong>
-                        istituito presso <strong class="underline" x-text="settings.providerName"></strong>
-                        di <strong class="underline">Roma (RM)</strong> afferente all'ambito tematico
-                        <strong class="underline" x-text="activeCourse.thematicArea"></strong>.
-                    </p>
-
-                    <div class="text-center font-sans text-xs font-extrabold">CONFERITO A</div>
-
-                    <p class="text-sm text-justify leading-7">
-                        Il Sig./Sig.ra <strong class="underline" x-text="certPreviewStudent.firstName + ' ' + certPreviewStudent.lastName"></strong>
-                        (C.F. <strong class="underline font-mono" x-text="certPreviewStudent.fiscalCode"></strong>)
-                        nato/a il <strong class="underline" x-text="formatDateIT(certPreviewStudent.birthDate)"></strong>
-                        a <strong class="underline" x-text="certPreviewStudent.birthCity"></strong>
-                        (<strong class="underline" x-text="certPreviewStudent.birthProvince"></strong>) in <strong class="underline">Italia</strong>,
-                        con una frequenza pari a <strong class="underline" x-text="getStudentTotalHours(certPreviewStudent)"></strong> ore
-                        (di cui <span x-text="certPreviewStudent.syncHours"></span>h in modalità sincrona e <span x-text="getStudentAsyncHours(certPreviewStudent)"></span>h in modalità FAD asincrona tracciata).
-                    </p>
-
-                    <div class="text-center font-sans text-xs font-extrabold py-3 tracking-wide">
-                        IL PRESENTE ATTESTATO È VALIDO SU TUTTO IL TERRITORIO NAZIONALE
-                    </div>
-
-                    <div class="pt-4 font-sans text-xs flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+    <div x-cloak x-show="auditModalStudent !== null"
+         class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto no-print">
+        <div @click.away="auditModalStudent = null" class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 my-8">
+            <template x-if="auditModalStudent">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-3">
                         <div>
-                            <div>Luogo e Data di rilascio:</div>
-                            <div class="font-bold border-b border-slate-800 pb-1 mt-2">Roma, 16 / 10 / 2026</div>
+                            <span class="text-[10px] font-bold uppercase text-indigo-600">Fascicolo Audit Individuale Corsista</span>
+                            <h3 class="text-base font-extrabold text-slate-900" x-text="auditModalStudent.firstName + ' ' + auditModalStudent.lastName + ' (CF: ' + auditModalStudent.fiscalCode + ')'"></h3>
                         </div>
-                        <div class="text-right">
-                            <div>Firma del Rappresentante Legale:</div>
-                            <div class="font-bold border-b border-slate-800 pb-1 mt-2 min-w-[220px]" x-text="settings.legalRep"></div>
+                        <button @click="auditModalStudent = null" class="text-slate-400 hover:text-slate-700 text-xl font-bold">&times;</button>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
+                        <div>
+                            <div class="text-slate-500">Ore Sincrone (Zoom)</div>
+                            <div class="font-extrabold text-slate-900 text-sm" x-text="auditModalStudent.syncHours + 'h'"></div>
                         </div>
+                        <div>
+                            <div class="text-slate-500">Ore Asincrone (FAD)</div>
+                            <div class="font-extrabold text-indigo-600 text-sm" x-text="getStudentAsyncHours(auditModalStudent) + 'h'"></div>
+                        </div>
+                        <div>
+                            <div class="text-slate-500">Totale Certificato</div>
+                            <div class="font-extrabold text-emerald-600 text-sm" x-text="getStudentTotalHours(auditModalStudent) + 'h (' + getStudentPercentage(auditModalStudent) + '%)'"></div>
+                        </div>
+                    </div>
+
+                    <div class="text-xs font-bold text-slate-700">Cronologia Sessioni Connessione, Heartbeat, IP e Download:</div>
+                    <div class="space-y-2 max-h-64 overflow-y-auto pr-1 text-xs">
+                        <template x-for="(log, idx) in getStudentAuditLogs(auditModalStudent)" :key="idx">
+                            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-2">
+                                <div>
+                                    <span class="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 font-mono font-bold text-[10px] uppercase" x-text="log.type"></span>
+                                    <span class="font-semibold text-slate-800 ml-1" x-text="log.desc"></span>
+                                </div>
+                                <div class="text-right font-mono text-[10px] text-slate-500 shrink-0">
+                                    <div x-text="log.time"></div>
+                                    <div x-text="'IP ' + log.ip"></div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-200 flex justify-end gap-2">
+                        <a href="./pdf/Fascicolo_Probante_Elena_Bianchi.pdf" download
+                           class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold">
+                            Scarica Fascicolo Probante Ufficiale (PDF) &darr;
+                        </a>
+                        <button @click="auditModalStudent = null" class="px-4 py-2 rounded-xl border border-slate-300 text-xs font-semibold">Chiudi</button>
                     </div>
                 </div>
             </template>
@@ -814,79 +869,47 @@
     </div>
 
     <!-- ===================================================================== -->
-    <!-- MODAL: REGISTER NEW STUDENT                                           -->
+    <!-- MODAL: ADD VIDEO MODULE (Supports MP4 Upload/URL AND Masked YouTube!) -->
     <!-- ===================================================================== -->
-    <div x-cloak x-show="newUserModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
-        <div @click.away="newUserModal = false" class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
-            <h3 class="text-base font-extrabold text-slate-900">Registra Nuovo Corsista & Iscrivi al Corso</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Inserisci i dati anagrafici per l'Attestato Allegato 4.</p>
+    <div x-cloak x-show="addModuleModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+        <div @click.away="addModuleModal = false" class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
+            <h3 class="text-base font-extrabold text-slate-900">Aggiungi Modulo Video al Corso <span x-text="activeCourse.code"></span></h3>
+            <p class="text-xs text-slate-500 mt-0.5">Scegli tra File Video .MP4 o Link YouTube con Mascheramento Automatico dei Loghi.</p>
 
-            <form @submit.prevent="addNewStudent()" class="mt-4 space-y-3 text-xs">
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Nome *</label>
-                        <input type="text" x-model="newStudentForm.firstName" required placeholder="Es. Giulia" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Cognome *</label>
-                        <input type="text" x-model="newStudentForm.lastName" required placeholder="Es. De Santis" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    </div>
+            <form @submit.prevent="addNewModule()" class="mt-4 space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Tipo Sorgente Video *</label>
+                    <select x-model="newModuleForm.sourceType" class="w-full rounded-xl border border-slate-300 px-3 py-2 font-bold">
+                        <option value="youtube">🛡 YouTube con Mascheramento Loghi & Anti-Skip (Link Non in Elenco)</option>
+                        <option value="mp4">🎬 Upload File .MP4 / URL Diretto Video</option>
+                    </select>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Codice Fiscale *</label>
-                        <input type="text" x-model="newStudentForm.fiscalCode" required placeholder="DSNGLI85E55H501Z" class="w-full rounded-xl border border-slate-300 px-3 py-2 uppercase font-mono">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Email *</label>
-                        <input type="email" x-model="newStudentForm.email" required placeholder="giulia@guideroma.it" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Titolo Modulo Video *</label>
+                    <input type="text" x-model="newModuleForm.title" required placeholder="Es. Modulo - Legislazione e Contrattualistica Turistica" class="w-full rounded-xl border border-slate-300 px-3 py-2">
                 </div>
-                <div class="grid grid-cols-3 gap-3">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Data Nascita</label>
-                        <input type="date" x-model="newStudentForm.birthDate" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Comune Nascita</label>
-                        <input type="text" x-model="newStudentForm.birthCity" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Ore Zoom già fatte</label>
-                        <input type="number" step="0.5" x-model.number="newStudentForm.syncHours" class="w-full rounded-xl border border-slate-300 px-3 py-2 font-bold">
-                    </div>
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Docente Relatore *</label>
+                    <input type="text" x-model="newModuleForm.instructor" required placeholder="Es. Prof.ssa Maria Ferri" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                </div>
+                <div x-show="newModuleForm.sourceType === 'youtube'">
+                    <label class="block font-bold text-slate-700 mb-1">Link o ID Video YouTube</label>
+                    <input type="text" x-model="newModuleForm.youtubeId" placeholder="Es. https://youtu.be/M7lc1UVf-VE" class="w-full rounded-xl border border-slate-300 px-3 py-2 font-mono">
                 </div>
                 <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
-                    <button type="button" @click="newUserModal = false" class="px-4 py-2 rounded-xl border border-slate-300 font-semibold">Annulla</button>
-                    <button type="submit" class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-bold cursor-pointer">Registra e Iscrivi</button>
+                    <button type="button" @click="addModuleModal = false" class="px-4 py-2 rounded-xl border border-slate-300 font-semibold">Annulla</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-bold cursor-pointer">Salva Modulo</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- ===================================================================== -->
-    <!-- MODAL: CSV BULK IMPORT                                                -->
-    <!-- ===================================================================== -->
-    <div x-cloak x-show="csvImportModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
-        <div @click.away="csvImportModal = false" class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
-            <h3 class="text-base font-extrabold text-slate-900">Importazione Massiva Corsisti (CSV / Excel)</h3>
-            <p class="text-xs text-slate-500 mt-1">Formato: <code>Nome;Cognome;CodiceFiscale;Email;DataNascita;Citta;Prov;OreZoom</code></p>
-            <form @submit.prevent="importCsvStudents()" class="mt-4 space-y-3 text-xs">
-                <textarea x-model="csvText" rows="5" class="w-full rounded-xl border border-slate-300 p-3 font-mono text-xs"></textarea>
-                <div class="flex justify-end gap-2">
-                    <button type="button" @click="csvImportModal = false" class="px-4 py-2 rounded-xl border border-slate-300 font-semibold">Annulla</button>
-                    <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold cursor-pointer">Importa Ora</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- ===================================================================== -->
-    <!-- MODAL: CREATE NEW COURSE                                              -->
+    <!-- MODAL: CREATE NEW COURSE (1 MODULE OR N MODULES)                      -->
     <!-- ===================================================================== -->
     <div x-cloak x-show="newCourseModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
         <div @click.away="newCourseModal = false" class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
-            <h3 class="text-base font-extrabold text-slate-900">Crea Nuovo Corso nel Catalogo FAD</h3>
+            <h3 class="text-base font-extrabold text-slate-900">Crea Nuovo Corso (da 1 a N Moduli)</h3>
             <form @submit.prevent="createNewCourse()" class="mt-4 space-y-3 text-xs">
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -894,10 +917,11 @@
                         <input type="text" x-model="newCourseForm.code" required class="w-full rounded-xl border border-slate-300 px-3 py-2 font-mono uppercase">
                     </div>
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Tipologia *</label>
-                        <select x-model="newCourseForm.type" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                            <option value="aggiornamento">Aggiornamento (Allegato 4)</option>
-                            <option value="specializzazione">Specializzazione (Allegato 3)</option>
+                        <label class="block font-bold text-slate-700 mb-1">Struttura Moduli Iniziali</label>
+                        <select x-model.number="newCourseForm.initialModulesCount" class="w-full rounded-xl border border-slate-300 px-3 py-2 font-bold">
+                            <option value="1">Corso a Modulo Singolo (1 Modulo)</option>
+                            <option value="3">Corso Multi-Modulo (3 Moduli)</option>
+                            <option value="5">Corso Multi-Modulo (5 Moduli)</option>
                         </select>
                     </div>
                 </div>
@@ -905,20 +929,10 @@
                     <label class="block font-bold text-slate-700 mb-1">Titolo del Corso *</label>
                     <input type="text" x-model="newCourseForm.title" required class="w-full rounded-xl border border-slate-300 px-3 py-2">
                 </div>
-                <div class="grid grid-cols-3 gap-3">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Ore Totali</label>
-                        <input type="number" x-model.number="newCourseForm.totalHours" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Ore Zoom</label>
-                        <input type="number" x-model.number="newCourseForm.syncHours" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Ore FAD</label>
-                        <input type="number" x-model.number="newCourseForm.asyncHours" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    </div>
-                </div>
+                <label class="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200 font-bold">
+                    <input type="checkbox" x-model="newCourseForm.hasSyncHours" class="rounded text-indigo-600">
+                    <span>Prevede anche Ore Sincrone (Zoom) oltre ai moduli FAD</span>
+                </label>
                 <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
                     <button type="button" @click="newCourseModal = false" class="px-4 py-2 rounded-xl border border-slate-300 font-semibold">Annulla</button>
                     <button type="submit" class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-bold cursor-pointer">Crea Corso</button>
@@ -928,57 +942,109 @@
     </div>
 
     <!-- ===================================================================== -->
-    <!-- MODAL: ADD VIDEO MODULE                                               -->
+    <!-- MODAL: CSV IMPORT                                                     -->
     <!-- ===================================================================== -->
-    <div x-cloak x-show="addModuleModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
-        <div @click.away="addModuleModal = false" class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
-            <h3 class="text-base font-extrabold text-slate-900">Aggiungi Nuovo Modulo Video Asincrono</h3>
-            <form @submit.prevent="addNewModule()" class="mt-4 space-y-3 text-xs">
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Titolo Modulo Video *</label>
-                    <input type="text" x-model="newModuleForm.title" required placeholder="Es. Modulo 6 - Approfondimento Legislazione Turistica" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                </div>
-                <div>
-                    <label class="block font-bold text-slate-700 mb-1">Docente Relatore *</label>
-                    <input type="text" x-model="newModuleForm.instructor" required placeholder="Es. Prof.ssa Maria Ferri" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                </div>
-                <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
-                    <button type="button" @click="addModuleModal = false" class="px-4 py-2 rounded-xl border border-slate-300 font-semibold">Annulla</button>
-                    <button type="submit" class="px-5 py-2 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-bold cursor-pointer">Aggiungi Modulo</button>
+    <div x-cloak x-show="csvImportModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 no-print">
+        <div @click.away="csvImportModal = false" class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
+            <h3 class="text-base font-extrabold text-slate-900">Importazione Massiva CSV (Iscritti & Ore Sincrone Zoom)</h3>
+            <form @submit.prevent="importCsvStudents()" class="mt-4 space-y-3 text-xs">
+                <textarea x-model="csvText" rows="5" class="w-full rounded-xl border border-slate-300 p-3 font-mono text-xs"></textarea>
+                <div class="flex justify-end gap-2">
+                    <button type="button" @click="csvImportModal = false" class="px-4 py-2 rounded-xl border border-slate-300 font-semibold">Annulla</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 text-white font-bold cursor-pointer">Importa Ora</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 mt-12 py-6 no-print">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-            <div>
-                <strong x-text="settings.platformName"></strong> — <span x-text="settings.providerName"></span>
-                • Sistema conforme alle Linee Guida B del Ministero del Turismo (D.M. 26 giugno 2024, n. 88)
+    <!-- ===================================================================== -->
+    <!-- MODAL: OFFICIAL ALLEGATO 4 CERTIFICATE PREVIEW                        -->
+    <!-- ===================================================================== -->
+    <div x-cloak x-show="certPreviewStudent !== null"
+         class="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+        <div @click.away="certPreviewStudent = null" class="bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-10 shadow-2xl border border-slate-300 my-8">
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-4 mb-6 border-b border-slate-200 no-print">
+                <div>
+                    <span class="text-xs font-bold uppercase text-emerald-600">Modello Conforme Linee Guida B</span>
+                    <h3 class="text-base font-extrabold text-slate-900">Attestato Ufficiale di Frequenza (Allegato 4)</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="./pdf/Attestato_Allegato4_Elena_Bianchi.pdf" download
+                       class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">
+                        Scarica PDF &darr;
+                    </a>
+                    <button @click="certPreviewStudent = null" class="text-slate-400 hover:text-slate-700 text-2xl font-bold px-2 cursor-pointer">&times;</button>
+                </div>
             </div>
-            <div>
-                Stack Tecnologico: <strong>PHP 8.2 + Laravel 12 + Alpine.js 3 + DomPDF</strong>
-            </div>
+
+            <template x-if="certPreviewStudent">
+                <div class="border-2 border-slate-800 p-6 sm:p-8 text-slate-900 space-y-4 font-serif leading-relaxed">
+                    <div class="text-center">
+                        <div class="text-xl sm:text-2xl font-bold italic">Ministero del Turismo</div>
+                        <div class="text-xs italic text-slate-600">Direzione Generale Controllo, Regolamentazione, Acquisti, Formazione e Professioni Turistiche</div>
+                    </div>
+                    <div class="text-right font-sans text-xs font-bold">Allegato 4</div>
+                    <div class="text-center font-sans space-y-1">
+                        <div class="text-sm font-extrabold uppercase">ATTESTATO DI FREQUENZA DEL CORSO DI AGGIORNAMENTO PER GUIDA TURISTICA</div>
+                        <div class="text-xs font-bold pt-1">
+                            Codice ATECO: <span x-text="settings.ateco"></span> &nbsp;&nbsp;•&nbsp;&nbsp; CP ISTAT: <span x-text="settings.cpIstat"></span>
+                        </div>
+                    </div>
+                    <div class="text-center font-sans text-xs font-extrabold">DA</div>
+                    <p class="text-xs sm:text-sm text-justify leading-6">
+                        <strong class="underline" x-text="settings.providerName"></strong>
+                        autorizzato all'erogazione del corso dal Ministero del turismo con
+                        <strong class="underline" x-text="activeCourse.authorization"></strong>
+                        afferente all'ambito tematico <strong class="underline" x-text="activeCourse.thematicArea"></strong>.
+                    </p>
+                    <div class="text-center font-sans text-xs font-extrabold">CONFERITO A</div>
+                    <p class="text-xs sm:text-sm text-justify leading-6">
+                        Il Sig./Sig.ra <strong class="underline" x-text="certPreviewStudent.firstName + ' ' + certPreviewStudent.lastName"></strong>
+                        (C.F. <strong class="underline font-mono" x-text="certPreviewStudent.fiscalCode"></strong>)
+                        nato/a il <strong class="underline" x-text="formatDateIT(certPreviewStudent.birthDate)"></strong>
+                        a <strong class="underline" x-text="certPreviewStudent.birthCity"></strong> (<strong class="underline" x-text="certPreviewStudent.birthProvince"></strong>),
+                        con una frequenza pari a <strong class="underline" x-text="getStudentTotalHours(certPreviewStudent)"></strong> ore.
+                    </p>
+                    <div class="text-center font-sans text-xs font-extrabold py-2">
+                        IL PRESENTE ATTESTATO È VALIDO SU TUTTO IL TERRITORIO NAZIONALE
+                    </div>
+                    <div class="pt-3 font-sans text-xs flex justify-between gap-4">
+                        <div>Roma, 16/10/2026</div>
+                        <div class="text-right font-bold" x-text="settings.legalRep"></div>
+                    </div>
+                </div>
+            </template>
         </div>
-    </footer>
+    </div>
 
 <script>
+let ytPlayerInstance = null;
+
 document.addEventListener('alpine:init', () => {
     Alpine.data('formaFadPreview', () => ({
         currentView: 'student',
-        activeStudentId: 3, // Start on Sara Lombardi (76% -> 1 click away from 80% Certificate unlock!)
+        activeCourseId: 1,
+        activeStudentId: 3, // Sara Lombardi (76%)
+        playerSourceMode: 'mp4', // 'mp4' | 'youtube'
         strictTabPause: false,
         isPlaying: false,
         skipBlockedWarning: false,
         presenceModalOpen: false,
-        lastHeartbeatTime: '19:25:10',
         toastMessage: '',
         certPreviewStudent: null,
+        auditModalStudent: null,
         newUserModal: false,
         csvImportModal: false,
         newCourseModal: false,
         addModuleModal: false,
+
+        // YouTube Masked Player State
+        ytIsPlaying: false,
+        ytCurrentSec: 0,
+        ytMaxWatchedSec: 0,
+        ytDurationSec: 600,
+        ytPercent: 0,
+        ytTimer: null,
 
         settings: {
             platformName: 'FormaFAD LMS',
@@ -986,6 +1052,7 @@ document.addEventListener('alpine:init', () => {
             legalRep: 'Dott.ssa Paola Gentile',
             ateco: '79.90',
             cpIstat: '3.4.1.5.2',
+            brandColor: '#0f172a'
         },
 
         courses: [
@@ -993,182 +1060,77 @@ document.addEventListener('alpine:init', () => {
                 id: 1,
                 code: 'AGG-GT-2026-01',
                 type: 'aggiornamento',
-                title: 'Corso di Aggiornamento Professionale Guide Turistiche: Patrimonio Storico-Artistico, Museale e Diritto del Turismo',
-                thematicArea: 'Storia dell\'Arte, Disciplina dei Beni Culturali e del Paesaggio, Diritto del Turismo e Accessibilità',
+                title: 'Corso di Aggiornamento Guide Turistiche: Patrimonio Storico-Artistico e Diritto del Turismo (5 Moduli)',
+                thematicArea: 'Storia dell\'Arte, Disciplina dei Beni Culturali e Diritto del Turismo',
                 authorization: 'Provv. Ministero del Turismo prot. n. 0039412 del 02/10/2026',
+                hasSyncHours: true,
+                strictTabPause: false,
+                presenceInterval: 0,
                 totalHours: 25,
                 syncHours: 20,
                 asyncHours: 5,
                 minPercent: 80,
                 modules: [
-                    {
-                        id: 1,
-                        order: 1,
-                        title: 'Riforma della Professione di Guida Turistica: Legge 190/2023 e D.M. 88/2024',
-                        instructor: 'Prof. Avv. Roberto Ferretti',
-                        description: 'Quadro normativo nazionale, Elenco Nazionale delle Guide Turistiche, obblighi di aggiornamento triennale e disciplina sanzionatoria.',
-                        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-                        attachmentTitle: 'Dispensa Modulo 1 - Testo Coordinato Legge 190-2023 e DM 88-2024.pdf'
-                    },
-                    {
-                        id: 2,
-                        order: 2,
-                        title: 'Codice dei Beni Culturali e del Paesaggio: Nuovi Modelli di Valorizzazione Museale',
-                        instructor: 'Prof.ssa Chiara Montanari',
-                        description: 'Analisi della tutela e valorizzazione del patrimonio storico-artistico e museale italiano negli itinerari guidati contemporanei.',
-                        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-                        attachmentTitle: 'Slide Modulo 2 - Valorizzazione Patrimonio Museale e Siti UNESCO.pdf'
-                    },
-                    {
-                        id: 3,
-                        order: 3,
-                        title: 'Accessibilità e Inclusività dell\'Offerta Turistica per Persone con Disabilità',
-                        instructor: 'Dott.ssa Laura Pellegrini',
-                        description: 'Progettazione di visite guidate accessibili, superamento delle barriere sensoriali e cognitive e accoglienza inclusiva.',
-                        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-                        attachmentTitle: 'Guida Operativa Modulo 3 - Protocolli di Accessibilità Turistica.pdf'
-                    },
-                    {
-                        id: 4,
-                        order: 4,
-                        title: 'Storytelling Digitale e Metodologie di Comunicazione del Patrimonio Monumentale',
-                        instructor: 'Prof. Alessandro De Luca',
-                        description: 'Tecniche narrative avanzate per la mediazione culturale, gestione di gruppi eterogenei e strumenti digitali di supporto.',
-                        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-                        attachmentTitle: 'Dispensa Modulo 4 - Tecniche di Mediazione Culturale e Storytelling.pdf'
-                    },
-                    {
-                        id: 5,
-                        order: 5,
-                        title: 'Adempimenti Fiscali, Sicurezza dei Gruppi e Deontologia Professionale',
-                        instructor: 'Dott. Stefano Marchetti',
-                        description: 'Inquadramento ATECO 79.90, responsabilità civile della guida turistica, copertura assicurativa e gestione delle emergenze.',
-                        videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4',
-                        attachmentTitle: 'Formulario Modulo 5 - Adempimenti Deontologici e Sicurezza Gruppi.pdf'
-                    }
+                    { id: 1, order: 1, sourceType: 'mp4', youtubeId: 'M7lc1UVf-VE', title: 'Riforma della Professione di Guida Turistica: Legge 190/2023 e D.M. 88/2024', instructor: 'Prof. Avv. Roberto Ferretti', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', attachmentTitle: 'Dispensa Modulo 1 - Legge 190-2023.pdf' },
+                    { id: 2, order: 2, sourceType: 'youtube', youtubeId: 'M7lc1UVf-VE', title: 'Codice dei Beni Culturali e Valorizzazione Museale (YouTube No-Logo)', instructor: 'Prof.ssa Chiara Montanari', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', attachmentTitle: 'Slide Modulo 2 - Patrimonio Museale.pdf' },
+                    { id: 3, order: 3, sourceType: 'mp4', youtubeId: 'M7lc1UVf-VE', title: 'Accessibilità e Inclusività dell\'Offerta Turistica', instructor: 'Dott.ssa Laura Pellegrini', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', attachmentTitle: 'Guida Modulo 3 - Accessibilita.pdf' },
+                    { id: 4, order: 4, sourceType: 'youtube', youtubeId: 'M7lc1UVf-VE', title: 'Storytelling Digitale del Patrimonio Monumentale (YouTube No-Logo)', instructor: 'Prof. Alessandro De Luca', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', attachmentTitle: 'Dispensa Modulo 4 - Storytelling.pdf' },
+                    { id: 5, order: 5, sourceType: 'mp4', youtubeId: 'M7lc1UVf-VE', title: 'Adempimenti Fiscali, Sicurezza e Deontologia Professionale', instructor: 'Dott. Stefano Marchetti', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4', attachmentTitle: 'Formulario Modulo 5 - Deontologia.pdf' }
                 ]
             },
             {
                 id: 2,
-                code: 'AGG-GT-2026-02',
+                code: 'MONO-FAD-2026',
                 type: 'aggiornamento',
-                title: 'Corso di Aggiornamento Guide Turistiche: Area Archeologica, Geografia Turistica ed Enogastronomia',
-                thematicArea: 'Archeologia, Geografia e Patrimonio Demo-Etno-Antropologico',
+                title: 'Seminario Monografico 100% FAD: Sicurezza e Primo Soccorso nei Gruppi Turistici (1 Singolo Modulo)',
+                thematicArea: 'Diritto e Sicurezza dell\'Offerta Turistica',
                 authorization: 'Provv. Ministero del Turismo prot. n. 0041890 del 10/10/2026',
-                totalHours: 25,
-                syncHours: 20,
-                asyncHours: 5,
+                hasSyncHours: false,
+                strictTabPause: true,
+                presenceInterval: 15,
+                totalHours: 4,
+                syncHours: 0,
+                asyncHours: 4,
                 minPercent: 80,
-                modules: []
-            },
-            {
-                id: 3,
-                code: 'SPEC-GT-2026-01',
-                type: 'specializzazione',
-                title: 'Corso di Specializzazione: Tecniche di Comunicazione per l\'Infanzia, l\'Adolescenza e la Terza Età',
-                thematicArea: 'Art. 2 comma 2 lett. i) - Tecniche di comunicazione per l\'infanzia, l\'adolescenza e la terza età',
-                authorization: 'Provv. Ministero del Turismo prot. n. 0045102 del 14/10/2026',
-                totalHours: 50,
-                syncHours: 40,
-                asyncHours: 10,
-                minPercent: 80,
-                modules: []
+                modules: [
+                    { id: 1, order: 1, sourceType: 'youtube', youtubeId: 'M7lc1UVf-VE', title: 'Modulo Unico (4h) — Gestione Emergenze e Sicurezza Gruppi Turistici', instructor: 'Dott. Marco Rinaldi', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', attachmentTitle: 'Manuale Modulo Unico Sicurezza.pdf' }
+                ]
             }
         ],
 
         students: [
-            {
-                id: 1,
-                firstName: 'Elena',
-                lastName: 'Bianchi',
-                fiscalCode: 'BNCLNE84D52H501Q',
-                birthDate: '1984-04-12',
-                birthCity: 'Roma',
-                birthProvince: 'RM',
-                email: 'elena.bianchi@guideroma.it',
-                nationalList: 'ENGT-RM-01492',
-                syncHours: 20,
-                moduleProgress: { 1: 100, 2: 100, 3: 100, 4: 100, 5: 100 }
-            },
-            {
-                id: 2,
-                firstName: 'Marco',
-                lastName: 'Valeri',
-                fiscalCode: 'VLRMRC79H18H501W',
-                birthDate: '1979-06-18',
-                birthCity: 'Viterbo',
-                birthProvince: 'VT',
-                email: 'marco.valeri@guideroma.it',
-                nationalList: 'ENGT-VT-00381',
-                syncHours: 19,
-                moduleProgress: { 1: 100, 2: 100, 3: 100, 4: 40, 5: 0 }
-            },
-            {
-                id: 3,
-                firstName: 'Sara',
-                lastName: 'Lombardi',
-                fiscalCode: 'LMBSRA88L62F839T',
-                birthDate: '1988-07-22',
-                birthCity: 'Napoli',
-                birthProvince: 'NA',
-                email: 'sara.lombardi@guideroma.it',
-                nationalList: 'ENGT-NA-02104',
-                syncHours: 17,
-                moduleProgress: { 1: 100, 2: 100, 3: 0, 4: 0, 5: 0 }
-            },
-            {
-                id: 4,
-                firstName: 'Davide',
-                lastName: 'Moretti',
-                fiscalCode: 'MRTDVD82B14F205Z',
-                birthDate: '1982-02-14',
-                birthCity: 'Milano',
-                birthProvince: 'MI',
-                email: 'davide.moretti@guideroma.it',
-                nationalList: 'ENGT-MI-00912',
-                syncHours: 20,
-                moduleProgress: { 1: 100, 2: 0, 3: 0, 4: 0, 5: 0 }
-            }
+            { id: 1, firstName: 'Elena', lastName: 'Bianchi', fiscalCode: 'BNCLNE84D52H501Q', birthDate: '1984-04-12', birthCity: 'Roma', birthProvince: 'RM', email: 'elena.bianchi@guideroma.it', nationalList: 'ENGT-RM-01492', syncHours: 20, moduleProgress: { 1: 100, 2: 100, 3: 100, 4: 100, 5: 100 } },
+            { id: 2, firstName: 'Marco', lastName: 'Valeri', fiscalCode: 'VLRMRC79H18H501W', birthDate: '1979-06-18', birthCity: 'Viterbo', birthProvince: 'VT', email: 'marco.valeri@guideroma.it', nationalList: 'ENGT-VT-00381', syncHours: 19, moduleProgress: { 1: 100, 2: 100, 3: 100, 4: 40, 5: 0 } },
+            { id: 3, firstName: 'Sara', lastName: 'Lombardi', fiscalCode: 'LMBSRA88L62F839T', birthDate: '1988-07-22', birthCity: 'Napoli', birthProvince: 'NA', email: 'sara.lombardi@guideroma.it', nationalList: 'ENGT-NA-02104', syncHours: 17, moduleProgress: { 1: 100, 2: 100, 3: 0, 4: 0, 5: 0 } }
         ],
 
         activeModuleId: 3,
         maxVideoTimeWatched: 0,
 
-        newStudentForm: {
-            firstName: '',
-            lastName: '',
-            fiscalCode: '',
-            email: '',
-            birthDate: '1986-05-14',
-            birthCity: 'Roma',
-            birthProvince: 'RM',
-            syncHours: 20
-        },
-
-        newCourseForm: {
-            code: 'AGG-GT-2026-03',
-            type: 'aggiornamento',
-            title: 'Corso di Aggiornamento Guide Turistiche: Patrimonio Religioso e Musicale Italiano',
-            totalHours: 25,
-            syncHours: 20,
-            asyncHours: 5
-        },
-
-        newModuleForm: {
-            title: '',
-            instructor: ''
-        },
-
+        newStudentForm: { firstName: '', lastName: '', fiscalCode: '', email: '', birthDate: '1986-05-14', birthCity: 'Roma', birthProvince: 'RM', nationalList: '', syncHours: 20 },
+        newCourseForm: { code: 'CORSO-2026-NEW', title: 'Nuovo Corso di Formazione Professionale', initialModulesCount: 1, hasSyncHours: false },
+        newModuleForm: { sourceType: 'youtube', title: '', instructor: '', youtubeId: 'M7lc1UVf-VE' },
         csvText: "Paola;Gentili;GNTPLA81C45H501U;paola.gentili@guideroma.it;1981-03-05;Roma;RM;20\nLorenzo;Fabbri;FBBLRN79A12F205K;lorenzo.fabbri@guideroma.it;1979-01-12;Milano;MI;20",
 
-        activityLogs: [
-            { type: 'certificate_ready', user: 'Elena Bianchi', desc: 'Raggiunto 100% (25h/25h) — Attestato Allegato 4 sbloccato', time: '19:15:22', ip: '93.44.118.21' },
-            { type: 'heartbeat_sync', user: 'Marco Valeri', desc: 'Salvataggio sessione notturna Modulo 4 (40% completato)', time: '19:10:05', ip: '151.38.92.104' },
-            { type: 'zoom_report', user: 'Direzione Didattica', desc: 'Importate ore sincrone Zoom per 4 corsisti iscritti', time: '18:55:12', ip: '127.0.0.1' }
-        ],
+        studentLogsMap: {
+            1: [
+                { type: 'ATTESTATO_PDF', desc: 'Scaricato Attestato Ufficiale Allegato 4 (100% ore svolte)', time: '19:15:22', ip: '93.44.118.21' },
+                { type: 'MODULO_5_OK', desc: 'Completato Modulo 5 (3600s certificati con Heartbeat 15s)', time: '19:12:04', ip: '93.44.118.21' },
+                { type: 'LOGIN_FAD', desc: 'Accesso autenticato da Chrome / Windows 11', time: '18:10:00', ip: '93.44.118.21' }
+            ],
+            2: [
+                { type: 'HEARTBEAT_15S', desc: 'Salvataggio automatico Modulo 4 al minuto 24:00 (40%)', time: '23:45:10', ip: '151.38.92.104' },
+                { type: 'DISPENSA_PDF', desc: 'Scaricata Slide Modulo 2 - Patrimonio Museale.pdf', time: '23:18:02', ip: '151.38.92.104' }
+            ],
+            3: [
+                { type: 'MODULO_2_OK', desc: 'Completato Modulo 2 al 100% (+1h FAD certificata)', time: '18:40:19', ip: '79.18.204.55' },
+                { type: 'MODULO_1_OK', desc: 'Completato Modulo 1 al 100% (+1h FAD certificata)', time: '17:35:08', ip: '79.18.204.55' },
+                { type: 'LOGIN_MOBILE', desc: 'Accesso in piattaforma da Smartphone iOS / Android', time: '17:30:00', ip: '79.18.204.55' }
+            ]
+        },
 
         init() {
-            const saved = localStorage.getItem('formafad_preview_v1');
+            const saved = localStorage.getItem('formafad_preview_v2');
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
@@ -1177,17 +1139,10 @@ document.addEventListener('alpine:init', () => {
                     if (parsed.courses) this.courses = parsed.courses;
                 } catch (e) {}
             }
-
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden && this.strictTabPause && this.$refs.videoEl) {
-                    this.$refs.videoEl.pause();
-                    this.showToast('Video messo in pausa automaticamente per cambio scheda');
-                }
-            });
         },
 
         get activeCourse() {
-            return this.courses[0];
+            return this.courses.find(c => c.id === Number(this.activeCourseId)) || this.courses[0];
         },
 
         get activeStudent() {
@@ -1199,7 +1154,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         saveToStorage() {
-            localStorage.setItem('formafad_preview_v1', JSON.stringify({
+            localStorage.setItem('formafad_preview_v2', JSON.stringify({
                 students: this.students,
                 settings: this.settings,
                 courses: this.courses
@@ -1207,28 +1162,120 @@ document.addEventListener('alpine:init', () => {
         },
 
         resetDemoData() {
-            localStorage.removeItem('formafad_preview_v1');
+            localStorage.removeItem('formafad_preview_v2');
             window.location.reload();
         },
 
+        onCourseChange() {
+            this.activeModuleId = this.activeCourse.modules[0]?.id || 1;
+            this.setPlayerSourceMode(this.activeModule.sourceType || 'mp4');
+        },
+
         onStudentChange() {
-            const stu = this.activeStudent;
-            const firstIncomplete = this.activeCourse.modules.find(m => this.getModulePercent(stu, m.id) < 100);
-            if (firstIncomplete) {
-                this.selectModule(firstIncomplete);
-            } else {
-                this.selectModule(this.activeCourse.modules[0]);
-            }
+            const firstIncomplete = this.activeCourse.modules.find(m => this.getModulePercent(this.activeStudent, m.id) < 100);
+            this.selectModule(firstIncomplete || this.activeCourse.modules[0]);
         },
 
         selectModule(mod) {
+            if (!mod) return;
             this.activeModuleId = mod.id;
-            this.maxVideoTimeWatched = 0;
-            this.$nextTick(() => {
-                if (this.$refs.videoEl) {
-                    this.$refs.videoEl.load();
-                }
-            });
+            this.setPlayerSourceMode(mod.sourceType || 'mp4');
+        },
+
+        setPlayerSourceMode(mode) {
+            this.playerSourceMode = mode;
+            if (mode === 'youtube') {
+                this.$nextTick(() => this.initYoutubeMaskedPlayer());
+            } else if (ytPlayerInstance && ytPlayerInstance.pauseVideo) {
+                ytPlayerInstance.pauseVideo();
+                this.ytIsPlaying = false;
+            }
+        },
+
+        initYoutubeMaskedPlayer() {
+            const videoId = this.activeModule.youtubeId || 'M7lc1UVf-VE';
+            if (ytPlayerInstance && typeof ytPlayerInstance.loadVideoById === 'function') {
+                ytPlayerInstance.cueVideoById(videoId);
+                return;
+            }
+            if (window.YT && window.YT.Player) {
+                ytPlayerInstance = new window.YT.Player('yt-masked-player', {
+                    videoId: videoId,
+                    playerVars: {
+                        controls: 0,
+                        disablekb: 1,
+                        rel: 0,
+                        modestbranding: 1,
+                        iv_load_policy: 3,
+                        fs: 0,
+                        playsinline: 1
+                    },
+                    events: {
+                        onReady: (e) => {
+                            this.ytDurationSec = Math.max(120, Math.round(e.target.getDuration() || 600));
+                        },
+                        onStateChange: (e) => {
+                            this.ytIsPlaying = (e.data === window.YT.PlayerState.PLAYING);
+                            if (this.ytIsPlaying && !this.ytTimer) {
+                                this.ytTimer = setInterval(() => this.tickYoutubeProgress(), 1000);
+                            } else if (!this.ytIsPlaying && this.ytTimer) {
+                                clearInterval(this.ytTimer);
+                                this.ytTimer = null;
+                            }
+                            if (e.data === window.YT.PlayerState.ENDED) {
+                                this.simulateCompleteCurrentModule();
+                            }
+                        }
+                    }
+                });
+            }
+        },
+
+        toggleYoutubePlay() {
+            if (!ytPlayerInstance || typeof ytPlayerInstance.getPlayerState !== 'function') {
+                this.initYoutubeMaskedPlayer();
+                return;
+            }
+            const state = ytPlayerInstance.getPlayerState();
+            if (state === window.YT.PlayerState.PLAYING) {
+                ytPlayerInstance.pauseVideo();
+                this.ytIsPlaying = false;
+            } else {
+                ytPlayerInstance.playVideo();
+                this.ytIsPlaying = true;
+            }
+        },
+
+        rewindYoutube15s() {
+            if (!ytPlayerInstance || typeof ytPlayerInstance.getCurrentTime !== 'function') return;
+            const target = Math.max(0, ytPlayerInstance.getCurrentTime() - 15);
+            ytPlayerInstance.seekTo(target, true);
+            this.ytCurrentSec = Math.round(target);
+        },
+
+        tickYoutubeProgress() {
+            if (!ytPlayerInstance || typeof ytPlayerInstance.getCurrentTime !== 'function') return;
+            const cur = Math.round(ytPlayerInstance.getCurrentTime() || 0);
+            const dur = Math.max(60, Math.round(ytPlayerInstance.getDuration() || 600));
+            this.ytDurationSec = dur;
+            this.ytCurrentSec = cur;
+            if (cur > this.ytMaxWatchedSec) this.ytMaxWatchedSec = cur;
+            this.ytPercent = Math.min(100, Math.round((cur / dur) * 100));
+        },
+
+        onYoutubeCustomSeek(event) {
+            if (!ytPlayerInstance || typeof ytPlayerInstance.seekTo !== 'function') return;
+            const rect = event.currentTarget.getBoundingClientRect();
+            const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+            const targetSec = Math.round(ratio * this.ytDurationSec);
+
+            if (targetSec > this.ytMaxWatchedSec + 3 && this.getModulePercent(this.activeStudent, this.activeModule.id) < 100) {
+                this.skipBlockedWarning = true;
+                setTimeout(() => { this.skipBlockedWarning = false; }, 3500);
+                return;
+            }
+            ytPlayerInstance.seekTo(targetSec, true);
+            this.ytCurrentSec = targetSec;
         },
 
         getModulePercent(student, modId) {
@@ -1236,26 +1283,46 @@ document.addEventListener('alpine:init', () => {
             return Number(student.moduleProgress[modId] || 0);
         },
 
-        getCompletedModulesCount(student) {
-            return this.activeCourse.modules.filter(m => this.getModulePercent(student, m.id) >= 100).length;
-        },
-
         getStudentAsyncHours(student) {
             if (!student || !student.moduleProgress) return 0;
-            let totalPct = 0;
-            this.activeCourse.modules.forEach(m => {
-                totalPct += Number(student.moduleProgress[m.id] || 0);
+            const mods = this.activeCourse.modules;
+            if (!mods.length) return 0;
+            const hoursPerMod = this.activeCourse.asyncHours / mods.length;
+            let sum = 0;
+            mods.forEach(m => {
+                sum += (Number(student.moduleProgress[m.id] || 0) / 100) * hoursPerMod;
             });
-            return Number((totalPct / 100).toFixed(2));
+            return Number(sum.toFixed(2));
         },
 
         getStudentTotalHours(student) {
-            return Number((Number(student.syncHours || 0) + this.getStudentAsyncHours(student)).toFixed(2));
+            const sync = this.activeCourse.hasSyncHours ? Number(student.syncHours || 0) : 0;
+            return Number((sync + this.getStudentAsyncHours(student)).toFixed(2));
         },
 
         getStudentPercentage(student) {
             const total = this.getStudentTotalHours(student);
-            return Math.min(100, Number(((total / this.activeCourse.totalHours) * 100).toFixed(1)));
+            return Math.min(100, Number(((total / Math.max(1, this.activeCourse.totalHours)) * 100).toFixed(1)));
+        },
+
+        getStudentAuditLogs(student) {
+            if (!student) return [];
+            if (!this.studentLogsMap[student.id]) {
+                this.studentLogsMap[student.id] = [
+                    { type: 'ISCRIZIONE', desc: 'Iscrizione registrata al corso ' + this.activeCourse.code, time: '18:00:00', ip: '93.44.118.21' }
+                ];
+            }
+            return this.studentLogsMap[student.id];
+        },
+
+        pushStudentAudit(student, type, desc) {
+            if (!this.studentLogsMap[student.id]) this.studentLogsMap[student.id] = [];
+            this.studentLogsMap[student.id].unshift({
+                type,
+                desc,
+                time: new Date().toLocaleTimeString('it-IT'),
+                ip: '93.44.118.21'
+            });
         },
 
         onVideoTimeUpdate() {
@@ -1269,73 +1336,67 @@ document.addEventListener('alpine:init', () => {
         onVideoSeeking() {
             const v = this.$refs.videoEl;
             if (!v) return;
-            const currentModPct = this.getModulePercent(this.activeStudent, this.activeModule.id);
-            if (currentModPct >= 100) return;
-
+            if (this.getModulePercent(this.activeStudent, this.activeModule.id) >= 100) return;
             if (v.currentTime > this.maxVideoTimeWatched + 3) {
                 v.currentTime = this.maxVideoTimeWatched;
                 this.skipBlockedWarning = true;
-                setTimeout(() => { this.skipBlockedWarning = false; }, 4000);
+                setTimeout(() => { this.skipBlockedWarning = false; }, 3500);
             }
         },
 
         onVideoRateChange() {
             const v = this.$refs.videoEl;
-            if (v && v.playbackRate > 1.0) {
-                v.playbackRate = 1.0;
-            }
+            if (v && v.playbackRate > 1.0) v.playbackRate = 1.0;
         },
 
         advanceModuleBy25Percent() {
             const cur = this.getModulePercent(this.activeStudent, this.activeModule.id);
             const next = Math.min(100, cur + 25);
             this.activeStudent.moduleProgress[this.activeModule.id] = next;
-            this.lastHeartbeatTime = new Date().toLocaleTimeString('it-IT');
-            this.recordLog('heartbeat_15s', this.activeStudent.firstName + ' ' + this.activeStudent.lastName, `Modulo ${this.activeModule.order} aggiornato al ${next}%`);
+            this.pushStudentAudit(this.activeStudent, 'HEARTBEAT_15S', `Avanzamento Modulo ${this.activeModule.order} salvato al ${next}%`);
             this.saveToStorage();
-            this.showToast(`Progresso Modulo ${this.activeModule.order} salvato: ${next}%`);
+            this.showToast(`Progresso Modulo ${this.activeModule.order} salvato (${next}%)`);
         },
 
         simulateCompleteCurrentModule() {
             this.activeStudent.moduleProgress[this.activeModule.id] = 100;
-            this.lastHeartbeatTime = new Date().toLocaleTimeString('it-IT');
             const pct = this.getStudentPercentage(this.activeStudent);
-            this.recordLog('module_complete', this.activeStudent.firstName + ' ' + this.activeStudent.lastName, `Completato 100% Modulo ${this.activeModule.order} (Frequenza totale: ${pct}%)`);
+            this.pushStudentAudit(this.activeStudent, 'MODULO_100%', `Completato Modulo ${this.activeModule.order} (Frequenza totale: ${pct}%)`);
             this.saveToStorage();
-
-            if (pct >= 80) {
-                this.showToast(`🎉 Modulo ${this.activeModule.order} completato! Soglia 80% raggiunta (${pct}%) — Attestato Allegato 4 SBLOCCATO!`);
+            if (pct >= this.activeCourse.minPercent) {
+                this.showToast(`🎉 Modulo ${this.activeModule.order} completato! Soglia ${this.activeCourse.minPercent}% raggiunta (${pct}%) — Attestato SBLOCCATO!`);
             } else {
-                this.showToast(`Modulo ${this.activeModule.order} completato al 100% (+1h FAD certificata).`);
+                this.showToast(`Modulo ${this.activeModule.order} completato al 100%!`);
             }
         },
 
         toggleModuleCompletionAdmin(stu, modId) {
             const cur = this.getModulePercent(stu, modId);
             stu.moduleProgress[modId] = cur >= 100 ? 0 : 100;
+            this.pushStudentAudit(stu, 'ADMIN_UPDATE', `Stato Modulo ${modId} impostato a ${stu.moduleProgress[modId]}%`);
             this.saveToStorage();
-            this.showToast(`Aggiornato Modulo ${modId} per ${stu.firstName} ${stu.lastName}`);
         },
 
         triggerPresenceModalDemo() {
             if (this.$refs.videoEl) this.$refs.videoEl.pause();
+            if (ytPlayerInstance && ytPlayerInstance.pauseVideo) ytPlayerInstance.pauseVideo();
             this.presenceModalOpen = true;
         },
 
         confirmPresenceCheck() {
             this.presenceModalOpen = false;
-            this.recordLog('presence_check', this.activeStudent.firstName + ' ' + this.activeStudent.lastName, 'Confermata presenza a schermo sul Modulo ' + this.activeModule.order);
-            this.showToast('Presenza confermata e registrata nel log ministeriale');
+            this.pushStudentAudit(this.activeStudent, 'PRESENZA_OK', `Confermata presenza a schermo sul Modulo ${this.activeModule.order}`);
+            this.showToast('Presenza confermata e salvata nell\'Audit del corsista');
         },
 
         logDownloadDispensa() {
-            this.recordLog('pdf_download', this.activeStudent.firstName + ' ' + this.activeStudent.lastName, 'Scaricata ' + this.activeModule.attachmentTitle);
-            this.showToast('Download dispensa PDF registrato nel log attività');
+            this.pushStudentAudit(this.activeStudent, 'DISPENSA_PDF', `Scaricata dispensa: ${this.activeModule.attachmentTitle}`);
+            this.showToast('Download dispensa registrato nell\'Audit del corsista');
         },
 
         openCertificatePreview(student) {
             this.certPreviewStudent = student;
-            this.recordLog('certificate_view', student.firstName + ' ' + student.lastName, 'Generato Attestato di Frequenza Allegato 4');
+            this.pushStudentAudit(student, 'ATTESTATO_PDF', 'Visualizzato/Scaricato Attestato Ufficiale Allegato 4');
         },
 
         addNewStudent() {
@@ -1347,18 +1408,17 @@ document.addEventListener('alpine:init', () => {
                 fiscalCode: this.newStudentForm.fiscalCode.toUpperCase(),
                 birthDate: this.newStudentForm.birthDate || '1986-05-14',
                 birthCity: this.newStudentForm.birthCity || 'Roma',
-                birthProvince: 'RM',
+                birthProvince: (this.newStudentForm.birthProvince || 'RM').toUpperCase(),
                 email: this.newStudentForm.email,
-                nationalList: 'ENGT-RM-' + Math.floor(1000 + Math.random() * 9000),
-                syncHours: Number(this.newStudentForm.syncHours || 20),
+                nationalList: this.newStudentForm.nationalList || 'ENGT-RM-08812',
+                syncHours: this.activeCourse.hasSyncHours ? 20 : 0,
                 moduleProgress: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
             };
             this.students.unshift(s);
             this.activeStudentId = s.id;
-            this.newUserModal = false;
-            this.recordLog('user_register', s.firstName + ' ' + s.lastName, `Nuova iscrizione al corso ${this.activeCourse.code} (CF: ${s.fiscalCode})`);
+            this.pushStudentAudit(s, 'AUTO_REGISTRAZIONE', `Utente registrato autonomamente dal modulo /register`);
             this.saveToStorage();
-            this.showToast(`Corsista ${s.firstName} ${s.lastName} registrato e iscritto!`);
+            this.showToast(`Benvenuto ${s.firstName} ${s.lastName}! Registrazione completata.`);
         },
 
         importCsvStudents() {
@@ -1367,7 +1427,7 @@ document.addEventListener('alpine:init', () => {
             lines.forEach(line => {
                 const parts = line.split(';');
                 if (parts.length >= 4) {
-                    this.students.push({
+                    const s = {
                         id: Date.now() + Math.floor(Math.random() * 1000),
                         firstName: parts[0].trim(),
                         lastName: parts[1].trim(),
@@ -1378,84 +1438,92 @@ document.addEventListener('alpine:init', () => {
                         birthProvince: parts[6] ? parts[6].trim().toUpperCase() : 'RM',
                         syncHours: parts[7] ? Number(parts[7]) : 20,
                         moduleProgress: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
-                    });
+                    };
+                    this.students.push(s);
+                    this.pushStudentAudit(s, 'CSV_IMPORT', 'Profilo importato da elenco CSV segreteria');
                     count++;
                 }
             });
             this.csvImportModal = false;
-            this.recordLog('csv_import', 'Segreteria Admin', `Importati ${count} corsisti via CSV sul corso ${this.activeCourse.code}`);
             this.saveToStorage();
-            this.showToast(`Importati ${count} corsisti da elenco CSV!`);
+            this.showToast(`Importati ${count} corsisti via CSV!`);
         },
 
         createNewCourse() {
-            this.courses.push({
+            const count = Number(this.newCourseForm.initialModulesCount || 1);
+            const mods = [];
+            for (let i = 1; i <= count; i++) {
+                mods.push({
+                    id: i,
+                    order: i,
+                    sourceType: 'youtube',
+                    youtubeId: 'M7lc1UVf-VE',
+                    title: count === 1 ? 'Modulo Unico — Videolezione Completa' : `Modulo ${i} — Unità Didattica Asincrona`,
+                    instructor: 'Docente Accreditato',
+                    videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                    attachmentTitle: `Dispensa Modulo ${i}.pdf`
+                });
+            }
+            const c = {
                 id: Date.now(),
                 code: this.newCourseForm.code.toUpperCase(),
-                type: this.newCourseForm.type,
+                type: 'aggiornamento',
                 title: this.newCourseForm.title,
                 thematicArea: 'Ambito Tematico D.M. 88/2024',
                 authorization: 'Provv. Ministero del Turismo prot. n. 0049102/2026',
-                totalHours: this.newCourseForm.totalHours,
-                syncHours: this.newCourseForm.syncHours,
-                asyncHours: this.newCourseForm.asyncHours,
+                hasSyncHours: this.newCourseForm.hasSyncHours,
+                strictTabPause: false,
+                presenceInterval: 0,
+                totalHours: this.newCourseForm.hasSyncHours ? 20 + count : count,
+                syncHours: this.newCourseForm.hasSyncHours ? 20 : 0,
+                asyncHours: count,
                 minPercent: 80,
-                modules: []
-            });
+                modules: mods
+            };
+            this.courses.push(c);
+            this.activeCourseId = c.id;
             this.newCourseModal = false;
             this.saveToStorage();
-            this.showToast(`Nuovo corso ${this.newCourseForm.code} aggiunto a catalogo!`);
+            this.showToast(`Corso ${c.code} creato con ${count} ${count === 1 ? 'modulo' : 'moduli'}!`);
         },
 
         addNewModule() {
             const nextOrder = this.activeCourse.modules.length + 1;
-            this.activeCourse.modules.push({
+            const mod = {
                 id: nextOrder,
                 order: nextOrder,
+                sourceType: this.newModuleForm.sourceType,
+                youtubeId: 'M7lc1UVf-VE',
                 title: this.newModuleForm.title,
                 instructor: this.newModuleForm.instructor,
-                description: 'Lezione videoregistrata caricata da pannello di amministrazione.',
                 videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
                 attachmentTitle: `Dispensa Modulo ${nextOrder}.pdf`
-            });
+            };
+            this.activeCourse.modules.push(mod);
+            this.activeCourse.asyncHours = this.activeCourse.modules.length;
+            this.activeCourse.totalHours = (this.activeCourse.hasSyncHours ? this.activeCourse.syncHours : 0) + this.activeCourse.asyncHours;
             this.addModuleModal = false;
+            this.selectModule(mod);
             this.saveToStorage();
-            this.showToast(`Modulo ${nextOrder} aggiunto al corso!`);
+            this.showToast(`Modulo ${nextOrder} (${mod.sourceType === 'youtube' ? 'YouTube Mascherato' : 'MP4'}) aggiunto!`);
         },
 
         applyFormaCameraPreset() {
             this.settings.platformName = 'FormaCamera VideoFAD';
             this.settings.providerName = 'FormaCamera - Azienda Speciale Camera di Commercio di Roma';
             this.settings.legalRep = 'Dott.ssa Paola Gentile';
+            this.settings.brandColor = '#1e3a8a';
             this.saveToStorage();
-            this.showToast('Applicato preset White-Label: FormaCamera VideoFAD');
+            this.showToast('Applicato preset: FormaCamera VideoFAD');
         },
 
-        exportCsvRegister() {
-            let csv = '\uFEFFCognome e Nome;Codice Fiscale;Data e Luogo Nascita;Email;Ore Sincrone Zoom;Ore Asincrone FAD;Totale Ore;% Frequenza;Stato Attestato\n';
-            this.students.forEach(s => {
-                const asyncH = this.getStudentAsyncHours(s);
-                const totH = this.getStudentTotalHours(s);
-                const pct = this.getStudentPercentage(s);
-                csv += `${s.lastName} ${s.firstName};${s.fiscalCode};${s.birthDate} ${s.birthCity} (${s.birthProvince});${s.email};${s.syncHours};${asyncH};${totH};${pct}%;${pct >= 80 ? 'IDONEO' : 'IN CORSO'}\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Registro_Presenze_${this.activeCourse.code}.csv`;
-            a.click();
-            this.showToast('Registro Presenze CSV/Excel scaricato!');
-        },
-
-        recordLog(type, user, desc) {
-            this.activityLogs.unshift({
-                type,
-                user,
-                desc,
-                time: new Date().toLocaleTimeString('it-IT'),
-                ip: '93.44.118.21'
-            });
+        applyNeutralPreset() {
+            this.settings.platformName = 'FormaFAD LMS';
+            this.settings.providerName = 'Ente di Formazione Accreditato';
+            this.settings.legalRep = 'Dott.ssa Paola Gentile';
+            this.settings.brandColor = '#0f172a';
+            this.saveToStorage();
+            this.showToast('Ripristinato preset White-Label Neutro');
         },
 
         showToast(msg) {
@@ -1469,6 +1537,13 @@ document.addEventListener('alpine:init', () => {
             if (!iso) return '';
             const p = iso.split('-');
             return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
+        },
+
+        formatSec(s) {
+            s = Math.max(0, Math.round(s || 0));
+            const m = Math.floor(s / 60);
+            const sec = s % 60;
+            return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
         }
     }));
 });
