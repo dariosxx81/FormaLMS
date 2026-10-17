@@ -8,137 +8,180 @@
     <!-- Top Admin Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Direzione Didattica & Controllo</span>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Cruscotto Multi-Corso & Tracciamento FAD</h1>
-            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
-                Gestisci il catalogo corsi, i moduli video asincroni, le iscrizioni, il report ore Zoom e la generazione degli Attestati Ministeriali (Allegati 3 e 4).
+            <h1 class="text-2xl font-extrabold text-slate-900">Cruscotto Multi-Corso</h1>
+            <p class="text-xs text-slate-500 mt-0.5">
+                Panoramica corsi formativi, stato avanzamento iscritti e rilascio attestati.
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
-            <a href="{{ route('admin.users.index') }}" class="px-4 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold transition shadow-2xs">
-                + Iscrivi / Importa Corsisti (CSV)
+            <a href="{{ route('admin.users.index') }}" class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold transition shadow-2xs">
+                👥 Gestisci Iscritti & CSV
             </a>
-            <button @click="newCourseModal = true" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold transition shadow-xs cursor-pointer">
-                + Crea Nuovo Corso FAD
+            <button @click="newCourseModal = true" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold transition shadow-xs cursor-pointer">
+                + Nuovo Corso
             </button>
         </div>
     </div>
 
-    <!-- KPI Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
-            <div class="text-xs font-semibold text-slate-500">Corsi a Catalogo</div>
-            <div class="text-2xl font-extrabold text-slate-900 mt-1">{{ $courses->count() }}</div>
-            <div class="text-[11px] text-emerald-600 font-semibold mt-1">Multi-corso attivo</div>
-        </div>
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
-            <div class="text-xs font-semibold text-slate-500">Corsisti Registrati</div>
-            <div class="text-2xl font-extrabold text-slate-900 mt-1">{{ $totalStudents }}</div>
-            <div class="text-[11px] text-slate-400 mt-1">
-                @if($pendingStudents > 0)
-                    <span class="text-amber-600 font-bold">{{ $pendingStudents }} da approvare</span>
-                @else
-                    Anagrafica ministeriale completa
-                @endif
+    <!-- 4 Essential KPI Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex items-center justify-between">
+            <div>
+                <div class="text-xs font-semibold text-slate-400">Corsi Attivi</div>
+                <div class="text-2xl font-extrabold text-slate-900 mt-1">{{ $courses->count() }}</div>
             </div>
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-base">📚</div>
         </div>
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
-            <div class="text-xs font-semibold text-slate-500">Iscrizioni Attive</div>
-            <div class="text-2xl font-extrabold text-indigo-600 mt-1">{{ $totalEnrollments }}</div>
-            <div class="text-[11px] text-slate-400 mt-1">Sincrono + Asincrono</div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex items-center justify-between">
+            <div>
+                <div class="text-xs font-semibold text-slate-400">Corsisti Registrati</div>
+                <div class="text-2xl font-extrabold text-slate-900 mt-1">{{ $totalStudents }}</div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-base">👥</div>
         </div>
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
-            <div class="text-xs font-semibold text-slate-500">Ore Video FAD Erogate</div>
-            <div class="text-2xl font-extrabold text-slate-900 mt-1">{{ number_format($totalAsyncHoursWatched, 1, ',', '') }}h</div>
-            <div class="text-[11px] text-slate-400 mt-1">Tracciate con Heartbeat 15s</div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex items-center justify-between">
+            <div>
+                <div class="text-xs font-semibold text-slate-400">Ore Video Erogate</div>
+                <div class="text-2xl font-extrabold text-slate-900 mt-1">{{ number_format($totalAsyncHoursWatched, 1, ',', '') }}h</div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-base">🎬</div>
         </div>
-        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs col-span-2 lg:col-span-1">
-            <div class="text-xs font-semibold text-slate-500">Attestati Idonei (&ge;80%)</div>
-            <div class="text-2xl font-extrabold text-emerald-600 mt-1">{{ $eligibleCertificates }}</div>
-            <div class="text-[11px] text-emerald-700 font-medium mt-1">Pronti in PDF (Allegato 4)</div>
+
+        <div class="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs flex items-center justify-between">
+            <div>
+                <div class="text-xs font-semibold text-slate-400">Attestati Sbloccati</div>
+                <div class="text-2xl font-extrabold text-emerald-600 mt-1">{{ $eligibleCertificates }}</div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-base">🏅</div>
         </div>
     </div>
 
-    <!-- Multi-Course Catalog Table -->
+    <!-- Streamlined Course Catalog Cards -->
+    <div class="space-y-4">
+        <div class="flex items-center justify-between">
+            <h2 class="text-base font-extrabold text-slate-900">Catalogo Corsi Formativi</h2>
+            <span class="text-xs text-slate-400">{{ $courses->count() }} corsi configurati</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            @foreach($courses as $course)
+                <div x-data="{ menuOpen: false }" class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs hover:border-slate-300 transition flex flex-col justify-between gap-4">
+                    <div>
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="px-2.5 py-0.5 rounded-lg bg-slate-900 text-white font-mono text-[11px] font-bold">
+                                    {{ $course->code }}
+                                </span>
+                                <span class="px-2.5 py-0.5 rounded-lg bg-indigo-50 border border-indigo-200 text-[10px] font-bold uppercase">
+                                    {{ $course->course_type }}
+                                </span>
+                            </div>
+
+                            <!-- Discreet Actions (⋯) Dropdown -->
+                            <div class="relative">
+                                <button @click="menuOpen = !menuOpen"
+                                        class="w-8 h-8 rounded-lg hover:bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 font-bold cursor-pointer"
+                                        title="Opzioni ed Esportazioni">
+                                    &ctdot;
+                                </button>
+                                <div x-cloak x-show="menuOpen" @click.away="menuOpen = false" x-transition
+                                     class="absolute right-0 mt-1.5 w-52 bg-white rounded-xl border border-slate-200 shadow-xl p-1.5 z-20 text-xs space-y-1">
+                                    <a href="{{ route('admin.courses.show', $course) }}" class="block px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700 font-semibold">
+                                        ⚙️ Configura Moduli & Ore
+                                    </a>
+                                    <a href="{{ route('admin.courses.export-pdf', $course) }}" class="block px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700 font-semibold">
+                                        📄 Scarica Registro PDF
+                                    </a>
+                                    <a href="{{ route('admin.courses.export-csv', $course) }}" class="block px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700 font-semibold">
+                                        📊 Esporta Excel / CSV
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <a href="{{ route('admin.courses.show', $course) }}" class="block font-extrabold text-base text-slate-900 hover:text-indigo-600 mt-2.5 leading-snug">
+                            {{ $course->title }}
+                        </a>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs">
+                        <div class="flex flex-wrap items-center gap-3 text-slate-500 font-medium">
+                            <span>⏱ <strong>{{ $course->total_hours }}h</strong> ({{ $course->sync_required_hours }}h Zoom + {{ $course->async_required_hours }}h Video)</span>
+                            <span>•</span>
+                            <span>🎬 <strong>{{ $course->modules_count }}</strong> moduli</span>
+                            <span>•</span>
+                            <span>👥 <strong>{{ $course->enrollments_count }}</strong> iscritti</span>
+                        </div>
+
+                        <a href="{{ route('admin.courses.show', $course) }}"
+                           class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold transition shadow-2xs">
+                            Gestisci Corso &rarr;
+                        </a>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+
+    <!-- Clean Recent Enrollments Table with Row Actions (⋯) -->
     <div class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div>
-                <h2 class="text-base font-extrabold text-slate-900">Catalogo Corsi Formativi (Aggiornamento & Specializzazione)</h2>
-                <p class="text-xs text-slate-500">Clicca su "Gestisci Corso & Registro" per amministrare i moduli video, caricare le dispense PDF, inserire le ore Zoom e scaricare i report.</p>
+                <h3 class="text-sm font-extrabold text-slate-900">Avanzamento Recente Iscritti</h3>
             </div>
+            <a href="{{ route('admin.users.index') }}" class="text-xs font-bold text-indigo-600 hover:underline">
+                Vedi anagrafica completa &rarr;
+            </a>
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+            <table class="w-full text-left border-collapse text-xs">
                 <thead>
-                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
-                        <th class="py-3.5 px-5">Codice & Titolo Corso</th>
-                        <th class="py-3.5 px-4">Tipologia / Ambito</th>
-                        <th class="py-3.5 px-4">Monte Ore</th>
-                        <th class="py-3.5 px-4">Moduli FAD</th>
-                        <th class="py-3.5 px-4">Iscritti</th>
-                        <th class="py-3.5 px-4">Controllo Player</th>
-                        <th class="py-3.5 px-5 text-right">Azioni & Export Ministeriali</th>
+                    <tr class="bg-slate-50/70 border-b border-slate-200 text-[11px] text-slate-400 font-bold uppercase">
+                        <th class="py-3 px-5">Corsista</th>
+                        <th class="py-3 px-4">Corso</th>
+                        <th class="py-3 px-4">Ore Svolte</th>
+                        <th class="py-3 px-4">Frequenza</th>
+                        <th class="py-3 px-5 text-right">Azioni</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-200 text-xs">
-                    @foreach($courses as $course)
-                        <tr class="hover:bg-slate-50/80 transition">
-                            <td class="py-4 px-5">
-                                <div class="flex items-center gap-2">
-                                    <span class="px-2 py-0.5 rounded bg-slate-900 text-white font-mono text-[11px] font-bold">{{ $course->code }}</span>
-                                    <a href="{{ route('admin.courses.show', $course) }}" class="font-extrabold text-sm text-slate-900 hover:text-indigo-600">
-                                        {{ $course->title }}
-                                    </a>
-                                </div>
-                                @if($course->authorization_details)
-                                    <div class="text-[11px] text-slate-500 mt-1">Provv. Aut.: {{ $course->authorization_details }}</div>
-                                @endif
+                <tbody class="divide-y divide-slate-100">
+                    @foreach($recentEnrollments as $enr)
+                        <tr x-data="{ rowMenu: false }" class="hover:bg-slate-50/60">
+                            <td class="py-3 px-5">
+                                <div class="font-bold text-slate-900">{{ $enr->user->full_name }}</div>
+                                <div class="text-[11px] text-slate-400 font-mono">{{ $enr->user->fiscal_code }}</div>
                             </td>
-                            <td class="py-4 px-4">
-                                <span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-bold uppercase text-[10px] border border-indigo-200">
-                                    {{ $course->course_type }}
-                                </span>
-                                <div class="text-[11px] text-slate-500 mt-1 max-w-xs truncate">{{ $course->thematic_area }}</div>
+                            <td class="py-3 px-4">
+                                <a href="{{ route('admin.courses.show', $enr->course) }}" class="font-mono font-bold text-indigo-600 hover:underline">
+                                    {{ $enr->course->code }}
+                                </a>
                             </td>
-                            <td class="py-4 px-4">
-                                <div class="font-bold text-slate-900">{{ $course->total_hours }}h totali</div>
-                                <div class="text-[11px] text-slate-500">{{ $course->sync_required_hours }}h Zoom + {{ $course->async_required_hours }}h FAD</div>
+                            <td class="py-3 px-4 text-slate-600">
+                                <strong>{{ $enr->total_hours_completed }}h</strong>
+                                <span class="text-slate-400">({{ $enr->sync_hours_completed }}h Zoom + {{ $enr->async_hours_completed }}h FAD)</span>
                             </td>
-                            <td class="py-4 px-4">
-                                <span class="font-bold text-slate-800">{{ $course->modules_count }} moduli</span>
-                            </td>
-                            <td class="py-4 px-4">
-                                <span class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 font-bold">
-                                    {{ $course->enrollments_count }} corsisti
+                            <td class="py-3 px-4">
+                                <span class="px-2.5 py-0.5 rounded-full font-bold text-[11px] {{ $enr->is_eligible_for_certificate ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
+                                    {{ $enr->attendance_percent }}%
                                 </span>
                             </td>
-                            <td class="py-4 px-4">
-                                <div class="space-y-0.5 text-[11px]">
-                                    <div class="text-emerald-700 font-semibold">&check; Anti-Skip + Heartbeat</div>
-                                    @if($course->strict_tab_pause)
-                                        <div class="text-amber-700 font-semibold">• Pausa Cambio Tab ON</div>
-                                    @endif
-                                    @if($course->presence_check_interval_minutes > 0)
-                                        <div class="text-indigo-700 font-semibold">• Popup ogni {{ $course->presence_check_interval_minutes }}m</div>
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="py-4 px-5 text-right">
-                                <div class="inline-flex flex-wrap items-center justify-end gap-1.5">
-                                    <a href="{{ route('admin.courses.show', $course) }}"
-                                       class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-indigo-600 text-white font-bold transition">
-                                        Gestisci Corso & Registro &rarr;
+                            <td class="py-3 px-5 text-right relative">
+                                <button @click="rowMenu = !rowMenu" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold cursor-pointer">
+                                    &ctdot;
+                                </button>
+                                <div x-cloak x-show="rowMenu" @click.away="rowMenu = false" x-transition
+                                     class="absolute right-5 mt-1 w-48 bg-white rounded-xl border border-slate-200 shadow-xl p-1.5 z-20 text-left space-y-1">
+                                    <a href="{{ route('admin.enrollments.dossier-pdf', $enr) }}" class="block px-3 py-1.5 rounded-lg hover:bg-slate-100 text-slate-700 font-semibold">
+                                        📋 Fascicolo Probante PDF
                                     </a>
-                                    <a href="{{ route('admin.courses.export-pdf', $course) }}"
-                                       class="px-2.5 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold transition"
-                                       title="Scarica Registro Ufficiale Presenze PDF">
-                                        PDF Registro
+                                    <a href="{{ route('student.enrollments.certificate', $enr) }}" class="block px-3 py-1.5 rounded-lg hover:bg-slate-100 font-semibold {{ $enr->is_eligible_for_certificate ? 'text-emerald-700' : 'text-slate-400' }}">
+                                        🎓 Attestato PDF
                                     </a>
-                                    <a href="{{ route('admin.courses.export-csv', $course) }}"
-                                       class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold transition"
-                                       title="Esporta Registro Excel/CSV">
-                                        CSV
+                                    <a href="{{ route('admin.courses.show', $enr->course) }}" class="block px-3 py-1.5 rounded-lg hover:bg-slate-100 text-indigo-600 font-semibold">
+                                        ⚙️ Scheda Corso
                                     </a>
                                 </div>
                             </td>
@@ -146,88 +189,6 @@
                     @endforeach
                 </tbody>
             </table>
-        </div>
-    </div>
-
-    <!-- Bottom Grid: Latest Enrollments & Live Activity Log -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <!-- Latest Enrollments Progress -->
-        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <h3 class="text-base font-extrabold text-slate-900">Stato Avanzamento Corsisti ( tempo reale )</h3>
-                    <p class="text-xs text-slate-500">Riepilogo rapido delle ultime iscrizioni e idoneità all'Attestato Allegato 4.</p>
-                </div>
-                <a href="{{ route('admin.users.index') }}" class="text-xs font-bold text-indigo-600 hover:underline">Vedi tutti &rarr;</a>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="border-b border-slate-200 text-[11px] text-slate-400 uppercase">
-                            <th class="pb-2">Corsista</th>
-                            <th class="pb-2">Corso</th>
-                            <th class="pb-2">Zoom + FAD</th>
-                            <th class="pb-2">% Freq.</th>
-                            <th class="pb-2 text-right">Attestato</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @foreach($recentEnrollments as $enr)
-                            <tr>
-                                <td class="py-3 pr-2">
-                                    <div class="font-bold text-slate-900">{{ $enr->user->full_name }}</div>
-                                    <div class="text-[11px] text-slate-400 font-mono">{{ $enr->user->fiscal_code }}</div>
-                                </td>
-                                <td class="py-3 pr-2">
-                                    <a href="{{ route('admin.courses.show', $enr->course) }}" class="font-mono font-bold text-indigo-600 hover:underline">
-                                        {{ $enr->course->code }}
-                                    </a>
-                                </td>
-                                <td class="py-3 pr-2">
-                                    <span class="font-semibold">{{ $enr->sync_hours_completed }}h</span> +
-                                    <span class="font-bold text-indigo-600">{{ $enr->async_hours_completed }}h</span>
-                                    = <strong>{{ $enr->total_hours_completed }}h</strong>
-                                </td>
-                                <td class="py-3 pr-2">
-                                    <span class="px-2 py-0.5 rounded-full font-bold text-[11px] {{ $enr->is_eligible_for_certificate ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
-                                        {{ $enr->attendance_percent }}%
-                                    </span>
-                                </td>
-                                <td class="py-3 text-right">
-                                    <a href="{{ route('student.enrollments.certificate', $enr) }}"
-                                       class="text-xs font-bold {{ $enr->is_eligible_for_certificate ? 'text-emerald-600 hover:underline' : 'text-slate-400 hover:text-slate-600' }}">
-                                        PDF Allegato 4 &darr;
-                                    </a>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Live Telemetry & Activity Feed -->
-        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <h3 class="text-base font-extrabold text-slate-900">Flusso Attività & Log Telemetrico</h3>
-                    <p class="text-xs text-slate-500">Eventi registrati con indirizzo IP e timestamp.</p>
-                </div>
-                <a href="{{ route('admin.logs.index') }}" class="text-xs font-bold text-indigo-600 hover:underline">Registro completo &rarr;</a>
-            </div>
-
-            <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
-                @foreach($recentActivities as $act)
-                    <div class="text-xs border-l-2 border-slate-300 pl-3 py-0.5">
-                        <div class="flex items-center justify-between text-[11px] text-slate-400">
-                            <span class="font-mono font-bold text-indigo-600 uppercase">{{ $act->action_type }}</span>
-                            <span>{{ $act->created_at->format('d/m H:i:s') }} • IP {{ $act->ip_address }}</span>
-                        </div>
-                        <div class="font-semibold text-slate-800 mt-0.5">{{ $act->description }}</div>
-                    </div>
-                @endforeach
-            </div>
         </div>
     </div>
 

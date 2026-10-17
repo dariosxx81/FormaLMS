@@ -13,66 +13,74 @@
      }"
      class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-6">
 
-    <!-- Course Header & Official Exports Bar -->
-    <div class="bg-slate-900 text-white rounded-2xl p-6 sm:p-7 shadow-md border border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+    <!-- Clean Course Header & Dropdown Exports -->
+    <div x-data="{ exportMenu: false }" class="bg-white rounded-2xl p-6 shadow-2xs border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-            <div class="flex flex-wrap items-center gap-2 text-xs mb-2">
-                <a href="{{ route('admin.dashboard') }}" class="text-slate-400 hover:text-white font-semibold">&larr; Catalogo Corsi</a>
-                <span class="text-slate-600">/</span>
-                <span class="px-2.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono font-bold border border-indigo-500/30">{{ $course->code }}</span>
-                <span class="px-2.5 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold uppercase">{{ $course->course_type }}</span>
+            <div class="flex flex-wrap items-center gap-2 text-xs mb-1.5">
+                <a href="{{ route('admin.dashboard') }}" class="text-slate-500 hover:text-indigo-600 font-bold">&larr; Torna ai Corsi</a>
+                <span class="text-slate-300">/</span>
+                <span class="px-2.5 py-0.5 rounded-lg bg-slate-900 font-mono font-bold text-[11px]">{{ $course->code }}</span>
+                <span class="px-2.5 py-0.5 rounded-lg bg-indigo-50 border border-indigo-200 font-bold uppercase text-[10px]">{{ $course->course_type }}</span>
             </div>
-            <h1 class="text-xl sm:text-2xl font-extrabold">{{ $course->title }}</h1>
-            <p class="text-xs text-slate-300 mt-1">
-                Monte ore: <strong>{{ $course->total_hours }}h complessive</strong> ({{ $course->sync_required_hours }}h Sincrone Zoom + {{ $course->async_required_hours }}h Asincrone Video FAD)
+            <h1 class="text-xl font-extrabold text-slate-900">{{ $course->title }}</h1>
+            <p class="text-xs text-slate-500 mt-1">
+                Monte ore: <strong>{{ $course->total_hours }}h</strong> ({{ $course->sync_required_hours }}h Zoom + {{ $course->async_required_hours }}h FAD)
                 • Soglia Attestato: <strong>{{ $course->min_attendance_percent }}% ({{ $course->minimum_required_hours }}h)</strong>
             </p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
             <a href="{{ route('student.courses.show', $course) }}"
-               class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition">
-                &#9654; Anteprima Player FAD
+               class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                &#9654; Apri Player
             </a>
-            <a href="{{ route('admin.courses.export-pdf', $course) }}"
-               class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition shadow-xs">
-                Scarica Registro Presenze (PDF)
-            </a>
-            <a href="{{ route('admin.courses.export-csv', $course) }}"
-               class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-xs">
-                Esporta Excel / CSV
-            </a>
+            <div class="relative">
+                <button @click="exportMenu = !exportMenu"
+                        class="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 text-xs font-bold transition cursor-pointer flex items-center gap-1.5">
+                    <span>📥 Esporta Registro</span>
+                    <span>&darr;</span>
+                </button>
+                <div x-cloak x-show="exportMenu" @click.away="exportMenu = false" x-transition
+                     class="absolute right-0 mt-1.5 w-56 bg-white rounded-xl border border-slate-200 shadow-xl p-1.5 z-30 text-xs space-y-1">
+                    <a href="{{ route('admin.courses.export-pdf', $course) }}" class="block px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700 font-bold">
+                        📄 Registro Ufficiale (PDF)
+                    </a>
+                    <a href="{{ route('admin.courses.export-csv', $course) }}" class="block px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700 font-bold">
+                        📊 Foglio Excel / CSV
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-3">
-        <div class="flex flex-wrap items-center gap-2">
+    <!-- Clean Navigation Tabs + Contextual Primary Action -->
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
+        <div class="flex flex-wrap items-center gap-1.5">
             <button @click="tab = 'enrollments'"
-                    :class="tab === 'enrollments' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
-                    class="px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer">
-                1. Registro Iscritti, Ore Zoom + FAD & Attestati ({{ $course->enrollments->count() }})
+                    :class="tab === 'enrollments' ? 'bg-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                    class="px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer">
+                👥 Iscritti & Ore Zoom ({{ $course->enrollments->count() }})
             </button>
             <button @click="tab = 'modules'"
-                    :class="tab === 'modules' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
-                    class="px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer">
-                2. Moduli Video & Dispense PDF ({{ $course->modules->count() }})
+                    :class="tab === 'modules' ? 'bg-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                    class="px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer">
+                🎬 Moduli Video & Dispense ({{ $course->modules->count() }})
             </button>
             <button @click="tab = 'settings'"
-                    :class="tab === 'settings' ? 'bg-slate-900 text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
-                    class="px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer">
-                3. Regole Player & Dati Autorizzazione Ministero
+                    :class="tab === 'settings' ? 'bg-indigo-600 shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'"
+                    class="px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer">
+                ⚙️ Regole & Parametri
             </button>
         </div>
 
         <div class="flex items-center gap-2">
-            <button @click="zoomCsvModal = true" class="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-bold transition cursor-pointer">
-                Importa Ore Report Zoom (CSV)
+            <button x-show="tab === 'enrollments'" @click="zoomCsvModal = true" class="px-3 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold transition cursor-pointer">
+                📊 Importa CSV Zoom
             </button>
-            <button @click="enrollStudentModal = true" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition cursor-pointer">
-                + Iscrivi Corsista al Corso
+            <button x-show="tab === 'enrollments'" @click="enrollStudentModal = true" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold transition cursor-pointer">
+                + Iscrivi Corsista
             </button>
-            <button @click="addModuleModal = true" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition cursor-pointer">
+            <button x-show="tab === 'modules'" @click="addModuleModal = true" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold transition cursor-pointer">
                 + Nuovo Modulo Video
             </button>
         </div>
@@ -80,42 +88,31 @@
 
     <!-- TAB 1: ENROLLMENTS, UNIFIED HOURS (ZOOM + FAD) & CERTIFICATES -->
     <div x-show="tab === 'enrollments'" class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-                <h2 class="text-base font-extrabold text-slate-900">Registro Unificato Frequenza (Ore Sincrone Zoom + Ore Asincrone Video FAD)</h2>
-                <p class="text-xs text-slate-500">Puoi aggiornare direttamente le ore Sincrone (Zoom) di ogni corsista: il sistema ricalcola all'istante la percentuale totale e sblocca l'Attestato Allegato 4.</p>
-            </div>
-        </div>
-
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse text-xs">
                 <thead>
-                    <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
-                        <th class="py-3.5 px-4">Corsista & Anagrafica</th>
+                    <tr class="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-400">
+                        <th class="py-3.5 px-5">Corsista</th>
                         <th class="py-3.5 px-4">Ore Sincrone (Zoom)</th>
-                        <th class="py-3.5 px-4">Dettaglio Moduli Video FAD</th>
-                        <th class="py-3.5 px-4">Ore FAD</th>
-                        <th class="py-3.5 px-4">Totale & %</th>
-                        <th class="py-3.5 px-4 text-right">Documenti Ufficiali (PDF)</th>
+                        <th class="py-3.5 px-4">Moduli Video FAD</th>
+                        <th class="py-3.5 px-4">Frequenza Totale</th>
+                        <th class="py-3.5 px-5 text-right">Azioni</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-200">
+                <tbody class="divide-y divide-slate-100">
                     @forelse($course->enrollments as $enr)
                         @php
                             $u = $enr->user;
                             $userMods = ($progressMatrix[$u->id] ?? collect())->keyBy('course_module_id');
                         @endphp
-                        <tr class="hover:bg-slate-50/70 transition">
-                            <td class="py-4 px-4">
+                        <tr x-data="{ rowOpen: false }" class="hover:bg-slate-50/70 transition">
+                            <td class="py-3.5 px-5">
                                 <div class="font-extrabold text-sm text-slate-900">{{ $u->full_name }}</div>
-                                <div class="text-[11px] text-slate-500 font-mono">CF: {{ $u->fiscal_code }} • {{ $u->email }}</div>
-                                <div class="text-[11px] text-slate-400">
-                                    Nato/a il {{ $u->birth_date ? $u->birth_date->format('d/m/Y') : 'N/D' }} a {{ $u->birth_city }} ({{ $u->birth_province }})
-                                </div>
+                                <div class="text-[11px] text-slate-400 font-mono">{{ $u->fiscal_code }} • {{ $u->email }}</div>
                             </td>
 
                             <!-- Inline Editable Sync Hours (Zoom) -->
-                            <td class="py-4 px-4">
+                            <td class="py-3.5 px-4">
                                 <form method="POST" action="{{ route('admin.enrollments.sync-hours', $enr) }}" class="flex items-center gap-1.5">
                                     @csrf
                                     @method('PUT')
@@ -123,22 +120,22 @@
                                            value="{{ $enr->sync_hours_completed }}"
                                            class="w-16 rounded-lg border border-slate-300 px-2 py-1 text-xs font-bold text-slate-900">
                                     <span class="text-slate-400">/ {{ $course->sync_required_hours }}h</span>
-                                    <button type="submit" class="px-2 py-1 rounded bg-slate-200 hover:bg-indigo-600 hover:text-white text-slate-700 font-bold text-[10px] transition cursor-pointer">
+                                    <button type="submit" class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-indigo-600 text-slate-700 font-bold text-[10px] transition cursor-pointer">
                                         Salva
                                     </button>
                                 </form>
                             </td>
 
                             <!-- Per-Module Progress Pills -->
-                            <td class="py-4 px-4">
-                                <div class="flex flex-wrap items-center gap-1.5">
+                            <td class="py-3.5 px-4">
+                                <div class="flex flex-wrap items-center gap-1">
                                     @foreach($course->modules as $m)
                                         @php
                                             $mp = $userMods[$m->id] ?? null;
                                             $done = $mp ? $mp->is_completed : false;
                                             $pct = $mp ? $mp->completion_percent : 0;
                                         @endphp
-                                        <span class="px-2 py-1 rounded-md text-[10px] font-bold border {{ $done ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : ($pct > 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-500 border-slate-200') }}"
+                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold border {{ $done ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : ($pct > 0 ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-100 text-slate-500 border-slate-200') }}"
                                               title="Modulo {{ $m->sort_order }}: {{ $m->title }}">
                                             M{{ $m->sort_order }}: {{ $done ? '100%' : $pct . '%' }}
                                         </span>
@@ -146,33 +143,31 @@
                                 </div>
                             </td>
 
-                            <td class="py-4 px-4">
-                                <div class="font-extrabold text-indigo-600 text-sm">{{ $enr->async_hours_completed }}h</div>
-                                <div class="text-[10px] text-slate-400">su {{ $course->async_required_hours }}h FAD</div>
-                            </td>
-
-                            <td class="py-4 px-4">
+                            <td class="py-3.5 px-4">
                                 <div class="flex items-center gap-2">
                                     <span class="font-extrabold text-sm text-slate-900">{{ $enr->total_hours_completed }}h</span>
                                     <span class="px-2 py-0.5 rounded-full text-[11px] font-bold {{ $enr->is_eligible_for_certificate ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
                                         {{ $enr->attendance_percent }}%
                                     </span>
                                 </div>
-                                <div class="text-[10px] mt-0.5 {{ $enr->is_eligible_for_certificate ? 'text-emerald-600 font-semibold' : 'text-slate-400' }}">
-                                    {{ $enr->is_eligible_for_certificate ? 'IDONEO ATTESTATO' : 'Soglia min. ' . $course->min_attendance_percent . '%' }}
+                                <div class="text-[10px] text-slate-400">
+                                    {{ $enr->async_hours_completed }}h FAD su {{ $course->async_required_hours }}h
                                 </div>
                             </td>
 
-                            <td class="py-4 px-4 text-right">
-                                <div class="inline-flex flex-wrap items-center justify-end gap-1.5">
+                            <td class="py-3.5 px-5 text-right relative">
+                                <button @click="rowOpen = !rowOpen" class="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 font-bold cursor-pointer">
+                                    Azioni &ctdot;
+                                </button>
+                                <div x-cloak x-show="rowOpen" @click.away="rowOpen = false" x-transition
+                                     class="absolute right-5 mt-1 w-52 bg-white rounded-xl border border-slate-200 shadow-xl p-1.5 z-20 text-left space-y-1">
                                     <a href="{{ route('student.enrollments.certificate', $enr) }}"
-                                       class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition">
-                                        Attestato Allegato 4 (PDF)
+                                       class="block px-3 py-2 rounded-lg hover:bg-slate-100 font-bold {{ $enr->is_eligible_for_certificate ? 'text-emerald-700' : 'text-slate-400' }}">
+                                        🎓 Scarica Attestato (PDF)
                                     </a>
                                     <a href="{{ route('admin.enrollments.dossier-pdf', $enr) }}"
-                                       class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold text-[11px] transition"
-                                       title="Fascicolo Analitico con Log di Connessione e IP per Ispezioni Ministeriali">
-                                        Fascicolo Probante (PDF)
+                                       class="block px-3 py-2 rounded-lg hover:bg-slate-100 text-slate-700 font-semibold">
+                                        📋 Fascicolo Probante (PDF)
                                     </a>
                                 </div>
                             </td>

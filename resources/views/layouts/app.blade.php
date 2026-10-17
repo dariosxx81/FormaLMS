@@ -141,193 +141,357 @@
             default => 'bg-white border border-slate-200 p-1 shadow-2xs',
         };
         $logoSizeClasses = match($logoSize) {
-            'sm' => 'h-8 max-w-[160px]',
-            'lg' => 'h-14 max-w-[260px]',
-            default => 'h-11 max-w-[210px]',
+            'sm' => 'h-8 max-w-[150px]',
+            'lg' => 'h-13 max-w-[230px]',
+            default => 'h-10 max-w-[190px]',
         };
+        $quickAdmin = auth()->check() ? \App\Models\User::where('role', 'admin')->first() : null;
+        $quickStudents = auth()->check() ? \App\Models\User::where('role', 'student')->orderBy('id')->limit(2)->get() : collect();
     @endphp
 
     @auth
-    <!-- Top Demo / Quick Role Switcher Bar (Colored with Secondary Brand Color + Auto Contrast) -->
-    <div class="brand-topbar text-xs border-b border-black/10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-between gap-2">
-            <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-black/15 border border-current/20">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Ambiente White-Label Attivo
-                </span>
-                <span class="opacity-60 hidden sm:inline">|</span>
-                <span class="hidden sm:inline opacity-95">
-                    Ente configurato: <strong>{{ $settings['provider_name'] ?? 'Ente Accreditato' }}</strong>
-                    (ATECO {{ $settings['ateco_code'] ?? '79.90' }} • CP ISTAT {{ $settings['cp_istat_code'] ?? '3.4.1.5.2' }})
-                </span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="opacity-80">Passa rapidamente a:</span>
-                @php
-                    $quickAdmin = \App\Models\User::where('role', 'admin')->first();
-                    $quickStudents = \App\Models\User::where('role', 'student')->orderBy('id')->limit(2)->get();
-                @endphp
-                @if($quickAdmin && auth()->id() !== $quickAdmin->id)
-                    <form method="POST" action="{{ route('demo.switch', $quickAdmin) }}" class="inline">
-                        @csrf
-                        <button type="submit" class="px-2.5 py-1 rounded bg-indigo-600 hover:bg-indigo-500 font-bold transition cursor-pointer shadow-2xs">
-                            Vista Admin ({{ $quickAdmin->first_name }})
-                        </button>
-                    </form>
-                @endif
-                @foreach($quickStudents as $qs)
-                    @if(auth()->id() !== $qs->id)
-                        <form method="POST" action="{{ route('demo.switch', $qs) }}" class="inline">
-                            @csrf
-                            <button type="submit" class="px-2.5 py-1 rounded bg-black/15 hover:bg-black/25 border border-current/25 font-semibold transition cursor-pointer">
-                                Corsista: {{ $qs->full_name }}
+        @if(auth()->user()->isAdmin())
+            <!-- ===================================================================== -->
+            <!-- LAYOUT ADMIN: SIDEBAR LATERALE FISSA (STILE GESTIONALE SAAS)          -->
+            <!-- ===================================================================== -->
+            <div x-data="{ mobileMenuOpen: false, profileDropdown: false }" class="min-h-screen flex bg-slate-50/70">
+
+                <!-- Mobile Backdrop -->
+                <div x-cloak x-show="mobileMenuOpen" @click="mobileMenuOpen = false"
+                     class="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-xs lg:hidden"></div>
+
+                <!-- Sidebar Navigation (Fixed on Desktop, Drawer on Mobile) -->
+                <aside :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
+                       class="fixed lg:sticky top-0 left-0 z-50 h-screen w-64 shrink-0 bg-white border-r border-slate-200 flex flex-col justify-between transition-transform duration-200 ease-in-out">
+
+                    <!-- Top: Brand Logo -->
+                    <div>
+                        <div class="min-h-18 px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-2">
+                            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 min-w-0">
+                                @if(!empty($settings['logo_url']))
+                                    <img src="{{ $settings['logo_url'] }}"
+                                         alt="Logo {{ $settings['platform_name'] ?? 'Ente' }}"
+                                         class="{{ $logoSizeClasses }} {{ $logoBgClasses }} w-auto object-contain rounded-xl shrink-0 transition">
+                                @else
+                                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-extrabold text-base shadow-xs shrink-0">
+                                        FAD
+                                    </div>
+                                @endif
+                                @if(!$hideBrandText)
+                                    <div class="truncate">
+                                        <div class="font-extrabold text-slate-900 text-sm leading-tight truncate">{{ $settings['platform_name'] ?? 'FormaFAD LMS' }}</div>
+                                        <div class="text-[11px] text-slate-400 font-medium truncate">Pannello Gestione Ente</div>
+                                    </div>
+                                @endif
+                            </a>
+                            <button @click="mobileMenuOpen = false" class="lg:hidden text-slate-400 hover:text-slate-700 p-1">
+                                &times;
                             </button>
-                        </form>
-                    @endif
-                @endforeach
-            </div>
-        </div>
-    </div>
+                        </div>
 
-    <!-- Main Navigation Header -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-2 flex items-center justify-between gap-4">
-            <div class="flex items-center gap-6">
-                <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('student.dashboard') }}" class="flex items-center gap-3 group">
-                    @if(!empty($settings['logo_url']))
-                        <img src="{{ $settings['logo_url'] }}"
-                             alt="Logo {{ $settings['platform_name'] ?? 'Ente' }}"
-                             class="{{ $logoSizeClasses }} {{ $logoBgClasses }} w-auto object-contain rounded-xl shrink-0 transition">
-                    @else
-                        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-extrabold text-lg shadow-xs transition shrink-0">
-                            FAD
+                        <!-- Menu Links -->
+                        <nav class="p-3.5 space-y-5">
+                            <div>
+                                <div class="px-3 mb-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                                    Didattica & Corsi
+                                </div>
+                                <div class="space-y-1">
+                                    <a href="{{ route('admin.dashboard') }}"
+                                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition {{ request()->routeIs('admin.dashboard') || request()->routeIs('admin.courses.*') ? 'brand-nav-active shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
+                                        <svg class="w-4 h-4 shrink-0 opacity-85" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                                        <span>Dashboard & Corsi</span>
+                                    </a>
+
+                                    <a href="{{ route('admin.users.index') }}"
+                                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition {{ request()->routeIs('admin.users.*') ? 'brand-nav-active shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
+                                        <svg class="w-4 h-4 shrink-0 opacity-85" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                        <span>Iscritti & Ore Zoom</span>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="px-3 mb-2 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                                    Controllo & Configurazione
+                                </div>
+                                <div class="space-y-1">
+                                    <a href="{{ route('admin.logs.index') }}"
+                                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition {{ request()->routeIs('admin.logs.*') ? 'brand-nav-active shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
+                                        <svg class="w-4 h-4 shrink-0 opacity-85" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        <span>Registro Audit & Log</span>
+                                    </a>
+
+                                    <a href="{{ route('admin.settings.index') }}"
+                                       class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition {{ request()->routeIs('admin.settings.*') ? 'brand-nav-active shadow-xs' : 'text-slate-600 hover:bg-slate-100' }}">
+                                        <svg class="w-4 h-4 shrink-0 opacity-85" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+                                        <span>White-Label & Ente</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </nav>
+                    </div>
+
+                    <!-- Bottom: Admin Profile + Discreet Demo Switcher Dropdown -->
+                    <div class="p-3.5 border-t border-slate-100 bg-slate-50/60 relative">
+                        <button @click="profileDropdown = !profileDropdown"
+                                class="w-full flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 text-left transition cursor-pointer shadow-2xs">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-extrabold text-xs shrink-0">
+                                    {{ strtoupper(substr(auth()->user()->first_name, 0, 1) . substr(auth()->user()->last_name, 0, 1)) }}
+                                </div>
+                                <div class="truncate">
+                                    <div class="text-xs font-extrabold text-slate-900 truncate">{{ auth()->user()->full_name }}</div>
+                                    <div class="text-[10px] text-indigo-600 font-semibold">Amministratore</div>
+                                </div>
+                            </div>
+                            <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
+                        </button>
+
+                        <!-- Discreet Profile & Demo Switcher Popover -->
+                        <div x-cloak x-show="profileDropdown" @click.away="profileDropdown = false" x-transition
+                             class="absolute bottom-18 left-3.5 right-3.5 bg-white rounded-xl border border-slate-200 shadow-xl p-2 z-50 text-xs space-y-1">
+                            <div class="px-2.5 py-1 text-[10px] font-extrabold uppercase text-slate-400">
+                                Passa a Vista Corsista (Demo)
+                            </div>
+                            @foreach($quickStudents as $qs)
+                                <form method="POST" action="{{ route('demo.switch', $qs) }}">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left px-2.5 py-2 rounded-lg hover:bg-slate-100 text-slate-700 font-semibold flex items-center justify-between cursor-pointer">
+                                        <span class="truncate">👤 {{ $qs->full_name }}</span>
+                                        <span class="text-[10px] text-indigo-600 font-bold">Apri &rarr;</span>
+                                    </button>
+                                </form>
+                            @endforeach
+                            <div class="border-t border-slate-100 my-1"></div>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="w-full text-left px-2.5 py-2 rounded-lg hover:bg-red-50 text-red-600 font-bold flex items-center gap-2 cursor-pointer">
+                                    <span>Esci dalla sessione</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Right Main Workspace -->
+                <div class="flex-1 min-w-0 flex flex-col">
+                    <!-- Mobile Header Bar (only on small screens) -->
+                    <div class="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
+                        <button @click="mobileMenuOpen = true" class="p-2 rounded-lg border border-slate-200 text-slate-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                        </button>
+                        <span class="font-extrabold text-sm text-slate-900">{{ $settings['platform_name'] ?? 'FormaFAD LMS' }}</span>
+                        <a href="{{ route('admin.settings.index') }}" class="text-xs font-bold text-indigo-600">White-Label</a>
+                    </div>
+
+                    @if(session('success') || (isset($errors) && $errors->any()))
+                        <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-5">
+                            @if(session('success'))
+                                <div x-data="{ show: true }" x-show="show" class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center justify-between shadow-2xs">
+                                    <div class="flex items-center gap-2.5 text-xs font-bold">
+                                        <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        <span>{{ session('success') }}</span>
+                                    </div>
+                                    <button @click="show = false" class="text-emerald-600 hover:text-emerald-900 text-sm font-bold cursor-pointer">&times;</button>
+                                </div>
+                            @endif
+
+                            @if(isset($errors) && $errors->any())
+                                <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl shadow-2xs mt-2">
+                                    <div class="font-bold text-xs mb-1">Attenzione: verifica i dati inseriti</div>
+                                    <ul class="list-disc list-inside text-xs space-y-0.5">
+                                        @foreach($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
                         </div>
                     @endif
-                    @if(!$hideBrandText)
-                        <div>
-                            <div class="font-bold text-slate-900 text-base leading-tight">{{ $settings['platform_name'] ?? 'FormaFAD LMS' }}</div>
-                            <div class="text-[11px] text-slate-500 font-medium">{{ $settings['provider_name'] ?? 'Piattaforma E-Learning Certificata' }}</div>
+
+                    <main class="flex-1">
+                        @yield('content')
+                    </main>
+
+                    <footer class="bg-white border-t border-slate-200/80 mt-12 py-4">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400">
+                            <div>
+                                <strong>{{ $settings['platform_name'] ?? 'FormaFAD LMS' }}</strong> — {{ $settings['provider_name'] ?? 'Ente Accreditato' }} (ATECO {{ $settings['ateco_code'] ?? '79.90' }} • CP ISTAT {{ $settings['cp_istat_code'] ?? '3.4.1.5.2' }})
+                            </div>
+                            <div>
+                                Supporto: <a href="mailto:{{ $settings['support_email'] ?? 'segreteria@ente.it' }}" class="text-indigo-600 hover:underline">{{ $settings['support_email'] ?? 'segreteria@ente.it' }}</a>
+                            </div>
                         </div>
-                    @endif
-                </a>
-
-                @if(auth()->user()->isAdmin())
-                    <nav class="hidden md:flex items-center gap-1 ml-4">
-                        <a href="{{ route('admin.dashboard') }}"
-                           class="px-3.5 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('admin.dashboard') || request()->routeIs('admin.courses.*') ? 'brand-nav-active shadow-2xs' : 'text-slate-600 hover:bg-slate-100' }}">
-                            Catalogo Corsi & Moduli
-                        </a>
-                        <a href="{{ route('admin.users.index') }}"
-                           class="px-3.5 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('admin.users.*') ? 'brand-nav-active shadow-2xs' : 'text-slate-600 hover:bg-slate-100' }}">
-                            Anagrafica Utenti & Iscrizioni
-                        </a>
-                        <a href="{{ route('admin.logs.index') }}"
-                           class="px-3.5 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('admin.logs.*') ? 'brand-nav-active shadow-2xs' : 'text-slate-600 hover:bg-slate-100' }}">
-                            Registro Tracciamento & Log
-                        </a>
-                        <a href="{{ route('admin.settings.index') }}"
-                           class="px-3.5 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('admin.settings.*') ? 'brand-nav-active shadow-2xs' : 'text-slate-600 hover:bg-slate-100' }}">
-                            White-Label Ente
-                        </a>
-                    </nav>
-                @else
-                    <nav class="hidden md:flex items-center gap-1 ml-4">
-                        <a href="{{ route('student.dashboard') }}"
-                           class="px-3.5 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('student.dashboard') ? 'brand-nav-active shadow-2xs' : 'text-slate-600 hover:bg-slate-100' }}">
-                            I Miei Corsi & Attestati
-                        </a>
-                    </nav>
-                @endif
+                    </footer>
+                </div>
             </div>
+        @else
+            <!-- ===================================================================== -->
+            <!-- LAYOUT CORSISTA: HEADER MINIMALE STILE STREAMING + MENU PROFILO        -->
+            <!-- ===================================================================== -->
+            <header x-data="{ profileDropdown: false }" class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-2xs">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-2 flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-6">
+                        <a href="{{ route('student.dashboard') }}" class="flex items-center gap-3 group">
+                            @if(!empty($settings['logo_url']))
+                                <img src="{{ $settings['logo_url'] }}"
+                                     alt="Logo {{ $settings['platform_name'] ?? 'Ente' }}"
+                                     class="{{ $logoSizeClasses }} {{ $logoBgClasses }} w-auto object-contain rounded-xl shrink-0 transition">
+                            @else
+                                <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-extrabold text-base shadow-xs shrink-0">
+                                    FAD
+                                </div>
+                            @endif
+                            @if(!$hideBrandText)
+                                <div>
+                                    <div class="font-extrabold text-slate-900 text-base leading-tight">{{ $settings['platform_name'] ?? 'FormaFAD LMS' }}</div>
+                                    <div class="text-[11px] text-slate-500 font-medium">{{ $settings['provider_name'] ?? 'Aula Didattica Telematica' }}</div>
+                                </div>
+                            @endif
+                        </a>
 
-            <div class="flex items-center gap-3">
-                <div class="hidden sm:block text-right">
-                    <div class="text-sm font-bold text-slate-900">{{ auth()->user()->full_name }}</div>
-                    <div class="text-xs text-slate-500">
-                        @if(auth()->user()->isAdmin())
-                            <span class="text-indigo-600 font-semibold">Amministratore Piattaforma</span>
-                        @else
-                            CF: <span class="font-mono">{{ auth()->user()->fiscal_code ?: 'N/D' }}</span>
-                        @endif
+                        <nav class="hidden md:flex items-center gap-1.5 ml-2">
+                            <a href="{{ route('student.dashboard') }}"
+                               class="px-3.5 py-2 rounded-xl text-xs font-bold transition {{ request()->routeIs('student.dashboard') && request('tab') !== 'certificates' ? 'brand-nav-active shadow-2xs' : 'text-slate-600 hover:bg-slate-100' }}">
+                                📚 I Miei Corsi
+                            </a>
+                            <a href="{{ route('student.dashboard', ['tab' => 'certificates']) }}"
+                               class="px-3.5 py-2 rounded-xl text-xs font-bold transition {{ request('tab') === 'certificates' ? 'brand-nav-active shadow-2xs' : 'text-slate-600 hover:bg-slate-100' }}">
+                                🏅 Attestati & Storico Presenze
+                            </a>
+                        </nav>
+                    </div>
+
+                    <!-- Right: Student Profile Pill + Discreet Demo Switcher Dropdown -->
+                    <div class="relative">
+                        <button @click="profileDropdown = !profileDropdown"
+                                class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition cursor-pointer">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-extrabold text-xs">
+                                {{ strtoupper(substr(auth()->user()->first_name, 0, 1) . substr(auth()->user()->last_name, 0, 1)) }}
+                            </div>
+                            <div class="hidden sm:block text-left">
+                                <div class="text-xs font-extrabold text-slate-900 leading-tight">{{ auth()->user()->full_name }}</div>
+                                <div class="text-[10px] text-slate-500 font-mono">{{ auth()->user()->fiscal_code ?: 'Corsista' }}</div>
+                            </div>
+                            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+
+                        <div x-cloak x-show="profileDropdown" @click.away="profileDropdown = false" x-transition
+                             class="absolute right-0 mt-2 w-64 bg-white rounded-xl border border-slate-200 shadow-xl p-2 z-50 text-xs space-y-1">
+                            <div class="px-2.5 py-1.5 border-b border-slate-100 mb-1">
+                                <div class="font-extrabold text-slate-900">{{ auth()->user()->full_name }}</div>
+                                <div class="text-[10px] text-slate-500">{{ auth()->user()->email }}</div>
+                            </div>
+
+                            <a href="{{ route('student.dashboard') }}" class="block px-2.5 py-2 rounded-lg hover:bg-slate-100 text-slate-700 font-semibold">
+                                📚 I Miei Corsi
+                            </a>
+                            <a href="{{ route('student.dashboard', ['tab' => 'certificates']) }}" class="block px-2.5 py-2 rounded-lg hover:bg-slate-100 text-slate-700 font-semibold">
+                                🏅 Attestati & Registro Personale
+                            </a>
+
+                            @if($quickAdmin)
+                                <div class="border-t border-slate-100 pt-1 mt-1">
+                                    <div class="px-2.5 py-1 text-[10px] font-extrabold uppercase text-slate-400">Cambio Rapido Demo</div>
+                                    <form method="POST" action="{{ route('demo.switch', $quickAdmin) }}">
+                                        @csrf
+                                        <button type="submit" class="w-full text-left px-2.5 py-2 rounded-lg hover:bg-indigo-50 text-indigo-600 font-bold flex items-center justify-between cursor-pointer">
+                                            <span>⚙️ Torna a Pannello Admin</span>
+                                            <span>&rarr;</span>
+                                        </button>
+                                    </form>
+                                    @foreach($quickStudents as $qs)
+                                        @if(auth()->id() !== $qs->id)
+                                            <form method="POST" action="{{ route('demo.switch', $qs) }}">
+                                                @csrf
+                                                <button type="submit" class="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-slate-100 text-slate-600 font-semibold flex items-center justify-between cursor-pointer">
+                                                    <span>👤 {{ $qs->full_name }}</span>
+                                                    <span>&rarr;</span>
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            <div class="border-t border-slate-100 pt-1 mt-1">
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="w-full text-left px-2.5 py-2 rounded-lg hover:bg-red-50 text-red-600 font-bold cursor-pointer">
+                                        Esci dalla piattaforma
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button type="submit" class="px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition cursor-pointer">
-                        Esci
-                    </button>
-                </form>
-            </div>
-        </div>
+            </header>
 
-        <!-- Mobile Navigation Bar (Visible on Smartphone/Tablet) -->
-        @if(auth()->user()->isAdmin())
-            <div class="md:hidden flex items-center gap-1.5 overflow-x-auto px-4 py-2 border-t border-slate-100 bg-slate-50">
-                <a href="{{ route('admin.dashboard') }}"
-                   class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap {{ request()->routeIs('admin.dashboard') || request()->routeIs('admin.courses.*') ? 'brand-nav-active' : 'bg-white text-slate-700 border border-slate-200' }}">
-                    Corsi & Moduli
-                </a>
-                <a href="{{ route('admin.users.index') }}"
-                   class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap {{ request()->routeIs('admin.users.*') ? 'brand-nav-active' : 'bg-white text-slate-700 border border-slate-200' }}">
-                    Utenti & Iscrizioni
-                </a>
-                <a href="{{ route('admin.logs.index') }}"
-                   class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap {{ request()->routeIs('admin.logs.*') ? 'brand-nav-active' : 'bg-white text-slate-700 border border-slate-200' }}">
-                    Audit Log
-                </a>
-                <a href="{{ route('admin.settings.index') }}"
-                   class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap {{ request()->routeIs('admin.settings.*') ? 'brand-nav-active' : 'bg-white text-slate-700 border border-slate-200' }}">
-                    White-Label
-                </a>
+            @if(session('success') || (isset($errors) && $errors->any()))
+                <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-4">
+                    @if(session('success'))
+                        <div x-data="{ show: true }" x-show="show" class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center justify-between shadow-2xs">
+                            <div class="flex items-center gap-2.5 text-xs font-bold">
+                                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span>{{ session('success') }}</span>
+                            </div>
+                            <button @click="show = false" class="text-emerald-600 hover:text-emerald-900 text-sm font-bold cursor-pointer">&times;</button>
+                        </div>
+                    @endif
+
+                    @if(isset($errors) && $errors->any())
+                        <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl shadow-2xs mt-2">
+                            <div class="font-bold text-xs mb-1">Attenzione:</div>
+                            <ul class="list-disc list-inside text-xs space-y-0.5">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
+            <main class="flex-1">
+                @yield('content')
+            </main>
+
+            <footer class="bg-white border-t border-slate-200/80 mt-12 py-5">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
+                    <div>
+                        <strong>{{ $settings['platform_name'] ?? 'FormaFAD LMS' }}</strong> — {{ $settings['provider_name'] ?? 'Ente di Formazione Accreditato' }}
+                    </div>
+                    <div>
+                        Assistenza Didattica: <a href="mailto:{{ $settings['support_email'] ?? 'segreteria@ente.it' }}" class="text-indigo-600 hover:underline">{{ $settings['support_email'] ?? 'segreteria@ente.it' }}</a>
+                    </div>
+                </div>
+            </footer>
+        @endif
+    @else
+        <!-- Guest Layout (Login / Register) -->
+        @if(session('success') || (isset($errors) && $errors->any()))
+            <div class="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-4">
+                @if(session('success'))
+                    <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl text-xs font-bold">
+                        {{ session('success') }}
+                    </div>
+                @endif
+                @if(isset($errors) && $errors->any())
+                    <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl text-xs mt-2">
+                        <ul class="list-disc list-inside space-y-0.5">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             </div>
         @endif
-    </header>
+
+        <main class="flex-1">
+            @yield('content')
+        </main>
     @endauth
-
-    <!-- Flash Notifications -->
-    @if(session('success') || (isset($errors) && $errors->any()))
-        <div class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-4">
-            @if(session('success'))
-                <div x-data="{ show: true }" x-show="show" class="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl flex items-center justify-between shadow-2xs">
-                    <div class="flex items-center gap-2.5 text-sm font-medium">
-                        <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <span>{{ session('success') }}</span>
-                    </div>
-                    <button @click="show = false" class="text-emerald-600 hover:text-emerald-900 text-sm font-bold">&times;</button>
-                </div>
-            @endif
-
-            @if(isset($errors) && $errors->any())
-                <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl shadow-2xs mt-2">
-                    <div class="font-bold text-sm mb-1">Attenzione: verifica i dati inseriti</div>
-                    <ul class="list-disc list-inside text-xs space-y-0.5">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-        </div>
-    @endif
-
-    <!-- Main Content -->
-    <main class="flex-1">
-        @yield('content')
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 mt-12 py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-            <div>
-                <strong>{{ $settings['platform_name'] ?? 'FormaFAD LMS' }}</strong> — {{ $settings['provider_name'] ?? 'Ente di Formazione Accreditato' }}
-                • Sistema conforme alle Linee Guida B del Ministero del Turismo (D.M. 26 giugno 2024, n. 88)
-            </div>
-            <div>
-                Tracciamento Telemetrico Certificato • Supporto: <a href="mailto:{{ $settings['support_email'] ?? 'segreteria@ente.it' }}" class="text-indigo-600 hover:underline">{{ $settings['support_email'] ?? 'segreteria@ente.it' }}</a>
-            </div>
-        </div>
-    </footer>
 
 </body>
 </html>

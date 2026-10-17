@@ -5,79 +5,69 @@
 @section('content')
 <div x-data="fadVideoPlayer" class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
 
-    <!-- Top Breadcrumb & Course Summary Bar -->
+    <!-- Clean Breadcrumb & Course Progress Header -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 mb-6 border-b border-slate-200">
         <div>
             <div class="flex items-center gap-2 text-xs text-slate-500 mb-1">
-                <a href="{{ route('student.dashboard') }}" class="hover:text-indigo-600 font-semibold">&larr; Torna ai Miei Corsi</a>
+                <a href="{{ route('student.dashboard') }}" class="hover:text-indigo-600 font-bold">&larr; I Miei Corsi</a>
                 <span>/</span>
                 <span class="font-mono font-bold text-slate-700">{{ $course->code }}</span>
                 <span>/</span>
-                <span class="text-indigo-600 font-semibold">Modulo {{ $activeModule->sort_order }} di {{ $modules->count() }}</span>
+                <span class="text-indigo-600 font-bold">Modulo {{ $activeModule->sort_order }} di {{ $modules->count() }}</span>
             </div>
-            <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900">{{ $course->title }}</h1>
+            <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">{{ $course->title }}</h1>
         </div>
 
-        <!-- Live Telemetry Status & Certificate Button -->
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-wrap items-center gap-2.5">
             <div class="px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs flex items-center gap-2.5 shadow-2xs">
                 <span class="w-2 h-2 rounded-full" :class="isPlaying ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'"></span>
-                <div>
-                    <div class="font-bold">Totale Corso: <span x-text="totalCourseHours"></span>h / {{ $course->total_hours }}h (<span x-text="courseAttendancePercent"></span>%)</div>
-                    <div class="text-[10px] text-slate-400">
-                        Sincrone Zoom: {{ $enrollment->sync_hours_completed }}h • Asincrone FAD: <span x-text="asyncCourseHours"></span>h
-                    </div>
+                <div class="font-bold">
+                    Frequenza Corso: <span x-text="courseAttendancePercent"></span>%
+                    <span class="text-slate-300 font-normal ml-1">(<span x-text="totalCourseHours"></span>h / {{ $course->total_hours }}h)</span>
                 </div>
             </div>
 
             <template x-if="certificateUrl">
                 <a :href="certificateUrl"
-                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <span>Scarica Attestato (Allegato 4)</span>
+                   class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition">
+                    <span>🏅 Scarica Attestato</span>
                 </a>
             </template>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-        <!-- Left Column (8 cols): Smart Anti-Skip Video Player & Telemetry Controls -->
-        <div class="lg:col-span-8 space-y-6">
+        <!-- Left Column (8 cols): Clean Streaming Player + Dispense + Collapsible Technical Details -->
+        <div class="lg:col-span-8 space-y-5">
 
             <!-- Video Player Card -->
-            <div class="bg-slate-950 rounded-2xl overflow-hidden shadow-xl border border-slate-800 relative">
+            <div class="bg-slate-950 rounded-2xl overflow-hidden shadow-lg border border-slate-800 relative">
 
-                <!-- Top Telemetry Strip inside Player -->
+                <!-- Minimal Player Top Bar -->
                 <div class="bg-slate-900/95 px-4 py-2.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-300">
-                    <div class="flex items-center gap-2">
-                        <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold border border-indigo-500/30">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-bold text-[11px] shrink-0">
                             MODULO {{ $activeModule->sort_order }}
                         </span>
-                        <span class="font-semibold text-white truncate">{{ $activeModule->title }}</span>
+                        <span class="font-bold text-white truncate">{{ $activeModule->title }}</span>
                     </div>
-                    <div class="flex items-center gap-3 text-[11px]">
-                        <span class="text-slate-400">Anti-Skip: <strong class="text-emerald-400">ATTIVO</strong></span>
-                        @if($course->strict_tab_pause)
-                            <span class="text-amber-300 font-semibold">• Auto-Pausa Cambio Scheda: ON</span>
-                        @endif
-                        <span class="text-slate-400" x-show="lastSavedAt">Ultimo salvataggio: <strong class="text-white" x-text="lastSavedAt"></strong></span>
+                    <div class="flex items-center gap-2.5 text-[11px]">
+                        <span class="text-emerald-400 font-semibold">● Anti-Skip Attivo</span>
+                        <span class="text-slate-400" x-show="lastSavedAt">Salvato: <strong class="text-white" x-text="lastSavedAt"></strong></span>
                     </div>
                 </div>
 
                 <!-- HTML5 Video OR Masked YouTube Player -->
                 <div class="relative aspect-video bg-black flex items-center justify-center overflow-hidden select-none">
                     @if($activeModule->is_youtube && $activeModule->youtube_video_id)
-                        <!-- Masked YouTube IFrame Container (scaled to crop top/bottom YT bars) -->
                         <div class="absolute inset-0 scale-[1.16] pointer-events-none">
                             <div id="yt-masked-player" class="w-full h-full"></div>
                         </div>
 
-                        <!-- Transparent Security Shield: blocks right-click & direct click on YouTube logo/links -->
                         <div @click="togglePlay()"
                              @contextmenu.prevent
                              class="absolute inset-0 z-10 cursor-pointer flex items-center justify-center">
-                            <!-- Custom Institutional Cover when paused (hides YouTube's "More Videos" / Related grid) -->
                             <div x-show="!isPlaying"
                                  class="absolute inset-0 bg-slate-950/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center transition">
                                 <div class="w-16 h-16 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-2xl mb-3 transition transform hover:scale-105">
@@ -87,16 +77,14 @@
                                     🛡 YouTube No-Logo Shield Attivo
                                 </span>
                                 <h4 class="text-white font-extrabold text-sm sm:text-base max-w-md">{{ $activeModule->title }}</h4>
-                                <p class="text-slate-400 text-xs mt-1">Clicca per avviare o riprendere la lezione dal secondo <span class="text-indigo-300 font-mono" x-text="formatSeconds(currentTime)"></span></p>
+                                <p class="text-slate-400 text-xs mt-1">Clicca per riprendere dal secondo <span class="text-indigo-300 font-mono" x-text="formatSeconds(currentTime)"></span></p>
                             </div>
                         </div>
 
-                        <!-- Top-Right Badge -->
                         <div class="absolute top-3 right-3 z-20 px-2.5 py-1 rounded-full bg-slate-950/85 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold pointer-events-none">
                             🛡 YouTube Mascherato (No-Logo / Anti-Skip)
                         </div>
 
-                        <!-- Custom Anti-Skip Control Bar for Masked YouTube -->
                         <div class="absolute bottom-0 inset-x-0 z-20 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent px-4 py-3 flex items-center gap-3">
                             <button type="button"
                                     @click.stop="togglePlay()"
@@ -106,8 +94,7 @@
                             </button>
                             <button type="button"
                                     @click.stop="rewind10()"
-                                    class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold cursor-pointer shrink-0"
-                                    title="Torna indietro di 10 secondi">
+                                    class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold cursor-pointer shrink-0">
                                 -10s
                             </button>
                             <div class="flex-1 flex items-center gap-2">
@@ -141,204 +128,176 @@
                         </video>
                     @endif
 
-                    <!-- Anti-Skip Warning Toast Overlay -->
+                    <!-- Anti-Skip Warning Toast -->
                     <div x-cloak x-show="skipWarning"
                          x-transition
                          class="absolute top-4 left-1/2 -translate-x-1/2 bg-red-600/95 text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-bold flex items-center gap-2 border border-red-400 z-30">
-                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                        <span>Avanzamento rapido bloccato: per la validità ministeriale devi seguire la lezione senza saltare in avanti. Puoi solo tornare indietro.</span>
+                        <span>Avanzamento rapido bloccato: puoi solo tornare indietro fino al punto già visto.</span>
                     </div>
 
                     <!-- Tab Switch Auto-Pause Banner -->
                     <div x-cloak x-show="tabPausedBanner"
                          class="absolute inset-0 bg-slate-950/85 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-30">
-                        <div class="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mb-3">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
-                        <h3 class="text-white font-bold text-base">Riproduzione in pausa (Cambio finestra rilevato)</h3>
-                        <p class="text-slate-300 text-xs max-w-md mt-1">Il video è stato messo in pausa perché hai lasciato la scheda della lezione. Clicca qui sotto per riprendere dal punto esatto.</p>
+                        <h3 class="text-white font-bold text-base">Lezione in pausa (Cambio scheda rilevato)</h3>
+                        <p class="text-slate-300 text-xs max-w-md mt-1">Clicca qui sotto per riprendere dal punto esatto.</p>
                         <button @click="resumeFromBanner()" class="mt-4 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold cursor-pointer">
                             Riprendi Lezione
                         </button>
                     </div>
 
-                    <!-- Presence Verification Modal (Optional per Course) -->
+                    <!-- Presence Verification Modal -->
                     <div x-cloak x-show="presenceModalOpen"
                          class="absolute inset-0 bg-slate-950/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-40">
                         <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl">
-                            <span class="px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold">Verifica Presenza Corsista</span>
-                            <h3 class="text-white font-extrabold text-lg mt-3">Sei ancora presente davanti allo schermo?</h3>
-                            <p class="text-slate-300 text-xs mt-1">Conferma la tua presenza per proseguire il conteggio certificato delle ore di formazione.</p>
+                            <span class="px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold">Verifica Presenza</span>
+                            <h3 class="text-white font-extrabold text-lg mt-3">Sei ancora presente?</h3>
+                            <p class="text-slate-300 text-xs mt-1">Conferma la tua presenza per proseguire la lezione.</p>
                             <button @click="confirmPresence()" class="mt-5 w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs cursor-pointer">
-                                Sì, sono presente — Continua la lezione
+                                Sì, continua la lezione
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Custom Telemetry Progress & Controls Footer -->
-                <div class="p-4 sm:p-5 bg-slate-900 text-white space-y-3">
+                <!-- Clean Progress & Demo Bar -->
+                <div class="p-4 bg-slate-900 text-white space-y-2.5">
                     <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
                         <div class="flex items-center gap-2">
-                            <span class="font-bold text-slate-200">Stato Modulo:</span>
                             <template x-if="isCompleted">
-                                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold">
-                                    Completato 100% (Certificato)
+                                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-[11px]">
+                                    ✓ Modulo Completato (100%)
                                 </span>
                             </template>
                             <template x-if="!isCompleted">
-                                <span class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold">
-                                    In corso (<span x-text="completionPercent"></span>%)
+                                <span class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold text-[11px]">
+                                    Avanzamento Modulo: <span x-text="completionPercent"></span>%
                                 </span>
                             </template>
-                        </div>
-
-                        <div class="text-slate-400 font-mono text-xs">
-                            Posizione: <span class="text-white font-bold" x-text="formatSeconds(currentTime)"></span>
-                            / Max raggiunto: <span class="text-indigo-300 font-bold" x-text="formatSeconds(maxPositionSeconds)"></span>
-                            / Durata: {{ $activeModule->formatted_duration }}
-                        </div>
-                    </div>
-
-                    <!-- Visual Progress Bar -->
-                    <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
-                        <div class="h-full transition-all duration-300"
-                             :class="isCompleted ? 'bg-emerald-500' : 'bg-indigo-500'"
-                             :style="'width: ' + completionPercent + '%'"></div>
-                    </div>
-
-                    <!-- Demo Helper Bar for Dario / Paola Presentation -->
-                    <div class="pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-                        <div class="text-slate-400">
-                            Docente: <strong class="text-slate-200">{{ $activeModule->instructor_name ?: 'Docente Accreditato' }}</strong>
-                            • Ripresa automatica attiva dal secondo <span class="font-mono text-indigo-300" x-text="maxPositionSeconds"></span>s
+                            <span class="text-slate-400 text-[11px]">Docente: <strong class="text-slate-200">{{ $activeModule->instructor_name ?: 'Docente Accreditato' }}</strong></span>
                         </div>
 
                         <div class="flex items-center gap-2">
                             <button type="button"
                                     @click="sendHeartbeat('manual_save')"
-                                    class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs transition cursor-pointer">
-                                Salva Progresso Ora
+                                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-[11px] transition cursor-pointer">
+                                Salva Ora
                             </button>
                             <button type="button"
                                     x-show="!isCompleted"
                                     @click="simulateCompleteModule()"
-                                    class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs transition cursor-pointer"
-                                    title="Utile durante la demo con il cliente per mostrare subito il completamento del modulo e lo sblocco dell'attestato">
-                                ⚡ Demo: Simula Fine Modulo (100%)
+                                    class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-[11px] transition cursor-pointer">
+                                ⚡ Demo: Completa 100%
                             </button>
                         </div>
                     </div>
+
+                    <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div class="h-full transition-all duration-300"
+                             :class="isCompleted ? 'bg-emerald-500' : 'bg-indigo-500'"
+                             :style="'width: ' + completionPercent + '%'"></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Module Details & Downloadable Dispense PDF -->
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-5">
+            <!-- Clean Module Description & Downloadable Dispense PDF -->
+            <div class="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs space-y-4">
                 <div>
-                    <div class="flex flex-wrap items-center justify-between gap-2">
-                        <h2 class="text-lg font-extrabold text-slate-900">
-                            Modulo {{ $activeModule->sort_order }}: {{ $activeModule->title }}
-                        </h2>
-                        <span class="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-bold uppercase">
-                            Sorgente: {{ $activeModule->is_youtube ? 'YouTube No-Logo Shield' : ($activeModule->video_source_type === 'upload' ? 'File MP4 Locale' : 'Streaming MP4') }}
-                        </span>
-                    </div>
-                    <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
-                        {{ $activeModule->description ?: 'Lezione videoregistrata valida ai fini dell\'aggiornamento professionale obbligatorio (Art. 6 Linee Guida B - Ministero del Turismo).' }}
+                    <h2 class="text-base font-extrabold text-slate-900">
+                        Modulo {{ $activeModule->sort_order }}: {{ $activeModule->title }}
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                        {{ $activeModule->description ?: 'Lezione videoregistrata con salvataggio automatico del punto di ripresa.' }}
                     </p>
                 </div>
 
-                <!-- Dispense PDF Allegate -->
-                <div class="pt-4 border-t border-slate-100">
-                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-500 mb-3">
-                        Materiale Didattico e Dispense Scaricabili (Tracciate)
-                    </h3>
-                    @if($activeModule->attachments->isEmpty())
-                        <p class="text-xs text-slate-400">Nessuna dispensa allegata a questo modulo.</p>
-                    @else
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                @if($activeModule->attachments->isNotEmpty())
+                    <div class="pt-3 border-t border-slate-100">
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">Dispense & Materiale Didattico (PDF)</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             @foreach($activeModule->attachments as $att)
                                 <a href="{{ route('student.attachments.download', $att) }}"
-                                   class="p-3.5 rounded-xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 flex items-center justify-between gap-3 transition group">
-                                    <div class="flex items-center gap-3 min-w-0">
-                                        <div class="w-9 h-9 rounded-lg bg-red-50 text-red-600 border border-red-200 flex items-center justify-center font-bold text-xs shrink-0">
-                                            PDF
-                                        </div>
+                                   class="p-3 rounded-xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/40 flex items-center justify-between gap-3 transition group">
+                                    <div class="flex items-center gap-2.5 min-w-0">
+                                        <span class="w-8 h-8 rounded-lg bg-red-50 text-red-600 border border-red-200 flex items-center justify-center font-bold text-[10px] shrink-0">PDF</span>
                                         <div class="truncate">
                                             <div class="text-xs font-bold text-slate-900 group-hover:text-indigo-700 truncate">{{ $att->title }}</div>
-                                            <div class="text-[11px] text-slate-400">Dispensa Ufficiale • {{ $att->file_size_kb }} KB</div>
+                                            <div class="text-[10px] text-slate-400">{{ $att->file_size_kb }} KB</div>
                                         </div>
                                     </div>
-                                    <span class="text-xs font-bold text-indigo-600 shrink-0">Scarica &darr;</span>
+                                    <span class="text-xs font-bold text-indigo-600 shrink-0">&darr;</span>
                                 </a>
                             @endforeach
                         </div>
-                    @endif
-                </div>
+                    </div>
+                @endif
             </div>
 
-            <!-- Registro Audit Personale del Corsista (Trasparenza Telemetria & Scarico PDF) -->
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs space-y-4">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-                    <div>
-                        <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold uppercase">
-                            Trasparenza Certificata Corsista
-                        </span>
-                        <h3 class="text-base font-extrabold text-slate-900 mt-1">Il Tuo Registro Audit Personale (Log Sessioni e Telemetria)</h3>
-                        <p class="text-xs text-slate-500">Visualizza tutti gli heartbeat, i salvataggi e i download registrati sul tuo profilo con indirizzo IP e orario certificato.</p>
+            <!-- Collapsible Technical Telemetry & Personal Audit Log (Clean Accordion) -->
+            <div x-data="{ openAudit: false }" class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+                <button type="button" @click="openAudit = !openAudit"
+                        class="w-full px-5 py-3.5 flex items-center justify-between text-left hover:bg-slate-50 transition cursor-pointer">
+                    <div class="flex items-center gap-2.5">
+                        <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold uppercase">Certificato</span>
+                        <span class="text-xs font-extrabold text-slate-800">Il Tuo Registro Audit Personale & Dettagli Telemetria</span>
                     </div>
-                    <a href="{{ route('student.enrollments.audit-pdf', $enrollment) }}"
-                       class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold shadow-2xs transition shrink-0">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        <span>Scarica il Tuo Fascicolo Audit (PDF)</span>
-                    </a>
-                </div>
+                    <span class="text-xs font-bold text-indigo-600" x-text="openAudit ? 'Nascondi ▲' : 'Mostra dettagli ▼'"></span>
+                </button>
 
-                <div class="overflow-x-auto max-h-60 overflow-y-auto">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="border-b border-slate-200 text-[10px] uppercase text-slate-400 font-extrabold">
-                                <th class="py-2 pr-3">Data / Ora</th>
-                                <th class="py-2 px-3">Evento</th>
-                                <th class="py-2 px-3">Dettaglio Attività</th>
-                                <th class="py-2 pl-3 text-right">IP Tracciato</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            @forelse($studentAuditLogs ?? [] as $log)
-                                <tr>
-                                    <td class="py-2 pr-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">{{ $log->created_at->format('d/m/Y H:i:s') }}</td>
-                                    <td class="py-2 px-3">
-                                        <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px] font-bold">{{ $log->action_type }}</span>
-                                    </td>
-                                    <td class="py-2 px-3 text-slate-800 font-medium">{{ $log->description }}</td>
-                                    <td class="py-2 pl-3 text-right font-mono text-[11px] text-slate-500">{{ $log->ip_address }}</td>
+                <div x-show="openAudit" class="p-5 pt-2 border-t border-slate-100 space-y-3">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <p class="text-[11px] text-slate-500">
+                            Posizione: <strong x-text="formatSeconds(currentTime)"></strong> • Max raggiunto: <strong x-text="formatSeconds(maxPositionSeconds)"></strong>
+                        </p>
+                        <a href="{{ route('student.enrollments.audit-pdf', $enrollment) }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-[11px] font-bold transition">
+                            <span>Scarica il Tuo Fascicolo Audit (PDF)</span>
+                        </a>
+                    </div>
+
+                    <div class="overflow-x-auto max-h-48 overflow-y-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b border-slate-200 text-[10px] uppercase text-slate-400 font-bold">
+                                    <th class="py-1.5 pr-3">Data / Ora</th>
+                                    <th class="py-1.5 px-3">Evento</th>
+                                    <th class="py-1.5 px-3">Dettaglio</th>
+                                    <th class="py-1.5 pl-3 text-right">IP</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="py-4 text-center text-slate-400">Avvia il player per generare i log di telemetria.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                @forelse($studentAuditLogs ?? [] as $log)
+                                    <tr>
+                                        <td class="py-1.5 pr-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">{{ $log->created_at->format('d/m/Y H:i:s') }}</td>
+                                        <td class="py-1.5 px-3"><span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px] font-bold">{{ $log->action_type }}</span></td>
+                                        <td class="py-1.5 px-3 text-slate-700">{{ $log->description }}</td>
+                                        <td class="py-1.5 pl-3 text-right font-mono text-[11px] text-slate-400">{{ $log->ip_address }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="py-3 text-center text-slate-400">Avvia il player per registrare i log di sessione.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Right Column (4 cols): Course Playlist (5 Modules) & Rules -->
-        <div class="lg:col-span-4 space-y-6">
-            <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
+        <!-- Right Column (4 cols): Clean Course Playlist -->
+        <div class="lg:col-span-4 space-y-5">
+            <div class="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs">
                 <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
                     <div>
-                        <h3 class="text-sm font-extrabold text-slate-900">Piano Didattico Asincrono</h3>
-                        <p class="text-[11px] text-slate-500">{{ $modules->count() }} Moduli Video • Fruibili in qualsiasi orario H24</p>
+                        <h3 class="text-sm font-extrabold text-slate-900">Moduli del Corso</h3>
+                        <p class="text-[11px] text-slate-500">{{ $modules->count() }} lezioni video • Ripresa automatica</p>
                     </div>
                     <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 text-xs font-bold">
                         {{ $course->async_required_hours }}h FAD
                     </span>
                 </div>
 
-                <div class="space-y-2.5">
+                <div class="space-y-2">
                     @foreach($modules as $mod)
                         @php
                             $mp = $progressMap[$mod->id] ?? null;
@@ -347,48 +306,33 @@
                             $pct = $mp ? $mp->completion_percent : 0;
                         @endphp
                         <a href="{{ route('student.courses.module', [$course, $mod]) }}"
-                           class="block p-3.5 rounded-xl border transition {{ $isCurrent ? 'bg-indigo-50/80 border-indigo-500 ring-2 ring-indigo-500/20' : ($done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-white border-slate-200 hover:border-slate-300') }}">
-                            <div class="flex items-start justify-between gap-2">
-                                <div class="flex items-center gap-2">
-                                    @if($done)
-                                        <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0">&check;</span>
-                                    @elseif($isCurrent)
-                                        <span class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">&#9654;</span>
-                                    @else
-                                        <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0">{{ $mod->sort_order }}</span>
-                                    @endif
-                                    <span class="text-xs font-bold {{ $isCurrent ? 'text-indigo-950' : 'text-slate-900' }}">
-                                        Modulo {{ $mod->sort_order }}: {{ $mod->title }}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="mt-2.5 flex items-center justify-between text-[11px] text-slate-500">
-                                <span>Durata: {{ $mod->formatted_duration }}</span>
-                                <span class="font-bold {{ $done ? 'text-emerald-600' : 'text-indigo-600' }}">
-                                    {{ $done ? 'Completato (100%)' : $pct . '% svolto' }}
+                           class="block p-3 rounded-xl border transition {{ $isCurrent ? 'bg-indigo-50/80 border-indigo-500 ring-2 ring-indigo-500/20' : ($done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-white border-slate-200 hover:border-slate-300') }}">
+                            <div class="flex items-center gap-2.5">
+                                @if($done)
+                                    <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0">&check;</span>
+                                @elseif($isCurrent)
+                                    <span class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">&#9654;</span>
+                                @else
+                                    <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0">{{ $mod->sort_order }}</span>
+                                @endif
+                                <span class="text-xs font-bold {{ $isCurrent ? 'text-indigo-950' : 'text-slate-900' }} line-clamp-1">
+                                    {{ $mod->title }}
                                 </span>
                             </div>
 
-                            <div class="mt-1.5 w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                            <div class="mt-2 flex items-center justify-between text-[10px] text-slate-500">
+                                <span>{{ $mod->formatted_duration }}</span>
+                                <span class="font-bold {{ $done ? 'text-emerald-600' : 'text-indigo-600' }}">
+                                    {{ $done ? '100% Completato' : $pct . '%' }}
+                                </span>
+                            </div>
+
+                            <div class="mt-1.5 w-full h-1 bg-slate-200 rounded-full overflow-hidden">
                                 <div class="h-full {{ $done ? 'bg-emerald-500' : 'bg-indigo-600' }}" style="width: {{ $pct }}%"></div>
                             </div>
                         </a>
                     @endforeach
                 </div>
-            </div>
-
-            <!-- Ministerial Compliance Info Box -->
-            <div class="bg-slate-900 text-slate-200 rounded-2xl p-5 text-xs space-y-2.5 border border-slate-800">
-                <div class="font-bold text-white flex items-center gap-2">
-                    <svg class="w-4 h-4 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    <span>Regole di Tracciamento Attive</span>
-                </div>
-                <ul class="space-y-1.5 text-slate-300 text-[11px] leading-relaxed">
-                    <li>• <strong>Ripresa Automatica (Auto-Resume)</strong>: puoi interrompere la visione in qualsiasi momento e riprendere anche di notte o nei giorni successivi dal secondo esatto.</li>
-                    <li>• <strong>Blocco Fast-Forward</strong>: non è consentito trascinare il cursore oltre il punto massimo già visualizzato.</li>
-                    <li>• <strong>Soglia Attestato ({{ $course->min_attendance_percent }}%)</strong>: l'Attestato Ufficiale (Allegato 4) si sblocca automaticamente al raggiungimento di <strong>{{ $course->minimum_required_hours }} ore</strong> complessive tra Zoom e FAD.</li>
-                </ul>
             </div>
         </div>
 
@@ -435,7 +379,6 @@ document.addEventListener('alpine:init', () => {
                 this.initYouTubePlayer();
             }
 
-            // Visibility change listener (Auto-pause if strictTabPause is enabled on course)
             document.addEventListener('visibilitychange', () => {
                 if (document.hidden && this.isPlaying) {
                     this.pendingTabSwitches++;
@@ -446,14 +389,12 @@ document.addEventListener('alpine:init', () => {
                 }
             });
 
-            // Periodic 15-second heartbeat while playing
             this.heartbeatTimer = setInterval(() => {
                 if (this.isPlaying && this.accumulatedDelta >= 5) {
                     this.sendHeartbeat('periodic');
                 }
             }, 15000);
 
-            // Optional presence check modal every X minutes
             if (this.presenceIntervalMinutes > 0) {
                 this.presenceTimer = setInterval(() => {
                     if (this.isPlaying) {
@@ -538,7 +479,6 @@ document.addEventListener('alpine:init', () => {
                         this.ytPlayer.playVideo();
                     }
                 } else {
-                    // Fallback simulation if YT API is blocked offline
                     this.isPlaying = !this.isPlaying;
                     if (this.isPlaying) {
                         this.onPlay();
@@ -599,7 +539,6 @@ document.addEventListener('alpine:init', () => {
         onLoadedMetadata() {
             const video = this.$refs.videoPlayer;
             if (!video) return;
-            // Resume from last watched position (or maxPositionSeconds if not finished)
             const resumeTarget = this.currentTime > 0 && this.currentTime < video.duration - 5
                 ? this.currentTime
                 : (this.maxPositionSeconds < video.duration - 5 ? this.maxPositionSeconds : 0);
@@ -633,7 +572,6 @@ document.addEventListener('alpine:init', () => {
             const video = this.$refs.videoPlayer;
             if (!video || this.isCompleted) return;
 
-            // Map real video duration to module formal duration if using a shorter sample video
             const scale = this.getScaleFactor(video);
             const scaledTarget = Math.round(video.currentTime * scale);
 
