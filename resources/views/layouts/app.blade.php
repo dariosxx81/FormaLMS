@@ -232,24 +232,10 @@
                     </div>
 
                     <!-- Bottom: Admin Profile + Discreet Demo Switcher Dropdown -->
-                    <div class="p-3.5 border-t border-slate-100 bg-slate-50/60 relative">
-                        <button @click="profileDropdown = !profileDropdown"
-                                class="w-full flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 text-left transition cursor-pointer shadow-2xs">
-                            <div class="flex items-center gap-2.5 min-w-0">
-                                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-extrabold text-xs shrink-0">
-                                    {{ strtoupper(substr(auth()->user()->first_name, 0, 1) . substr(auth()->user()->last_name, 0, 1)) }}
-                                </div>
-                                <div class="truncate">
-                                    <div class="text-xs font-extrabold text-slate-900 truncate">{{ auth()->user()->full_name }}</div>
-                                    <div class="text-[10px] text-indigo-600 font-semibold">Amministratore</div>
-                                </div>
-                            </div>
-                            <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
-                        </button>
-
-                        <!-- Discreet Profile & Demo Switcher Popover -->
-                        <div x-cloak x-show="profileDropdown" @click.away="profileDropdown = false" x-transition
-                             class="absolute bottom-18 left-3.5 right-3.5 bg-white rounded-xl border border-slate-200 shadow-xl p-2 z-50 text-xs space-y-1">
+                    <div class="p-3.5 border-t border-slate-100 bg-slate-50/60 relative" @click.outside="profileDropdown = false">
+                        <!-- Discreet Profile & Demo Switcher Popover (Opens Upwards) -->
+                        <div x-cloak x-show="profileDropdown" x-transition
+                             class="absolute bottom-full mb-2 left-3.5 right-3.5 bg-white rounded-xl border border-slate-200 shadow-2xl p-2 z-50 text-xs space-y-1">
                             <div class="px-2.5 py-1 text-[10px] font-extrabold uppercase text-slate-400">
                                 Passa a Vista Corsista (Demo)
                             </div>
@@ -266,7 +252,31 @@
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit" class="w-full text-left px-2.5 py-2 rounded-lg hover:bg-red-50 text-red-600 font-bold flex items-center gap-2 cursor-pointer">
-                                    <span>Esci dalla sessione</span>
+                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                    <span>Esci dalla sessione (Logout)</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="flex items-center gap-1.5">
+                            <button type="button" @click="profileDropdown = !profileDropdown"
+                                    class="flex-1 min-w-0 flex items-center justify-between gap-2 p-2.5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 text-left transition cursor-pointer shadow-2xs">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-extrabold text-xs shrink-0">
+                                        {{ strtoupper(substr(auth()->user()->first_name, 0, 1) . substr(auth()->user()->last_name, 0, 1)) }}
+                                    </div>
+                                    <div class="truncate">
+                                        <div class="text-xs font-extrabold text-slate-900 truncate">{{ auth()->user()->full_name }}</div>
+                                        <div class="text-[10px] text-indigo-600 font-semibold">Profilo & Demo &#9650;</div>
+                                    </div>
+                                </div>
+                            </button>
+
+                            <form method="POST" action="{{ route('logout') }}" class="shrink-0">
+                                @csrf
+                                <button type="submit" title="Esci dalla sessione (Logout)"
+                                        class="p-2.5 rounded-xl bg-white hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 transition cursor-pointer shadow-2xs">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                                 </button>
                             </form>
                         </div>
@@ -363,8 +373,8 @@
                     </div>
 
                     <!-- Right: Student Profile Pill + Discreet Demo Switcher Dropdown -->
-                    <div class="relative">
-                        <button @click="profileDropdown = !profileDropdown"
+                    <div class="relative" @click.outside="profileDropdown = false">
+                        <button type="button" @click="profileDropdown = !profileDropdown"
                                 class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition cursor-pointer">
                             <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-extrabold text-xs">
                                 {{ strtoupper(substr(auth()->user()->first_name, 0, 1) . substr(auth()->user()->last_name, 0, 1)) }}
@@ -376,7 +386,7 @@
                             <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
 
-                        <div x-cloak x-show="profileDropdown" @click.away="profileDropdown = false" x-transition
+                        <div x-cloak x-show="profileDropdown" x-transition
                              class="absolute right-0 mt-2 w-64 bg-white rounded-xl border border-slate-200 shadow-xl p-2 z-50 text-xs space-y-1">
                             <div class="px-2.5 py-1.5 border-b border-slate-100 mb-1">
                                 <div class="font-extrabold text-slate-900">{{ auth()->user()->full_name }}</div>
