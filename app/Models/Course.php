@@ -64,4 +64,14 @@ class Course extends Model
     {
         return round(($this->total_hours * $this->min_attendance_percent) / 100, 2);
     }
+
+    public function getHasSyncHoursAttribute(): bool
+    {
+        return (float) $this->sync_required_hours > 0;
+    }
+
+    public function getAccessCodeAttribute(): string
+    {
+        return !empty($this->invite_code) ? $this->invite_code : $this->code;
+    }
 }

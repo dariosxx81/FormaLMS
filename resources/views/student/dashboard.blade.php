@@ -24,7 +24,7 @@
         <div class="grid grid-cols-3 gap-2.5 w-full lg:w-auto text-center">
             <div class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5">
                 <div class="text-lg font-extrabold text-white">{{ $enrollments->count() }}</div>
-                <div class="text-[11px] text-slate-400">Corsi Attivi</div>
+                <div class="text-[11px] text-slate-400">Corsi Abilitati</div>
             </div>
             <div class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5">
                 <div class="text-lg font-extrabold text-indigo-300">{{ number_format($enrollments->sum('total_hours_completed'), 1, ',', '') }}h</div>
@@ -37,36 +37,49 @@
         </div>
     </div>
 
-    <!-- Clean View Switcher Tabs -->
-    <div class="flex items-center justify-between border-b border-slate-200">
+    <!-- Clean View Switcher Tabs & Course Code Unlock Bar -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-2">
         <div class="flex gap-2">
             <button type="button" @click="studentTab = 'courses'"
                     :class="studentTab === 'courses' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'"
-                    class="px-4 py-3 border-b-2 text-xs font-extrabold transition cursor-pointer flex items-center gap-2">
+                    class="px-4 py-2.5 border-b-2 text-xs font-extrabold transition cursor-pointer flex items-center gap-2">
                 <span>📚 I Miei Corsi</span>
                 <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px]">{{ $enrollments->count() }}</span>
             </button>
             <button type="button" @click="studentTab = 'certificates'"
                     :class="studentTab === 'certificates' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-800'"
-                    class="px-4 py-3 border-b-2 text-xs font-extrabold transition cursor-pointer flex items-center gap-2">
+                    class="px-4 py-2.5 border-b-2 text-xs font-extrabold transition cursor-pointer flex items-center gap-2">
                 <span>🏅 Attestati & Storico Presenze</span>
             </button>
         </div>
+
+        <!-- Redeem Course Code Form (For Existing Users to Unlock a New Course) -->
+        <form method="POST" action="{{ route('student.courses.redeem-code') }}" class="flex items-center gap-2 text-xs">
+            @csrf
+            <span class="text-slate-500 font-semibold hidden sm:inline">🔑 Hai un Codice Corso?</span>
+            <input type="text" name="access_code" required placeholder="Inserisci Codice Corso..."
+                   class="w-44 sm:w-48 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-mono uppercase font-bold">
+            <button type="submit" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold cursor-pointer transition shrink-0 shadow-2xs">
+                Abilita Corso &rarr;
+            </button>
+        </form>
     </div>
 
     <!-- TAB 1: I MIEI CORSI (Clean Streaming Cards) -->
     <div x-show="studentTab === 'courses'" class="space-y-6">
         @if($enrollments->isEmpty())
-            <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center">
-                <p class="text-sm font-semibold text-slate-700">Non risulti ancora iscritto a nessun corso.</p>
-                <p class="text-xs text-slate-500 mt-1">Puoi iscriverti a uno dei corsi attivi nel catalogo sottostante.</p>
+            <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-2">
+                <p class="text-sm font-extrabold text-slate-800">Non hai ancora corsi attivi associati al tuo profilo.</p>
+                <p class="text-xs text-slate-500 max-w-md mx-auto">
+                    L'abilitazione ai corsi viene effettuata dalla Segreteria Didattica oppure inserendo nel riquadro in alto il <strong>Codice Corso</strong> che ti è stato comunicato.
+                </p>
             </div>
         @else
             <div class="grid grid-cols-1 gap-5">
                 @foreach($enrollments as $enrollment)
                     @php
                         $course = $enrollment->course;
-                        $modules = $course->modules;
+                        $modules = $course->modules->where('is_published', true);
                         $completedModulesCount = $modules->filter(fn($m) => $progressByModule[$m->id]->is_completed ?? false)->count();
                     @endphp
                     <div class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 transition hover:border-slate-300">
@@ -77,6 +90,11 @@
                                     <span class="px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[11px] font-bold border border-indigo-200 uppercase">
                                         {{ ucfirst($course->course_type) }}
                                     </span>
+                                    @if(!$course->has_sync_hours)
+                                        <span class="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-bold">
+                                            100% Piattaforma FAD
+                                        </span>
+                                    @endif
                                     @if($enrollment->is_eligible_for_certificate)
                                         <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
                                             ✓ Idoneo all'Attestato
@@ -85,7 +103,12 @@
                                 </div>
                                 <h2 class="text-xl font-extrabold text-slate-900">{{ $course->title }}</h2>
                                 <p class="text-xs text-slate-500">
-                                    {{ $completedModulesCount }} di {{ $modules->count() }} moduli video completati • Totale maturato: <strong>{{ number_format($enrollment->total_hours_completed, 1, ',', '') }}h / {{ number_format($course->total_hours, 0) }}h</strong> (Zoom {{ number_format($enrollment->sync_hours_completed, 1, ',', '') }}h + FAD {{ number_format($enrollment->async_hours_completed, 1, ',', '') }}h)
+                                    {{ $completedModulesCount }} di {{ $modules->count() }} moduli video completati •
+                                    @if($course->has_sync_hours)
+                                        Totale maturato: <strong>{{ number_format($enrollment->total_hours_completed, 1, ',', '') }}h / {{ number_format($course->total_hours, 0) }}h</strong> (Zoom {{ number_format($enrollment->sync_hours_completed, 1, ',', '') }}h + Piattaforma FAD {{ number_format($enrollment->async_hours_completed, 1, ',', '') }}h)
+                                    @else
+                                        Ore maturate in piattaforma: <strong>{{ number_format($enrollment->async_hours_completed, 1, ',', '') }}h / {{ number_format($course->total_hours, 1, ',', '') }}h</strong>
+                                    @endif
                                 </p>
                             </div>
 
@@ -154,32 +177,6 @@
                 @endforeach
             </div>
         @endif
-
-        <!-- Available Courses Catalog (Only if there are un-enrolled courses) -->
-        @if($availableCourses->isNotEmpty())
-            <div class="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-2xs">
-                <h3 class="text-base font-extrabold text-slate-900">Altri Corsi Disponibili a Catalogo</h3>
-                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    @foreach($availableCourses as $ac)
-                        <div class="p-4 rounded-xl border border-slate-200 flex items-center justify-between gap-4 hover:bg-slate-50 transition">
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-[11px] font-bold">{{ $ac->code }}</span>
-                                    <span class="text-xs text-indigo-600 font-semibold">{{ $ac->total_hours }}h totali ({{ $ac->modules_count }} moduli)</span>
-                                </div>
-                                <div class="font-bold text-sm text-slate-900 mt-1">{{ $ac->title }}</div>
-                            </div>
-                            <form method="POST" action="{{ route('student.courses.enroll', $ac) }}" class="shrink-0">
-                                @csrf
-                                <button type="submit" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition cursor-pointer">
-                                    Iscriviti &rarr;
-                                </button>
-                            </form>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
     </div>
 
     <!-- TAB 2: ATTESTATI & STORICO PRESENZE (Audit Personale & Certificati PDF) -->
@@ -206,7 +203,11 @@
                                     </div>
                                     <div class="font-extrabold text-sm text-slate-900 mt-1">{{ $course->title }}</div>
                                     <div class="text-[11px] text-slate-500 mt-0.5">
-                                        Ore Zoom: <strong>{{ number_format($enrollment->sync_hours_completed, 1, ',', '') }}h</strong> • Ore Video FAD: <strong>{{ number_format($enrollment->async_hours_completed, 2, ',', '') }}h</strong>
+                                        @if($course->has_sync_hours)
+                                            Ore Zoom: <strong>{{ number_format($enrollment->sync_hours_completed, 1, ',', '') }}h</strong> • Ore Video FAD: <strong>{{ number_format($enrollment->async_hours_completed, 2, ',', '') }}h</strong>
+                                        @else
+                                            Ore maturate in piattaforma FAD: <strong>{{ number_format($enrollment->async_hours_completed, 2, ',', '') }}h / {{ number_format($course->total_hours, 1, ',', '') }}h</strong>
+                                        @endif
                                     </div>
                                 </div>
 

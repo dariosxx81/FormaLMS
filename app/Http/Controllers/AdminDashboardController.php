@@ -15,6 +15,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class AdminDashboardController extends Controller
 {
@@ -96,15 +97,16 @@ class AdminDashboardController extends Controller
         $data = $request->validate([
             'code' => ['required', 'string', 'max:40', 'unique:courses,code'],
             'title' => ['required', 'string', 'max:255'],
-            'course_type' => ['required', 'string', 'max:40'],
+            'course_type' => ['nullable', 'string', 'max:40'],
+            'edition' => ['nullable', 'string', 'max:120'],
             'thematic_area' => ['nullable', 'string', 'max:255'],
             'authorization_details' => ['nullable', 'string', 'max:255'],
             'training_center_name' => ['nullable', 'string', 'max:255'],
             'training_center_city' => ['nullable', 'string', 'max:150'],
             'description' => ['nullable', 'string'],
-            'total_hours' => ['required', 'numeric', 'min:1'],
-            'sync_required_hours' => ['required', 'numeric', 'min:0'],
-            'async_required_hours' => ['required', 'numeric', 'min:0'],
+            'total_hours' => ['nullable', 'numeric', 'min:0.5'],
+            'sync_required_hours' => ['nullable', 'numeric', 'min:0'],
+            'async_required_hours' => ['required', 'numeric', 'min:0.5'],
             'min_attendance_percent' => ['required', 'integer', 'min:1', 'max:100'],
             'presence_check_interval_minutes' => ['nullable', 'integer', 'min:0', 'max:120'],
             'invite_code' => ['nullable', 'string', 'max:40'],
@@ -112,10 +114,26 @@ class AdminDashboardController extends Controller
             'ends_at' => ['nullable', 'date'],
         ]);
 
+        // Check if Sync Hours (Zoom) are explicitly disabled
+        $enableSync = $request->has('enable_sync_hours')
+            ? $request->boolean('enable_sync_hours')
+            : ((float) ($data['sync_required_hours'] ?? 0) > 0);
+
+        $syncHours = $enableSync ? (float) ($data['sync_required_hours'] ?? 0) : 0.0;
+        $asyncHours = (float) $data['async_required_hours'];
+        $totalHours = $enableSync
+            ? (float) ($data['total_hours'] ?: ($syncHours + $asyncHours))
+            : $asyncHours;
+
+        $data['course_type'] = $data['course_type'] ?? 'aggiornamento';
+        $data['sync_required_hours'] = $syncHours;
+        $data['async_required_hours'] = $asyncHours;
+        $data['total_hours'] = max(0.5, $totalHours);
         $data['strict_tab_pause'] = $request->boolean('strict_tab_pause');
         $data['allow_self_enrollment'] = $request->boolean('allow_self_enrollment', true);
         $data['is_active'] = true;
         $data['presence_check_interval_minutes'] = (int) ($data['presence_check_interval_minutes'] ?? 0);
+        $data['invite_code'] = !empty($data['invite_code']) ? strtoupper(trim($data['invite_code'])) : null;
 
         $course = Course::create($data);
 
@@ -127,31 +145,48 @@ class AdminDashboardController extends Controller
         );
 
         return redirect()->route('admin.courses.show', $course)
-            ->with('success', "Corso \"{$course->title}\" creato con successo! Ora puoi aggiungere i moduli video e iscrivere i corsisti.");
+            ->with('success', "Corso \"{$course->title}\" creato con successo!");
     }
 
     public function updateCourse(Request $request, Course $course)
     {
         $data = $request->validate([
+            'code' => ['nullable', 'string', 'max:40', Rule::unique('courses', 'code')->ignore($course->id)],
             'title' => ['required', 'string', 'max:255'],
-            'course_type' => ['required', 'string', 'max:40'],
+            'course_type' => ['nullable', 'string', 'max:40'],
+            'edition' => ['nullable', 'string', 'max:120'],
             'thematic_area' => ['nullable', 'string', 'max:255'],
             'authorization_details' => ['nullable', 'string', 'max:255'],
             'training_center_name' => ['nullable', 'string', 'max:255'],
             'training_center_city' => ['nullable', 'string', 'max:150'],
             'description' => ['nullable', 'string'],
-            'total_hours' => ['required', 'numeric', 'min:1'],
-            'sync_required_hours' => ['required', 'numeric', 'min:0'],
-            'async_required_hours' => ['required', 'numeric', 'min:0'],
+            'total_hours' => ['nullable', 'numeric', 'min:0.5'],
+            'sync_required_hours' => ['nullable', 'numeric', 'min:0'],
+            'async_required_hours' => ['required', 'numeric', 'min:0.5'],
             'min_attendance_percent' => ['required', 'integer', 'min:1', 'max:100'],
             'presence_check_interval_minutes' => ['nullable', 'integer', 'min:0', 'max:120'],
             'invite_code' => ['nullable', 'string', 'max:40'],
         ]);
 
+        $enableSync = $request->has('enable_sync_hours')
+            ? $request->boolean('enable_sync_hours')
+            : ((float) ($data['sync_required_hours'] ?? 0) > 0);
+
+        $syncHours = $enableSync ? (float) ($data['sync_required_hours'] ?? 0) : 0.0;
+        $asyncHours = (float) $data['async_required_hours'];
+        $totalHours = $enableSync
+            ? (float) ($data['total_hours'] ?: ($syncHours + $asyncHours))
+            : $asyncHours;
+
+        $data['code'] = !empty($data['code']) ? strtoupper(trim($data['code'])) : $course->code;
+        $data['sync_required_hours'] = $syncHours;
+        $data['async_required_hours'] = $asyncHours;
+        $data['total_hours'] = max(0.5, $totalHours);
         $data['strict_tab_pause'] = $request->boolean('strict_tab_pause');
         $data['allow_self_enrollment'] = $request->boolean('allow_self_enrollment');
-        $data['is_active'] = $request->boolean('is_active', true);
+        $data['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : $course->is_active;
         $data['presence_check_interval_minutes'] = (int) ($data['presence_check_interval_minutes'] ?? 0);
+        $data['invite_code'] = !empty($data['invite_code']) ? strtoupper(trim($data['invite_code'])) : null;
 
         $course->update($data);
 
@@ -161,12 +196,45 @@ class AdminDashboardController extends Controller
 
         ActivityLog::record(
             'course_update',
-            "Aggiornate impostazioni e regole tracciamento del corso \"{$course->title}\"",
+            "Aggiornato corso \"{$course->title}\" ({$course->code})",
             auth()->id(),
             $course->id
         );
 
-        return back()->with('success', 'Impostazioni del corso e regole del player aggiornate.');
+        return back()->with('success', 'Impostazioni e parametri del corso aggiornati con successo.');
+    }
+
+    public function toggleCourseStatus(Course $course)
+    {
+        $course->update(['is_active' => !$course->is_active]);
+
+        $stateLabel = $course->is_active ? 'riattivato' : 'disattivato';
+
+        ActivityLog::record(
+            'course_status_toggle',
+            "Corso \"{$course->title}\" ({$course->code}) {$stateLabel}",
+            auth()->id(),
+            $course->id
+        );
+
+        return back()->with('success', "Corso \"{$course->title}\" {$stateLabel} con successo.");
+    }
+
+    public function destroyCourse(Course $course)
+    {
+        $title = $course->title;
+        $code = $course->code;
+
+        $course->delete();
+
+        ActivityLog::record(
+            'course_delete',
+            "Eliminato definitivamente il corso \"{$title}\" ({$code})",
+            auth()->id()
+        );
+
+        return redirect()->route('admin.dashboard')
+            ->with('success', "Corso \"{$title}\" eliminato definitivamente.");
     }
 
     public function storeModule(Request $request, Course $course)
@@ -212,6 +280,91 @@ class AdminDashboardController extends Controller
         return back()->with('success', "Modulo video \"{$module->title}\" aggiunto al corso.");
     }
 
+    public function updateModule(Request $request, CourseModule $module)
+    {
+        $data = $request->validate([
+            'sort_order' => ['required', 'integer', 'min:1'],
+            'title' => ['required', 'string', 'max:255'],
+            'instructor_name' => ['nullable', 'string', 'max:150'],
+            'description' => ['nullable', 'string'],
+            'video_source_type' => ['required', 'in:url,upload,youtube'],
+            'video_url' => ['nullable', 'string', 'max:500'],
+            'video_file' => ['nullable', 'file', 'mimes:mp4,webm,ogg', 'max:512000'],
+            'duration_minutes' => ['required', 'numeric', 'min:1'],
+        ]);
+
+        $videoUrl = $data['video_url'] ?: $module->video_url;
+
+        if ($data['video_source_type'] === 'upload' && $request->hasFile('video_file')) {
+            $path = $request->file('video_file')->store('course-videos', 'public');
+            $videoUrl = asset('storage/' . $path);
+        }
+
+        $module->update([
+            'sort_order' => (int) $data['sort_order'],
+            'title' => $data['title'],
+            'instructor_name' => $data['instructor_name'] ?? null,
+            'description' => $data['description'] ?? null,
+            'video_source_type' => $data['video_source_type'],
+            'video_url' => $videoUrl,
+            'duration_seconds' => (int) round($data['duration_minutes'] * 60),
+            'is_published' => $request->has('is_published') ? $request->boolean('is_published') : $module->is_published,
+        ]);
+
+        foreach ($module->course->enrollments as $enrollment) {
+            $enrollment->recalculateProgress();
+        }
+
+        ActivityLog::record(
+            'module_update',
+            "Modificato Modulo #{$module->sort_order} \"{$module->title}\"",
+            auth()->id(),
+            $module->course_id,
+            $module->id
+        );
+
+        return back()->with('success', "Modulo \"{$module->title}\" aggiornato con successo.");
+    }
+
+    public function toggleModuleStatus(CourseModule $module)
+    {
+        $module->update(['is_published' => !$module->is_published]);
+        $state = $module->is_published ? 'pubblicato' : 'nascosto (bozza)';
+
+        ActivityLog::record(
+            'module_status_toggle',
+            "Modulo #{$module->sort_order} \"{$module->title}\" {$state}",
+            auth()->id(),
+            $module->course_id,
+            $module->id
+        );
+
+        return back()->with('success', "Modulo \"{$module->title}\" {$state}.");
+    }
+
+    public function destroyModule(CourseModule $module)
+    {
+        $course = $module->course;
+        $title = $module->title;
+
+        $module->delete();
+
+        if ($course) {
+            foreach ($course->enrollments as $enrollment) {
+                $enrollment->recalculateProgress();
+            }
+        }
+
+        ActivityLog::record(
+            'module_delete',
+            "Eliminato modulo \"{$title}\" dal corso {$course?->code}",
+            auth()->id(),
+            $course?->id
+        );
+
+        return back()->with('success', "Modulo \"{$title}\" eliminato e ore corso ricalcolate.");
+    }
+
     public function storeAttachment(Request $request, CourseModule $module)
     {
         $data = $request->validate([
@@ -244,6 +397,25 @@ class AdminDashboardController extends Controller
         );
 
         return back()->with('success', "Dispensa PDF \"{$attachment->title}\" allegata al modulo.");
+    }
+
+    public function destroyAttachment(ModuleAttachment $attachment)
+    {
+        $title = $attachment->title;
+        $courseId = $attachment->module?->course_id;
+        $moduleId = $attachment->course_module_id;
+
+        $attachment->delete();
+
+        ActivityLog::record(
+            'attachment_delete',
+            "Rimossa dispensa PDF \"{$title}\"",
+            auth()->id(),
+            $courseId,
+            $moduleId
+        );
+
+        return back()->with('success', "Dispensa \"{$title}\" rimossa dal modulo.");
     }
 
     public function usersIndex(Request $request)
@@ -337,6 +509,111 @@ class AdminDashboardController extends Controller
         return back()->with('success', "Corsista {$user->full_name} creato e iscritto con successo (Password: {$plainPassword}).");
     }
 
+    public function updateUser(Request $request, User $user)
+    {
+        $data = $request->validate([
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['required', 'string', 'max:100'],
+            'fiscal_code' => ['required', 'string', 'max:20'],
+            'birth_date' => ['nullable', 'date'],
+            'birth_city' => ['nullable', 'string', 'max:120'],
+            'birth_province' => ['nullable', 'string', 'max:10'],
+            'birth_country' => ['nullable', 'string', 'max:100'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'national_list_number' => ['nullable', 'string', 'max:50'],
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+            'status' => ['nullable', 'in:active,pending,suspended'],
+            'password' => ['nullable', 'string', 'min:6'],
+        ]);
+
+        $payload = [
+            'name' => trim($data['first_name'] . ' ' . $data['last_name']),
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'fiscal_code' => strtoupper(trim($data['fiscal_code'])),
+            'birth_date' => ($data['birth_date'] ?? null) ?: $user->birth_date,
+            'birth_city' => $data['birth_city'] ?? $user->birth_city,
+            'birth_province' => strtoupper($data['birth_province'] ?? ($user->birth_province ?: 'RM')),
+            'birth_country' => $data['birth_country'] ?? ($user->birth_country ?: 'Italia'),
+            'phone' => $data['phone'] ?? null,
+            'national_list_number' => $data['national_list_number'] ?? null,
+            'email' => strtolower(trim($data['email'])),
+            'status' => $data['status'] ?? $user->status,
+        ];
+
+        if (!empty($data['password'])) {
+            $payload['password'] = Hash::make($data['password']);
+        }
+
+        $user->update($payload);
+
+        ActivityLog::record(
+            'admin_user_update',
+            "Aggiornata scheda anagrafica di {$user->full_name} ({$user->email})",
+            auth()->id()
+        );
+
+        return back()->with('success', "Dati del corsista {$user->full_name} aggiornati con successo.");
+    }
+
+    public function toggleUserStatus(User $user)
+    {
+        $newStatus = $user->status === 'active' ? 'suspended' : 'active';
+        $user->update(['status' => $newStatus]);
+
+        $label = $newStatus === 'active' ? 'riattivato' : 'sospeso/disattivato';
+
+        ActivityLog::record(
+            'admin_user_status',
+            "Account corsista {$user->full_name} {$label}",
+            auth()->id()
+        );
+
+        return back()->with('success', "Account di {$user->full_name} {$label}.");
+    }
+
+    public function destroyUser(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            return back()->withErrors(['user' => 'Non puoi eliminare il tuo account amministratore attivo.']);
+        }
+
+        $fullName = $user->full_name;
+        $email = $user->email;
+
+        $user->delete();
+
+        ActivityLog::record(
+            'admin_user_delete',
+            "Eliminato definitivamente l'utente {$fullName} ({$email})",
+            auth()->id()
+        );
+
+        return back()->with('success', "Utente {$fullName} eliminato definitivamente.");
+    }
+
+    public function destroyEnrollment(Enrollment $enrollment)
+    {
+        $studentName = $enrollment->user?->full_name ?? 'Corsista';
+        $courseTitle = $enrollment->course?->title ?? 'Corso';
+        $courseId = $enrollment->course_id;
+
+        ModuleProgress::where('user_id', $enrollment->user_id)
+            ->where('course_id', $enrollment->course_id)
+            ->delete();
+
+        $enrollment->delete();
+
+        ActivityLog::record(
+            'admin_enrollment_delete',
+            "Rimossa iscrizione di {$studentName} dal corso \"{$courseTitle}\"",
+            auth()->id(),
+            $courseId
+        );
+
+        return back()->with('success', "Iscrizione di {$studentName} al corso \"{$courseTitle}\" rimossa.");
+    }
+
     public function importUsersCsv(Request $request)
     {
         $data = $request->validate([
@@ -395,7 +672,7 @@ class AdminDashboardController extends Controller
                 ['user_id' => $user->id, 'course_id' => $course->id],
                 [
                     'status' => 'active',
-                    'sync_hours_completed' => $syncHours,
+                    'sync_hours_completed' => $course->has_sync_hours ? $syncHours : 0,
                     'enrolled_at' => now(),
                     'notes' => 'Importazione massiva CSV',
                 ]
@@ -422,18 +699,19 @@ class AdminDashboardController extends Controller
             'sync_hours_completed' => ['nullable', 'numeric', 'min:0'],
         ]);
 
+        $course = Course::findOrFail($data['course_id']);
+
         $enrollment = Enrollment::updateOrCreate(
-            ['user_id' => $data['user_id'], 'course_id' => $data['course_id']],
+            ['user_id' => $data['user_id'], 'course_id' => $course->id],
             [
                 'status' => 'active',
-                'sync_hours_completed' => (float) ($data['sync_hours_completed'] ?? 0),
+                'sync_hours_completed' => $course->has_sync_hours ? (float) ($data['sync_hours_completed'] ?? 0) : 0,
                 'enrolled_at' => now(),
             ]
         );
         $enrollment->recalculateProgress();
 
         $student = User::find($data['user_id']);
-        $course = Course::find($data['course_id']);
 
         ActivityLog::record(
             'admin_enroll',
@@ -599,7 +877,7 @@ class AdminDashboardController extends Controller
 
         $callback = function () use ($course) {
             $out = fopen('php://output', 'w');
-            fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM for Excel
+            fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
             fputcsv($out, [
                 'Cognome e Nome',

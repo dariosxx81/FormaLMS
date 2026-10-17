@@ -31,14 +31,6 @@ class StudentCourseController extends Controller
             $enrollment->recalculateProgress();
         }
 
-        $enrolledCourseIds = $enrollments->pluck('course_id')->toArray();
-
-        $availableCourses = Course::where('is_active', true)
-            ->where('allow_self_enrollment', true)
-            ->whereNotIn('id', $enrolledCourseIds)
-            ->withCount('modules')
-            ->get();
-
         $progressByModule = ModuleProgress::where('user_id', $user->id)
             ->get()
             ->keyBy('course_module_id');
@@ -53,10 +45,61 @@ class StudentCourseController extends Controller
             'user',
             'settings',
             'enrollments',
-            'availableCourses',
             'progressByModule',
             'recentLogs'
         ));
+    }
+
+    public function redeemCode(Request $request)
+    {
+        $user = auth()->user();
+
+        $data = $request->validate([
+            'access_code' => ['required', 'string', 'max:50'],
+        ]);
+
+        $rawCode = strtoupper(trim($data['access_code']));
+
+        $course = Course::where('is_active', true)
+            ->where(function ($q) use ($rawCode) {
+                $q->whereRaw('UPPER(invite_code) = ?', [$rawCode])
+                  ->orWhereRaw('UPPER(code) = ?', [$rawCode]);
+            })
+            ->first();
+
+        if (!$course) {
+            return back()->withErrors([
+                'access_code' => 'Codice Corso non valido oppure corso disattivato. Verifica il codice fornito dalla Segreteria.',
+            ]);
+        }
+
+        $existing = Enrollment::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->first();
+
+        if ($existing) {
+            return redirect()->route('student.courses.show', $course)
+                ->with('success', "Risulti già iscritto al corso \"{$course->title}\".");
+        }
+
+        $enrollment = Enrollment::create([
+            'user_id' => $user->id,
+            'course_id' => $course->id,
+            'status' => 'active',
+            'enrolled_at' => now(),
+            'notes' => "Sbloccato tramite Codice Corso ({$rawCode})",
+        ]);
+        $enrollment->recalculateProgress();
+
+        ActivityLog::record(
+            'course_code_redeem',
+            "Sbloccato corso \"{$course->title}\" ({$course->code}) tramite Codice d'Accesso",
+            $user->id,
+            $course->id
+        );
+
+        return redirect()->route('student.dashboard')
+            ->with('success', "Corso \"{$course->title}\" sbloccato con successo e aggiunto ai tuoi percorsi!");
     }
 
     public function enroll(Request $request, Course $course)
@@ -67,7 +110,7 @@ class StudentCourseController extends Controller
             return back()->withErrors(['course' => 'Questo corso non accetta auto-iscrizioni dirette.']);
         }
 
-        if ($course->invite_code && trim((string) $request->input('invite_code')) !== $course->invite_code) {
+        if ($course->invite_code && trim((string) $request->input('invite_code')) !== '' && trim((string) $request->input('invite_code')) !== $course->invite_code) {
             return back()->withErrors(['invite_code' => 'Codice invito corso non valido.']);
         }
 
@@ -76,7 +119,7 @@ class StudentCourseController extends Controller
             [
                 'status' => 'active',
                 'enrolled_at' => now(),
-                'notes' => 'Auto-iscrizione da catalogo corsista',
+                'notes' => 'Iscrizione tramite codice corso',
             ]
         );
         $enrollment->recalculateProgress();
@@ -97,6 +140,11 @@ class StudentCourseController extends Controller
         $user = auth()->user();
         $settings = PlatformSetting::getAllSettings();
 
+        if (!$course->is_active && !$user->isAdmin()) {
+            return redirect()->route('student.dashboard')
+                ->withErrors(['course' => 'Questo corso è attualmente disattivato dalla segreteria.']);
+        }
+
         $enrollment = Enrollment::where('user_id', $user->id)
             ->where('course_id', $course->id)
             ->first();
@@ -114,7 +162,9 @@ class StudentCourseController extends Controller
         }
 
         $course->load(['modules.attachments']);
-        $modules = $course->modules;
+        $modules = $user->isAdmin()
+            ? $course->modules
+            : $course->modules->where('is_published', true)->values();
 
         if ($modules->isEmpty()) {
             return redirect()->route('student.dashboard')
@@ -127,7 +177,6 @@ class StudentCourseController extends Controller
             ->keyBy('course_module_id');
 
         if (!$module) {
-            // Pick first uncompleted module or the first module
             $activeModule = $modules->first(function ($m) use ($progressMap) {
                 return !($progressMap[$m->id]->is_completed ?? false);
             }) ?? $modules->first();
@@ -222,7 +271,6 @@ class StudentCourseController extends Controller
         $newMaxPos = min($duration, max($progress->max_position_seconds, $currentTime, $newWatched));
         $percent = min(100, round(($newMaxPos / $duration) * 100, 1));
 
-        // Consider module completed when >= 95% or ended event at end of video
         $isCompleted = $progress->is_completed || $percent >= 95 || ($data['event_type'] === 'ended' && $percent >= 90);
 
         if ($isCompleted) {
@@ -333,7 +381,6 @@ class StudentCourseController extends Controller
             );
         }
 
-        // Generate on-the-fly Ministerial Study Handout PDF if demo attachment
         $settings = PlatformSetting::getAllSettings();
         $pdf = Pdf::loadView('pdf.study-handout', [
             'settings' => $settings,

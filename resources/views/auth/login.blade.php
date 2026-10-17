@@ -23,10 +23,9 @@
 <div class="min-h-screen flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8 bg-slate-50/70">
     <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 rounded-3xl overflow-hidden shadow-xl border border-slate-200/90 bg-white">
 
-        <!-- Left Column: Brand Identity & 1-Click Demo Access (Harmonized with Secondary & Primary Brand Colors) -->
+        <!-- Left Column: Brand Identity & 1-Click Demo Access -->
         <div class="lg:col-span-7 bg-slate-900 p-8 sm:p-10 flex flex-col justify-between relative overflow-hidden">
             <div class="space-y-6">
-                <!-- Brand Header (Logo + Optional Platform Name) -->
                 <div class="flex flex-wrap items-center gap-4">
                     @if($hasLogo)
                         <img src="{{ $settings['logo_url'] }}"
@@ -60,15 +59,14 @@
                     {{ $settings['platform_subtitle'] ?? 'Ambiente digitale certificato per la fruizione dei corsi e il rilascio degli attestati ufficiali.' }}
                 </p>
 
-                <!-- 3 Clean Feature Pills Harmonized with Brand Colors -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
                     <div class="bg-slate-800 border border-slate-700 rounded-xl p-3.5">
                         <div class="font-extrabold text-white">🎬 Aula Video H24</div>
                         <p class="text-slate-300 text-[11px] mt-1">Ripresa automatica e salvataggio continuo.</p>
                     </div>
                     <div class="bg-slate-800 border border-slate-700 rounded-xl p-3.5">
-                        <div class="font-extrabold text-white">📊 Zoom + FAD</div>
-                        <p class="text-slate-300 text-[11px] mt-1">Conteggio unificato delle ore di frequenza.</p>
+                        <div class="font-extrabold text-white">🔑 Accesso Controllato</div>
+                        <p class="text-slate-300 text-[11px] mt-1">Corsi abilitati da Segreteria o Codice Invito.</p>
                     </div>
                     <div class="bg-slate-800 border border-slate-700 rounded-xl p-3.5">
                         <div class="font-extrabold text-white">🏅 Attestati PDF</div>
@@ -115,9 +113,8 @@
             </div>
         </div>
 
-        <!-- Right Column: Clean Login Form with Brand Logo & Colors -->
+        <!-- Right Column: Clean Login Form with Brand Logo, Password Recovery & Registration -->
         <div class="lg:col-span-5 p-8 sm:p-10 flex flex-col justify-center bg-white">
-            <!-- Mobile / Form Top Brand Header -->
             <div class="mb-6 pb-5 border-b border-slate-100 flex items-center justify-between gap-3">
                 <div>
                     <span class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600">Area Riservata</span>
@@ -140,7 +137,12 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-bold text-slate-700">Password</label>
+                        <a href="{{ route('password.request') }}" class="text-[11px] font-bold text-indigo-600 hover:underline">
+                            Password dimenticata?
+                        </a>
+                    </div>
                     <input type="password" name="password" value="password" required
                            class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-600 outline-none transition">
                 </div>
@@ -158,10 +160,10 @@
             </form>
 
             @if(($settings['allow_public_registration'] ?? '1') === '1')
-                <div class="mt-7 pt-6 border-t border-slate-100 text-center">
-                    <p class="text-xs text-slate-500">Sei un nuovo corsista e devi iscriverti a un corso?</p>
-                    <a href="{{ route('register') }}" class="mt-2.5 inline-flex items-center justify-center w-full py-2.5 px-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs transition border border-indigo-200">
-                        Registrati come nuovo Corsista &rarr;
+                <div class="mt-7 pt-6 border-t border-slate-100 text-center space-y-2">
+                    <p class="text-xs text-slate-500">Primo accesso? Crea il tuo profilo anagrafico:</p>
+                    <a href="{{ route('register') }}" class="inline-flex items-center justify-center w-full py-2.5 px-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs transition border border-indigo-200">
+                        Registrazione Nuovo Corsista &rarr;
                     </a>
                 </div>
             @endif

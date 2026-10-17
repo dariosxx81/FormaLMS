@@ -20,12 +20,15 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
+Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
+Route::post('/forgot-password', [AuthController::class, 'resetPasswordWithIdentity'])->name('password.reset.submit');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/demo-switch/{user}', [AuthController::class, 'demoSwitch'])->name('demo.switch');
 
 // Authenticated Student & Shared Routes
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [StudentCourseController::class, 'dashboard'])->name('student.dashboard');
+    Route::post('/courses/redeem-code', [StudentCourseController::class, 'redeemCode'])->name('student.courses.redeem-code');
     Route::post('/courses/{course}/enroll', [StudentCourseController::class, 'enroll'])->name('student.courses.enroll');
     Route::get('/courses/{course}', [StudentCourseController::class, 'showCourse'])->name('student.courses.show');
     Route::get('/courses/{course}/modules/{module}', [StudentCourseController::class, 'showCourse'])->name('student.courses.module');
@@ -39,20 +42,33 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', EnsureUserIsAdmin::class])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-    // Courses & Modules
+    // Courses, Modules & Attachments
     Route::post('/courses', [AdminDashboardController::class, 'storeCourse'])->name('courses.store');
     Route::get('/courses/{course}', [AdminDashboardController::class, 'showCourse'])->name('courses.show');
     Route::put('/courses/{course}', [AdminDashboardController::class, 'updateCourse'])->name('courses.update');
-    Route::post('/courses/{course}/modules', [AdminDashboardController::class, 'storeModule'])->name('courses.modules.store');
-    Route::post('/modules/{module}/attachments', [AdminDashboardController::class, 'storeAttachment'])->name('modules.attachments.store');
+    Route::patch('/courses/{course}/toggle-status', [AdminDashboardController::class, 'toggleCourseStatus'])->name('courses.toggle-status');
+    Route::delete('/courses/{course}', [AdminDashboardController::class, 'destroyCourse'])->name('courses.destroy');
 
-    // Users & Enrollments & Zoom Sync
+    Route::post('/courses/{course}/modules', [AdminDashboardController::class, 'storeModule'])->name('courses.modules.store');
+    Route::put('/modules/{module}', [AdminDashboardController::class, 'updateModule'])->name('modules.update');
+    Route::patch('/modules/{module}/toggle-status', [AdminDashboardController::class, 'toggleModuleStatus'])->name('modules.toggle-status');
+    Route::delete('/modules/{module}', [AdminDashboardController::class, 'destroyModule'])->name('modules.destroy');
+
+    Route::post('/modules/{module}/attachments', [AdminDashboardController::class, 'storeAttachment'])->name('modules.attachments.store');
+    Route::delete('/attachments/{attachment}', [AdminDashboardController::class, 'destroyAttachment'])->name('attachments.destroy');
+
+    // Users, Enrollments & Zoom Sync
     Route::get('/users', [AdminDashboardController::class, 'usersIndex'])->name('users.index');
     Route::post('/users', [AdminDashboardController::class, 'storeUser'])->name('users.store');
+    Route::put('/users/{user}', [AdminDashboardController::class, 'updateUser'])->name('users.update');
+    Route::patch('/users/{user}/toggle-status', [AdminDashboardController::class, 'toggleUserStatus'])->name('users.toggle-status');
+    Route::delete('/users/{user}', [AdminDashboardController::class, 'destroyUser'])->name('users.destroy');
     Route::post('/users/import-csv', [AdminDashboardController::class, 'importUsersCsv'])->name('users.import-csv');
     Route::post('/users/{user}/approve', [AdminDashboardController::class, 'approveUser'])->name('users.approve');
+
     Route::post('/enrollments/assign', [AdminDashboardController::class, 'assignCourse'])->name('enrollments.assign');
     Route::put('/enrollments/{enrollment}/sync-hours', [AdminDashboardController::class, 'updateSyncHours'])->name('enrollments.sync-hours');
+    Route::delete('/enrollments/{enrollment}', [AdminDashboardController::class, 'destroyEnrollment'])->name('enrollments.destroy');
     Route::post('/courses/{course}/import-zoom-csv', [AdminDashboardController::class, 'importZoomCsv'])->name('courses.import-zoom-csv');
 
     // Audit Logs & Ministerial Exports

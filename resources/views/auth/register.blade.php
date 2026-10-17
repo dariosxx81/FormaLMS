@@ -20,7 +20,24 @@
     };
 @endphp
 
-<div class="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+<div class="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-5">
+
+    <!-- Notice for Already Registered Students -->
+    <div class="bg-white rounded-2xl border border-slate-200/90 p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs text-xs">
+        <div>
+            <strong class="text-slate-900">Sei già registrato in piattaforma e devi seguire un nuovo corso?</strong>
+            <p class="text-slate-500 mt-0.5">Non creare un nuovo account: accedi al tuo profilo e inserisci il <strong>Codice Corso</strong> fornito dalla Segreteria.</p>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+            <a href="{{ route('login') }}" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold transition">
+                Accedi ora
+            </a>
+            <a href="{{ route('password.request') }}" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
+                Recupera Password
+            </a>
+        </div>
+    </div>
+
     <div class="bg-white rounded-3xl shadow-md border border-slate-200/90 overflow-hidden">
         <!-- Branded Top Banner -->
         <div class="bg-slate-900 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -52,19 +69,23 @@
         <form method="POST" action="{{ route('register.submit') }}" class="p-6 sm:p-8 space-y-6">
             @csrf
 
-            <!-- Selezione Corso -->
-            <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4">
-                <label class="block text-xs font-extrabold text-slate-900 mb-1.5">
-                    Corso a cui desideri iscriverti
-                </label>
-                <select name="course_id" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-800">
-                    <option value="">-- Seleziona un corso attivo dal catalogo --</option>
-                    @foreach($courses as $c)
-                        <option value="{{ $c->id }}" {{ (old('course_id') == $c->id || $selectedCourseCode === $c->code) ? 'selected' : '' }}>
-                            [{{ $c->code }}] {{ $c->title }} ({{ $c->total_hours }}h totali)
-                        </option>
-                    @endforeach
-                </select>
+            <!-- Codice Invito / Codice Corso fornito dalla Segreteria (Niente scelta libera da catalogo!) -->
+            <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 sm:p-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="space-y-0.5">
+                        <label class="block text-xs font-extrabold text-slate-900">
+                            🔑 Codice Invito Corso (fornito dalla Segreteria)
+                        </label>
+                        <p class="text-[11px] text-slate-600">
+                            Se hai ricevuto un Codice Corso inseriscilo qui per abilitare subito il corso. In assenza di codice, il corso ti verrà assegnato dalla Segreteria dopo la registrazione.
+                        </p>
+                    </div>
+                    <div class="sm:w-56 shrink-0">
+                        <input type="text" name="invite_code" value="{{ old('invite_code', $prefilledCode ?? '') }}"
+                               placeholder="Es. AGG-GT-2026-01"
+                               class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs font-mono uppercase font-bold text-slate-900">
+                    </div>
+                </div>
             </div>
 
             <!-- Dati Personali e Codice Fiscale -->
@@ -148,7 +169,7 @@
                     Annulla
                 </a>
                 <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-extrabold transition shadow-xs cursor-pointer">
-                    Completa Registrazione e Accedi &rarr;
+                    Completa Registrazione &rarr;
                 </button>
             </div>
         </form>

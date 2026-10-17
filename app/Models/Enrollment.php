@@ -65,7 +65,11 @@ class Enrollment extends Model
         $asyncHours = round($asyncSeconds / 3600, 2);
         // Cap async hours to course async_required_hours if greater, or count full watched hours
         $effectiveAsyncHours = min($asyncHours, max($course->async_required_hours, $asyncHours));
-        $totalHours = round((float) $this->sync_hours_completed + $effectiveAsyncHours, 2);
+
+        // If sync hours (Zoom) are disabled on the course (sync_required_hours == 0), count ONLY platform FAD hours
+        $syncHours = $course->has_sync_hours ? (float) $this->sync_hours_completed : 0.0;
+
+        $totalHours = round($syncHours + $effectiveAsyncHours, 2);
         $targetHours = max(0.1, (float) $course->total_hours);
         $percent = min(100, round(($totalHours / $targetHours) * 100, 1));
         $eligible = $percent >= $course->min_attendance_percent;

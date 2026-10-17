@@ -42,7 +42,7 @@ class AuthController extends Controller
 
             if ($user->status === 'suspended') {
                 Auth::logout();
-                return back()->withErrors(['email' => 'Il tuo account è stato sospeso dalla segreteria didattica.']);
+                return back()->withErrors(['email' => 'Il tuo account è stato sospeso o disattivato dalla segreteria didattica.']);
             }
 
             $user->update([
@@ -73,13 +73,9 @@ class AuthController extends Controller
     public function showRegister(Request $request)
     {
         $settings = PlatformSetting::getAllSettings();
-        $courses = Course::where('is_active', true)
-            ->where('allow_self_enrollment', true)
-            ->orderBy('title')
-            ->get();
-        $selectedCourseCode = $request->query('course');
+        $prefilledCode = $request->query('code', $request->query('course', ''));
 
-        return view('auth.register', compact('settings', 'courses', 'selectedCourseCode'));
+        return view('auth.register', compact('settings', 'prefilledCode'));
     }
 
     public function register(Request $request)
@@ -99,7 +95,31 @@ class AuthController extends Controller
             'email' => ['required', 'email', 'max:190', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
             'course_id' => ['nullable', 'exists:courses,id'],
+            'invite_code' => ['nullable', 'string', 'max:50'],
+        ], [
+            'email.unique' => 'Questa email risulta già registrata in piattaforma. Accedi o usa il recupero password.',
         ]);
+
+        // Resolve course either from invite_code (secret code given by Admin) or course_id
+        $targetCourse = null;
+        $rawInviteCode = strtoupper(trim((string) ($validated['invite_code'] ?? '')));
+
+        if ($rawInviteCode !== '') {
+            $targetCourse = Course::where('is_active', true)
+                ->where(function ($q) use ($rawInviteCode) {
+                    $q->whereRaw('UPPER(invite_code) = ?', [$rawInviteCode])
+                      ->orWhereRaw('UPPER(code) = ?', [$rawInviteCode]);
+                })
+                ->first();
+
+            if (!$targetCourse) {
+                return back()
+                    ->withErrors(['invite_code' => 'Il Codice Corso inserito non è valido oppure il corso non è attivo.'])
+                    ->withInput();
+            }
+        } elseif (!empty($validated['course_id'])) {
+            $targetCourse = Course::find($validated['course_id']);
+        }
 
         $autoApprove = ($settings['auto_approve_registration'] ?? '1') === '1';
 
@@ -126,27 +146,27 @@ class AuthController extends Controller
             'user_register',
             "Nuova auto-registrazione corsista: {$user->full_name} (CF: {$user->fiscal_code})",
             $user->id,
-            $validated['course_id'] ?? null,
+            $targetCourse?->id,
             null,
             ['status' => $user->status],
             $request
         );
 
-        if (!empty($validated['course_id'])) {
+        if ($targetCourse) {
             $enrollment = Enrollment::create([
                 'user_id' => $user->id,
-                'course_id' => (int) $validated['course_id'],
+                'course_id' => $targetCourse->id,
                 'status' => $autoApprove ? 'active' : 'pending',
                 'enrolled_at' => now(),
-                'notes' => 'Auto-iscrizione in fase di registrazione',
+                'notes' => $rawInviteCode !== '' ? "Iscritto con Codice Corso ({$rawInviteCode})" : 'Auto-iscrizione in fase di registrazione',
             ]);
             $enrollment->recalculateProgress();
 
             ActivityLog::record(
                 'course_enroll',
-                "Iscrizione al corso ID #{$validated['course_id']} contestuale alla registrazione",
+                "Iscrizione al corso \"{$targetCourse->title}\" ({$targetCourse->code}) contestuale alla registrazione",
                 $user->id,
-                (int) $validated['course_id'],
+                $targetCourse->id,
                 null,
                 [],
                 $request
@@ -156,7 +176,60 @@ class AuthController extends Controller
         Auth::login($user);
 
         return redirect()->route('student.dashboard')
-            ->with('success', 'Registrazione completata con successo! Benvenuto nella piattaforma FAD.');
+            ->with('success', $targetCourse
+                ? "Registrazione completata e corso \"{$targetCourse->title}\" abilitato!"
+                : 'Registrazione anagrafica completata! Puoi sbloccare un corso inserendo il Codice Corso fornito dalla Segreteria.');
+    }
+
+    public function showForgotPassword()
+    {
+        $settings = PlatformSetting::getAllSettings();
+        return view('auth.forgot-password', compact('settings'));
+    }
+
+    public function resetPasswordWithIdentity(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+            'fiscal_code' => ['required', 'string', 'min:11', 'max:20'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ]);
+
+        $email = strtolower(trim($validated['email']));
+        $fiscalCode = strtoupper(trim($validated['fiscal_code']));
+
+        $user = User::whereRaw('LOWER(email) = ?', [$email])
+            ->whereRaw('UPPER(fiscal_code) = ?', [$fiscalCode])
+            ->first();
+
+        if (!$user) {
+            return back()
+                ->withErrors(['email' => 'Nessun account trovato con questa combinazione di Email e Codice Fiscale. Verifica i dati o contatta la segreteria.'])
+                ->onlyInput('email', 'fiscal_code');
+        }
+
+        if ($user->status === 'suspended') {
+            return back()
+                ->withErrors(['email' => 'Questo account risulta sospeso dalla segreteria didattica.'])
+                ->onlyInput('email', 'fiscal_code');
+        }
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        ActivityLog::record(
+            'password_reset',
+            "Reimpostazione password eseguita tramite verifica Email + Codice Fiscale per {$user->full_name}",
+            $user->id,
+            null,
+            null,
+            [],
+            $request
+        );
+
+        return redirect()->route('login')
+            ->with('success', 'Password reimpostata con successo! Ora puoi accedere con la tua nuova password.');
     }
 
     public function demoSwitch(Request $request, User $user)

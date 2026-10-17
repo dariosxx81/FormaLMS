@@ -521,4 +521,97 @@ class PlatformFullCollaudoTest extends TestCase
             ->get(route('student.enrollments.audit-pdf', $enrElena))
             ->assertStatus(403);
     }
+
+    public function test_11_admin_crud_courses_modules_users_password_recovery_and_course_code_redeem(): void
+    {
+        $admin = User::where('role', 'admin')->firstOrFail();
+        $course = Course::where('code', 'AGG-GT-2026-01')->firstOrFail();
+
+        // 1. Admin creates a 100% FAD course with Zoom hours disabled (enable_sync_hours = 0) and a custom invite_code
+        $this->actingAs($admin)->post(route('admin.courses.store'), [
+            'code' => 'FAD-SOLO-2026',
+            'invite_code' => 'SEGRETO-FAD-99',
+            'title' => 'Corso 100% Piattaforma Senza Zoom',
+            'edition' => 'I Edizione',
+            'enable_sync_hours' => '0',
+            'sync_required_hours' => 25, // Should be forced to 0 because enable_sync_hours = 0
+            'async_required_hours' => 10,
+            'min_attendance_percent' => 80,
+            'presence_check_interval_minutes' => 30,
+        ])->assertSessionHasNoErrors();
+
+        $fadOnlyCourse = Course::where('code', 'FAD-SOLO-2026')->firstOrFail();
+        $this->assertFalse($fadOnlyCourse->has_sync_hours);
+        $this->assertEquals(0.0, (float) $fadOnlyCourse->sync_required_hours);
+        $this->assertEquals(10.0, (float) $fadOnlyCourse->total_hours);
+        $this->assertEquals('SEGRETO-FAD-99', $fadOnlyCourse->access_code);
+
+        // 2. Admin adds a module, updates it, toggles its publication status, and deletes a temporary module
+        $this->actingAs($admin)->post(route('admin.courses.modules.store', $fadOnlyCourse), [
+            'sort_order' => 1,
+            'title' => 'Modulo Unico Piattaforma',
+            'instructor_name' => 'Dott. Test',
+            'video_source_type' => 'url',
+            'video_url' => '/videos/lezione-demo.mp4',
+            'duration_minutes' => 600,
+        ])->assertSessionHasNoErrors();
+
+        $mod = CourseModule::where('course_id', $fadOnlyCourse->id)->firstOrFail();
+
+        $this->actingAs($admin)->put(route('admin.modules.update', $mod), [
+            'sort_order' => 1,
+            'title' => 'Modulo Unico Piattaforma Aggiornato',
+            'instructor_name' => 'Dott. Test Modificato',
+            'video_source_type' => 'url',
+            'video_url' => '/videos/lezione-demo.mp4',
+            'duration_minutes' => 600,
+            'is_published' => '1',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertEquals('Modulo Unico Piattaforma Aggiornato', $mod->fresh()->title);
+
+        // 3. Already-registered student links to the new course using ONLY the secret invite_code (no catalog choice)
+        $sara = User::where('email', 'sara.lombardi@guideroma.it')->firstOrFail();
+        $this->actingAs($sara)->post(route('student.courses.redeem-code'), [
+            'access_code' => 'SEGRETO-FAD-99',
+        ])->assertRedirect(route('student.dashboard'));
+
+        $this->assertDatabaseHas('enrollments', [
+            'user_id' => $sara->id,
+            'course_id' => $fadOnlyCourse->id,
+        ]);
+
+        // 4. Password recovery flow via Email + Fiscal Code (/forgot-password)
+        $this->post('/logout');
+        $this->post(route('password.reset.submit'), [
+            'email' => $sara->email,
+            'fiscal_code' => $sara->fiscal_code,
+            'password' => 'NuovaPassword2026!',
+            'password_confirmation' => 'NuovaPassword2026!',
+        ])->assertRedirect(route('login'));
+
+        $this->post('/login', [
+            'email' => $sara->email,
+            'password' => 'NuovaPassword2026!',
+        ])->assertRedirect(route('student.dashboard'));
+        $this->post('/logout');
+
+        // 5. Admin updates user profile, toggles suspension, and deletes a temporary course
+        $this->actingAs($admin)->put(route('admin.users.update', $sara), [
+            'first_name' => 'Sara',
+            'last_name' => 'Lombardi Modificata',
+            'fiscal_code' => $sara->fiscal_code,
+            'email' => $sara->email,
+            'status' => 'active',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertEquals('Lombardi Modificata', $sara->fresh()->last_name);
+
+        $this->actingAs($admin)->patch(route('admin.courses.toggle-status', $fadOnlyCourse));
+        $this->assertFalse($fadOnlyCourse->fresh()->is_active);
+
+        $this->actingAs($admin)->delete(route('admin.courses.destroy', $fadOnlyCourse));
+        $this->assertDatabaseMissing('courses', ['id' => $fadOnlyCourse->id]);
+    }
 }
+
