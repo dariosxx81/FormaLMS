@@ -713,8 +713,9 @@ class AdminDashboardController extends Controller
 
         $data['logo_bg'] = $data['logo_bg'] ?? 'white';
         $data['logo_size'] = $data['logo_size'] ?? 'md';
+        $data['hide_brand_text_with_logo'] = $request->boolean('hide_brand_text_with_logo') ? '1' : '0';
         $data['primary_color'] = $data['primary_color'] ?? '#4f46e5';
-        $data['secondary_color'] = $data['secondary_color'] ?? '#0f172a';
+        $data['secondary_color'] = $data['secondary_color'] ?? '#1e1b4b';
         $data['accent_color'] = $data['accent_color'] ?? '#10b981';
 
         $data['allow_public_registration'] = $request->boolean('allow_public_registration') ? '1' : '0';

@@ -18,19 +18,26 @@
             --brand-primary-soft: {{ $settings['primary_soft_bg'] ?? 'rgba(79, 70, 229, 0.10)' }};
             --brand-primary-border: {{ $settings['primary_soft_border'] ?? 'rgba(79, 70, 229, 0.26)' }};
 
-            --brand-secondary: {{ $settings['secondary_color'] ?? '#0f172a' }};
+            --brand-secondary: {{ $settings['secondary_color'] ?? '#1e1b4b' }};
             --brand-secondary-contrast: {{ $settings['secondary_contrast'] ?? '#ffffff' }};
+            --brand-secondary-muted: {{ $settings['secondary_muted'] ?? 'rgba(255, 255, 255, 0.78)' }};
+            --brand-secondary-surface: {{ $settings['secondary_surface'] ?? 'rgba(255, 255, 255, 0.11)' }};
+            --brand-secondary-border: {{ $settings['secondary_border'] ?? 'rgba(255, 255, 255, 0.20)' }};
+            --brand-secondary-highlight: {{ $settings['secondary_highlight'] ?? '#a5b4fc' }};
 
             --brand-accent: {{ $settings['accent_color'] ?? '#10b981' }};
             --brand-accent-contrast: {{ $settings['accent_contrast'] ?? '#ffffff' }};
             --brand-accent-readable: {{ $settings['accent_readable_on_light'] ?? '#059669' }};
             --brand-accent-soft: {{ $settings['accent_soft_bg'] ?? 'rgba(16, 185, 129, 0.12)' }};
             --brand-accent-border: {{ $settings['accent_soft_border'] ?? 'rgba(16, 185, 129, 0.28)' }};
+
+            --brand-heading: {{ $settings['brand_heading'] ?? '#11102e' }};
+            --brand-body: {{ $settings['brand_body'] ?? '#1e1b4b' }};
         }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; color: var(--brand-body); }
         [x-cloak] { display: none !important; }
 
-        /* 1. Brand Primary Buttons & Progress Bars (with automatic WCAG text contrast!) */
+        /* 1. Brand Primary Buttons & Progress Bars (with automatic tonal text contrast) */
         .bg-indigo-600, .bg-indigo-500 {
             background-color: var(--brand-primary) !important;
             color: var(--brand-primary-contrast) !important;
@@ -41,7 +48,7 @@
             filter: brightness(1.07);
         }
 
-        /* 2. Readable Brand Text on Light Surfaces (auto-darkened if brand color is too bright) */
+        /* 2. Readable Brand Text on Light Surfaces */
         .text-indigo-600, .text-indigo-700, .text-indigo-800, .text-indigo-950 {
             color: var(--brand-primary-readable) !important;
         }
@@ -49,7 +56,7 @@
             border-color: var(--brand-primary) !important;
         }
 
-        /* 3. Soft 10% Opacity Tints for Badges & Info Boxes (prevents tone-on-tone unreadability) */
+        /* 3. Soft 10% Opacity Tints for Badges & Info Boxes */
         .bg-indigo-50, .bg-indigo-50\/40, .bg-indigo-50\/70, .bg-indigo-50\/80, .bg-indigo-100 {
             background-color: var(--brand-primary-soft) !important;
             color: var(--brand-primary-readable) !important;
@@ -69,31 +76,74 @@
             filter: brightness(1.07);
         }
 
-        /* 5. Top Institutional Bar & Active Nav Pills (keeps .bg-slate-900 dark for Video Player!) */
-        .brand-topbar {
+        /* 5. Harmonize ALL .bg-slate-900 Banners, Panels, Buttons & Active Tabs with --brand-secondary (no fixed #0f172a!) */
+        .bg-slate-900, .brand-topbar {
             background-color: var(--brand-secondary) !important;
             color: var(--brand-secondary-contrast) !important;
         }
+        .hover\:bg-slate-800:hover, .hover\:bg-slate-900:hover {
+            background-color: var(--brand-secondary) !important;
+            color: var(--brand-secondary-contrast) !important;
+            filter: brightness(1.12);
+        }
+
+        /* Harmonize all child fonts, sub-cards & borders inside .bg-slate-900 panels */
+        .bg-slate-900 .text-white,
+        .bg-slate-900 .text-slate-100,
+        .bg-slate-900 .text-slate-200 {
+            color: var(--brand-secondary-contrast) !important;
+        }
+        .bg-slate-900 .text-slate-300,
+        .bg-slate-900 .text-slate-400 {
+            color: var(--brand-secondary-muted) !important;
+        }
+        .bg-slate-900 .text-indigo-300,
+        .bg-slate-900 .text-indigo-400 {
+            color: var(--brand-secondary-highlight) !important;
+        }
+        .bg-slate-900 .bg-slate-800,
+        .bg-slate-900 .bg-slate-800\/80 {
+            background-color: var(--brand-secondary-surface) !important;
+            color: var(--brand-secondary-contrast) !important;
+        }
+        .bg-slate-900 .border-slate-700,
+        .bg-slate-900 .border-slate-800 {
+            border-color: var(--brand-secondary-border) !important;
+        }
+
+        /* 6. Harmonize Headings (.text-slate-900) on light cards with deep brand tone instead of #0f172a */
+        .text-slate-900 {
+            color: var(--brand-heading) !important;
+        }
+        .bg-slate-900.text-white, .bg-slate-900 .text-slate-900 {
+            color: var(--brand-secondary-contrast) !important;
+        }
+
         .brand-nav-active {
             background-color: var(--brand-primary) !important;
             color: var(--brand-primary-contrast) !important;
         }
+        .logo-box-dark {
+            background-color: var(--brand-secondary) !important;
+            border-color: var(--brand-secondary-border) !important;
+        }
     </style>
 </head>
-<body class="min-h-full flex flex-col text-slate-800 antialiased">
+<body class="min-h-full flex flex-col antialiased">
 
     @php
         $logoBg = $settings['logo_bg'] ?? 'white';
         $logoSize = $settings['logo_size'] ?? 'md';
+        $hideBrandText = !empty($settings['logo_url']) && ($settings['hide_brand_text_with_logo'] ?? '0') === '1';
         $logoBgClasses = match($logoBg) {
-            'dark' => 'bg-slate-900 border border-slate-700 p-1.5 shadow-xs',
+            'dark' => 'logo-box-dark border p-1.5 shadow-xs',
             'transparent' => 'bg-transparent p-0.5',
             default => 'bg-white border border-slate-200 p-1 shadow-2xs',
         };
         $logoSizeClasses = match($logoSize) {
-            'sm' => 'h-8 max-w-[140px]',
-            'lg' => 'h-14 max-w-[220px]',
-            default => 'h-10 max-w-[175px]',
+            'sm' => 'h-8 max-w-[160px]',
+            'lg' => 'h-14 max-w-[260px]',
+            default => 'h-11 max-w-[210px]',
         };
     @endphp
 
@@ -102,7 +152,7 @@
     <div class="brand-topbar text-xs border-b border-black/10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-black/20 border border-white/20">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-black/15 border border-current/20">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     Ambiente White-Label Attivo
                 </span>
@@ -130,7 +180,7 @@
                     @if(auth()->id() !== $qs->id)
                         <form method="POST" action="{{ route('demo.switch', $qs) }}" class="inline">
                             @csrf
-                            <button type="submit" class="px-2.5 py-1 rounded bg-white/15 hover:bg-white/25 border border-white/25 font-semibold transition cursor-pointer">
+                            <button type="submit" class="px-2.5 py-1 rounded bg-black/15 hover:bg-black/25 border border-current/25 font-semibold transition cursor-pointer">
                                 Corsista: {{ $qs->full_name }}
                             </button>
                         </form>
@@ -154,10 +204,12 @@
                             FAD
                         </div>
                     @endif
-                    <div>
-                        <div class="font-bold text-slate-900 text-base leading-tight">{{ $settings['platform_name'] ?? 'FormaFAD LMS' }}</div>
-                        <div class="text-[11px] text-slate-500 font-medium">{{ $settings['provider_name'] ?? 'Piattaforma E-Learning Certificata' }}</div>
-                    </div>
+                    @if(!$hideBrandText)
+                        <div>
+                            <div class="font-bold text-slate-900 text-base leading-tight">{{ $settings['platform_name'] ?? 'FormaFAD LMS' }}</div>
+                            <div class="text-[11px] text-slate-500 font-medium">{{ $settings['provider_name'] ?? 'Piattaforma E-Learning Certificata' }}</div>
+                        </div>
+                    @endif
                 </a>
 
                 @if(auth()->user()->isAdmin())

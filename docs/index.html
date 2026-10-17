@@ -17,14 +17,20 @@
             --brand-primary-readable: #4f46e5;
             --brand-primary-soft: rgba(79, 70, 229, 0.10);
             --brand-primary-border: rgba(79, 70, 229, 0.26);
-            --brand-secondary: #0f172a;
+            --brand-secondary: #1e1b4b;
             --brand-secondary-contrast: #ffffff;
+            --brand-secondary-muted: rgba(255, 255, 255, 0.78);
+            --brand-secondary-surface: rgba(255, 255, 255, 0.11);
+            --brand-secondary-border: rgba(255, 255, 255, 0.20);
+            --brand-secondary-highlight: #a5b4fc;
             --brand-accent: #10b981;
             --brand-accent-contrast: #ffffff;
+            --brand-heading: #11102e;
+            --brand-body: #1e1b4b;
         }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; color: var(--brand-body); }
         [x-cloak] { display: none !important; }
-        /* 1. Brand Primary Buttons, Active Tabs & Progress Bars (with automatic WCAG text contrast!) */
+        /* 1. Brand Primary Buttons, Active Tabs & Progress Bars (with automatic tonal text contrast!) */
         .bg-indigo-600, .bg-indigo-500 {
             background-color: var(--brand-primary) !important;
             color: var(--brand-primary-contrast) !important;
@@ -34,14 +40,14 @@
             color: var(--brand-primary-contrast) !important;
             filter: brightness(1.07);
         }
-        /* 2. Readable Brand Text on Light Cards (auto-darkened if brand color is too bright) */
+        /* 2. Readable Brand Text on Light Cards */
         .text-indigo-600, .text-indigo-700, .text-indigo-800, .text-indigo-950 {
             color: var(--brand-primary-readable) !important;
         }
         .border-indigo-500, .border-indigo-600, .border-indigo-400 {
             border-color: var(--brand-primary) !important;
         }
-        /* 3. Soft 10% Opacity Tints for Badges & Info Boxes (prevents tone-on-tone unreadability) */
+        /* 3. Soft 10% Opacity Tints for Badges & Info Boxes */
         .bg-indigo-50, .bg-indigo-50\/70, .bg-indigo-50\/80, .bg-indigo-100 {
             background-color: var(--brand-primary-soft) !important;
             color: var(--brand-primary-readable) !important;
@@ -54,7 +60,48 @@
             background-color: var(--brand-accent) !important;
             color: var(--brand-accent-contrast) !important;
         }
-        /* NOTE: .bg-slate-900 is intentionally NOT overridden so the Video Player & dark telemetry cards stay high-contrast dark! */
+        /* 5. Harmonize ALL .bg-slate-900 Banners, Panels & Buttons with --brand-secondary (no fixed #0f172a!) */
+        .bg-slate-900 {
+            background-color: var(--brand-secondary) !important;
+            color: var(--brand-secondary-contrast) !important;
+        }
+        .hover\:bg-slate-800:hover, .hover\:bg-slate-900:hover {
+            background-color: var(--brand-secondary) !important;
+            color: var(--brand-secondary-contrast) !important;
+            filter: brightness(1.12);
+        }
+        .bg-slate-900 .text-white,
+        .bg-slate-900 .text-slate-100,
+        .bg-slate-900 .text-slate-200 {
+            color: var(--brand-secondary-contrast) !important;
+        }
+        .bg-slate-900 .text-slate-300,
+        .bg-slate-900 .text-slate-400 {
+            color: var(--brand-secondary-muted) !important;
+        }
+        .bg-slate-900 .text-indigo-300,
+        .bg-slate-900 .text-indigo-400 {
+            color: var(--brand-secondary-highlight) !important;
+        }
+        .bg-slate-900 .bg-slate-800,
+        .bg-slate-900 .bg-slate-800\/80 {
+            background-color: var(--brand-secondary-surface) !important;
+            color: var(--brand-secondary-contrast) !important;
+        }
+        .bg-slate-900 .border-slate-700,
+        .bg-slate-900 .border-slate-800 {
+            border-color: var(--brand-secondary-border) !important;
+        }
+        .text-slate-900 {
+            color: var(--brand-heading) !important;
+        }
+        .bg-slate-900.text-white, .bg-slate-900 .text-slate-900 {
+            color: var(--brand-secondary-contrast) !important;
+        }
+        .logo-box-dark {
+            background-color: var(--brand-secondary) !important;
+            border-color: var(--brand-secondary-border) !important;
+        }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @media print {
@@ -62,14 +109,14 @@
         }
     </style>
 </head>
-<body x-data="formaFadPreview" class="min-h-full flex flex-col text-slate-800 antialiased">
+<body x-data="formaFadPreview" class="min-h-full flex flex-col antialiased">
 
-    <!-- Top Status & Quick Reset Bar (Uses Secondary Brand Color + Auto WCAG Contrast) -->
+    <!-- Top Status & Quick Reset Bar (Uses Secondary Brand Color + Auto Tonal Contrast) -->
     <div class="text-xs border-b border-black/10 no-print"
          :style="'background-color: ' + settings.brandColor + '; color: ' + getContrastText(settings.brandColor)">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 truncate">
-                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/20 border border-white/20 shrink-0">
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/15 border border-current/20 shrink-0">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     DEMO INTERATTIVA
                 </span>
@@ -78,7 +125,7 @@
                 </span>
             </div>
             <button @click="resetDemoData()"
-                    class="px-2.5 py-1 rounded bg-black/25 hover:bg-red-600 text-white border border-white/20 text-[11px] font-semibold shrink-0 cursor-pointer">
+                    class="px-2.5 py-1 rounded bg-black/20 hover:bg-red-600 text-white border border-current/20 text-[11px] font-semibold shrink-0 cursor-pointer">
                 Reset Dati
             </button>
         </div>
@@ -94,11 +141,11 @@
                         <img :src="settings.logoUrl"
                              alt="Logo Aziendale"
                              :class="{
-                                'h-8 max-w-[130px]': settings.logoSize === 'sm',
-                                'h-10 max-w-[165px]': !settings.logoSize || settings.logoSize === 'md',
-                                'h-12 max-w-[210px]': settings.logoSize === 'lg',
+                                'h-8 max-w-[140px]': settings.logoSize === 'sm',
+                                'h-10 max-w-[185px]': !settings.logoSize || settings.logoSize === 'md',
+                                'h-12 max-w-[240px]': settings.logoSize === 'lg',
                                 'bg-white border border-slate-200 p-1 shadow-2xs': !settings.logoBg || settings.logoBg === 'white',
-                                'bg-slate-900 border border-slate-700 p-1.5 shadow-xs': settings.logoBg === 'dark',
+                                'logo-box-dark border p-1.5 shadow-xs': settings.logoBg === 'dark',
                                 'bg-transparent p-0.5': settings.logoBg === 'transparent'
                              }"
                              class="w-auto object-contain rounded-xl shrink-0 transition">
@@ -109,7 +156,7 @@
                             FAD
                         </div>
                     </template>
-                    <div class="truncate">
+                    <div class="truncate" x-show="!(settings.logoUrl && settings.hideBrandText)">
                         <div class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight truncate" x-text="settings.platformName"></div>
                         <div class="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate" x-text="settings.providerName"></div>
                     </div>
@@ -828,7 +875,7 @@
             <div class="rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
                 <div class="px-4 py-2 text-[11px] font-bold flex flex-wrap items-center justify-between gap-2"
                      :style="'background-color: ' + settings.brandColor + '; color: ' + getContrastText(settings.brandColor)">
-                    <span>1. Barra Istituzionale (Contrasto Testo Auto: <strong x-text="getContrastText(settings.brandColor) === '#ffffff' ? 'Bianco' : 'Scuro'"></strong>)</span>
+                    <span>1. Barra & Banner Istituzionali (Sfondo: <strong class="uppercase font-mono" x-text="settings.brandColor"></strong> • Font Accordato: <strong class="uppercase font-mono" x-text="getContrastText(settings.brandColor)"></strong>)</span>
                     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
                           :style="'background-color: ' + settings.accentColor + '; color: ' + getContrastText(settings.accentColor)">
                         ✓ Attestato Sbloccato (80%)
@@ -841,11 +888,11 @@
                                 <img :src="settings.logoUrl"
                                      alt="Logo Preview"
                                      :class="{
-                                        'h-8 max-w-[130px]': settings.logoSize === 'sm',
-                                        'h-11 max-w-[175px]': !settings.logoSize || settings.logoSize === 'md',
-                                        'h-14 max-w-[225px]': settings.logoSize === 'lg',
+                                        'h-8 max-w-[140px]': settings.logoSize === 'sm',
+                                        'h-11 max-w-[190px]': !settings.logoSize || settings.logoSize === 'md',
+                                        'h-14 max-w-[240px]': settings.logoSize === 'lg',
                                         'bg-white border border-slate-200 p-1 shadow-2xs': !settings.logoBg || settings.logoBg === 'white',
-                                        'bg-slate-900 border border-slate-700 p-1.5 shadow-xs': settings.logoBg === 'dark',
+                                        'logo-box-dark border p-1.5 shadow-xs': settings.logoBg === 'dark',
                                         'bg-transparent p-0.5': settings.logoBg === 'transparent'
                                      }"
                                      class="w-auto object-contain rounded-xl transition">
@@ -856,32 +903,40 @@
                                     FAD
                                 </div>
                             </template>
-                            <div>
+                            <div x-show="!(settings.logoUrl && settings.hideBrandText)">
                                 <div class="font-extrabold text-slate-900 text-sm sm:text-base" x-text="settings.platformName"></div>
                                 <div class="text-xs text-slate-500" x-text="settings.providerName"></div>
                             </div>
+                            <template x-if="settings.logoUrl && settings.hideBrandText">
+                                <span class="px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-[10px] font-bold">
+                                    ✓ Modalità "Solo Logo" attiva (scritta nascosta)
+                                </span>
+                            </template>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
                             <span class="px-3.5 py-2 rounded-xl text-xs font-bold shadow-2xs"
                                   :style="'background-color: ' + settings.primaryColor + '; color: ' + getContrastText(settings.primaryColor)">
-                                Bottone Primario (Auto-Contrasto)
+                                Bottone Primario (Font <span class="uppercase font-mono" x-text="getContrastText(settings.primaryColor)"></span>)
                             </span>
                             <span class="px-3 py-1.5 rounded-xl text-xs font-bold border"
                                   :style="'background-color: ' + getRgba(settings.primaryColor, 0.10) + '; border-color: ' + getRgba(settings.primaryColor, 0.28) + '; color: ' + getReadableOnLight(settings.primaryColor)">
-                                Badge Tinta 10% (Sempre Leggibile)
+                                Badge Tinta 10% Accordata
                             </span>
                         </div>
                     </div>
 
-                    <!-- Protected Dark Video Player Preview -->
-                    <div class="bg-slate-900 text-white rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs border border-slate-800">
-                        <div class="flex items-center gap-2">
-                            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-[10px]">
-                                🛡 PLAYER VIDEO PROTETTO
-                            </span>
-                            <span class="text-slate-200 font-semibold">Il Player Video e i box telemetria restano sempre in tema scuro ad alto contrasto</span>
+                    <!-- Harmonized Banner Preview -->
+                    <div class="bg-slate-900 rounded-xl p-3.5 flex flex-wrap items-center justify-between gap-3 text-xs border border-slate-800">
+                        <div class="space-y-0.5">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-bold text-[10px] text-indigo-300">
+                                    🎨 BANNER & CARD ARMONIZZATI COL BRAND
+                                </span>
+                                <span class="text-white font-extrabold">Titolo Banner Principale</span>
+                            </div>
+                            <p class="text-slate-300 text-[11px]">Sfondi, sottotitoli e riquadri interni si accordano automaticamente ai colori scelti (nessun elemento fisso #0f172a).</p>
                         </div>
-                        <div class="w-32 h-2 bg-slate-800 rounded-full overflow-hidden">
+                        <div class="w-32 h-2 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
                             <div class="h-full w-3/4 rounded-full" :style="'background-color: ' + settings.primaryColor"></div>
                         </div>
                     </div>
@@ -890,11 +945,11 @@
 
             <!-- BOX 1: CARICAMENTO LOGO AZIENDALE & SCELTA COLORI BASE -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
-                <!-- Colonna Sinistra: Caricamento Logo Aziendale + Sfondo/Grandezza -->
+                <!-- Colonna Sinistra: Caricamento Logo Aziendale + Solo Logo + Sfondo/Grandezza -->
                 <div class="lg:col-span-5 space-y-3">
-                    <div class="font-extrabold text-sm text-slate-900">1. Logo Aziendale & Adattamento Box</div>
+                    <div class="font-extrabold text-sm text-slate-900">1. Logo Aziendale & Opzione "Solo Logo"</div>
                     <p class="text-[11px] text-slate-500">
-                        Carica un'immagine e scegli lo <strong>Sfondo Box Logo</strong> (Chiaro, Scuro per loghi bianchi o Trasparente) e la <strong>Dimensione</strong>.
+                        Carica il tuo logo grafico e scegli se <strong>nascondere la scritta accanto</strong> (ideale quando il logo contiene già il nome dell'azienda).
                     </p>
 
                     <div class="p-4 rounded-xl bg-white border border-dashed border-slate-300 flex flex-col items-center justify-center text-center gap-2.5">
@@ -903,7 +958,7 @@
                                 <div class="inline-block rounded-xl"
                                      :class="{
                                         'bg-white border border-slate-200 p-2': !settings.logoBg || settings.logoBg === 'white',
-                                        'bg-slate-900 border border-slate-700 p-2': settings.logoBg === 'dark',
+                                        'logo-box-dark border p-2': settings.logoBg === 'dark',
                                         'bg-slate-100 p-2': settings.logoBg === 'transparent'
                                      }">
                                     <img :src="settings.logoUrl" alt="Logo Caricato" class="h-12 mx-auto object-contain">
@@ -929,18 +984,27 @@
                                 Demo Logo Scuro
                             </button>
                             <button type="button" @click="setDemoLogo('white')"
-                                    class="px-2.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] cursor-pointer">
+                                    class="px-2.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 font-bold text-[11px] cursor-pointer">
                                 Demo Logo Bianco
                             </button>
                         </div>
                     </div>
+
+                    <!-- OPZIONE NASCONDI SCRITTA ACCANTO AL LOGO -->
+                    <label class="flex items-start gap-2.5 p-3 rounded-xl bg-white border border-slate-300 cursor-pointer hover:border-indigo-500 transition shadow-2xs">
+                        <input type="checkbox" x-model="settings.hideBrandText" @change="saveToStorage()" class="mt-0.5 rounded text-indigo-600">
+                        <span class="text-[11px] leading-snug">
+                            <strong class="text-slate-900 block">Mostra solo il Logo (nascondi scritta accanto)</strong>
+                            <span class="text-slate-500">Quando è presente il logo grafico, rimuove il testo del nome piattaforma accanto al logo nell'intestazione.</span>
+                        </span>
+                    </label>
 
                     <div class="grid grid-cols-2 gap-2.5">
                         <div>
                             <label class="block font-bold text-slate-700 mb-1 text-[11px]">Sfondo Box Logo</label>
                             <select x-model="settings.logoBg" @change="saveToStorage()" class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-xs font-bold">
                                 <option value="white">Chiaro (Bianco)</option>
-                                <option value="dark">Scuro (Per loghi bianchi)</option>
+                                <option value="dark">Colore Brand (Per loghi bianchi)</option>
                                 <option value="transparent">Trasparente</option>
                             </select>
                         </div>
@@ -962,14 +1026,24 @@
 
                 <!-- Colonna Destra: Colori Base & Palette Istituzionali -->
                 <div class="lg:col-span-7 space-y-4">
-                    <div class="font-extrabold text-sm text-slate-900">2. Colori Base con Protezione Leggibilità Automatica</div>
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="font-extrabold text-sm text-slate-900">2. Colori del Brand & Accordatura Automatica Font/Sfondo</div>
+                        <button type="button" @click="harmonizeSecondaryFromPrimary()" class="px-3 py-1.5 rounded-xl bg-indigo-50 border border-indigo-200 font-bold text-[11px] cursor-pointer">
+                            🎨 Ricalcola Secondario dal Primario
+                        </button>
+                    </div>
                     <p class="text-[11px] text-slate-500">
-                        Se scegli un colore molto chiaro (es. <em>Oro Chiaro</em>), il testo sui bottoni diventa automaticamente scuro e i badge usano una tinta morbida al 10%.
+                        Tutti gli elementi della piattaforma (inclusi i banner grandi, i titoli, i bottoni secondari e le card) si accordano con i colori scelti qui sotto. Se scegli uno sfondo chiaro, anche il font scuro viene generato come <strong>tonalità profonda coordinata al tuo colore</strong>.
                     </p>
 
-                    <!-- 5 Preset Palette Buttons -->
+                    <label class="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 cursor-pointer text-[11px]">
+                        <input type="checkbox" x-model="autoHarmonize" class="rounded text-indigo-600">
+                        <span><strong>Accordatura automatica in tempo reale:</strong> quando cambi il <em>Colore Primario</em>, aggiorna automaticamente anche il <em>Colore Secondario (Banner & Sfondi)</em> in tono coordinato.</span>
+                    </label>
+
+                    <!-- Preset Palette Buttons -->
                     <div>
-                        <div class="text-[11px] font-bold text-slate-600 mb-1.5">Palette Colori Testate (1-Click):</div>
+                        <div class="text-[11px] font-bold text-slate-600 mb-1.5">Palette Istituzionali Coordinate (1-Click):</div>
                         <div class="flex flex-wrap gap-2">
                             <template x-for="p in colorPresets" :key="p.name">
                                 <button type="button"
@@ -991,31 +1065,40 @@
                         <div class="p-3 rounded-xl bg-white border border-slate-200">
                             <label class="block font-bold text-slate-700 text-[11px] mb-1">Colore Primario (Bottoni & Tab)</label>
                             <div class="flex items-center gap-2">
-                                <input type="color" x-model="settings.primaryColor" @input="applyBrandCssVars(); saveToStorage()" class="h-9 w-10 rounded border border-slate-300 cursor-pointer shrink-0">
-                                <input type="text" x-model="settings.primaryColor" @input="applyBrandCssVars(); saveToStorage()" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-xs uppercase">
+                                <input type="color" x-model="settings.primaryColor" @input="onPrimaryColorInput()" class="h-9 w-10 rounded border border-slate-300 cursor-pointer shrink-0">
+                                <input type="text" x-model="settings.primaryColor" @input="onPrimaryColorInput()" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-xs uppercase">
                             </div>
-                            <div class="text-[10px] text-slate-400 mt-1">
-                                Testo: <strong class="text-slate-700" x-text="getContrastText(settings.primaryColor) === '#ffffff' ? 'Bianco (#FFF)' : 'Scuro (#0F172A)'"></strong>
+                            <div class="text-[10px] text-slate-500 mt-1.5 flex items-center gap-1.5">
+                                <span>Font accordato:</span>
+                                <span class="px-1.5 py-0.5 rounded font-mono font-bold text-[10px] uppercase border border-black/10"
+                                      :style="'background-color:' + settings.primaryColor + '; color:' + getContrastText(settings.primaryColor)"
+                                      x-text="getContrastText(settings.primaryColor)"></span>
                             </div>
                         </div>
                         <div class="p-3 rounded-xl bg-white border border-slate-200">
-                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Barra Superiore Ente</label>
+                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Banner, Header & Bottoni Secondari</label>
                             <div class="flex items-center gap-2">
                                 <input type="color" x-model="settings.brandColor" @input="applyBrandCssVars(); saveToStorage()" class="h-9 w-10 rounded border border-slate-300 cursor-pointer shrink-0">
                                 <input type="text" x-model="settings.brandColor" @input="applyBrandCssVars(); saveToStorage()" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-xs uppercase">
                             </div>
-                            <div class="text-[10px] text-slate-400 mt-1">
-                                Testo: <strong class="text-slate-700" x-text="getContrastText(settings.brandColor) === '#ffffff' ? 'Bianco (#FFF)' : 'Scuro (#0F172A)'"></strong>
+                            <div class="text-[10px] text-slate-500 mt-1.5 flex items-center gap-1.5">
+                                <span>Font accordato:</span>
+                                <span class="px-1.5 py-0.5 rounded font-mono font-bold text-[10px] uppercase border border-black/10"
+                                      :style="'background-color:' + settings.brandColor + '; color:' + getContrastText(settings.brandColor)"
+                                      x-text="getContrastText(settings.brandColor)"></span>
                             </div>
                         </div>
                         <div class="p-3 rounded-xl bg-white border border-slate-200">
-                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Colore Accento (Attestati)</label>
+                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Colore Accento (Attestati & Idoneità)</label>
                             <div class="flex items-center gap-2">
                                 <input type="color" x-model="settings.accentColor" @input="applyBrandCssVars(); saveToStorage()" class="h-9 w-10 rounded border border-slate-300 cursor-pointer shrink-0">
                                 <input type="text" x-model="settings.accentColor" @input="applyBrandCssVars(); saveToStorage()" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-xs uppercase">
                             </div>
-                            <div class="text-[10px] text-slate-400 mt-1">
-                                Testo: <strong class="text-slate-700" x-text="getContrastText(settings.accentColor) === '#ffffff' ? 'Bianco (#FFF)' : 'Scuro (#0F172A)'"></strong>
+                            <div class="text-[10px] text-slate-500 mt-1.5 flex items-center gap-1.5">
+                                <span>Font accordato:</span>
+                                <span class="px-1.5 py-0.5 rounded font-mono font-bold text-[10px] uppercase border border-black/10"
+                                      :style="'background-color:' + settings.accentColor + '; color:' + getContrastText(settings.accentColor)"
+                                      x-text="getContrastText(settings.accentColor)"></span>
                             </div>
                         </div>
                     </div>
@@ -1299,6 +1382,8 @@ document.addEventListener('alpine:init', () => {
         ytPercent: 0,
         ytTimer: null,
 
+        autoHarmonize: true,
+
         settings: {
             platformName: 'FormaFAD LMS',
             providerName: 'Ente di Formazione Accreditato',
@@ -1308,17 +1393,19 @@ document.addEventListener('alpine:init', () => {
             logoUrl: '',
             logoBg: 'white',
             logoSize: 'md',
+            hideBrandText: false,
             primaryColor: '#4f46e5',
-            brandColor: '#0f172a',
+            brandColor: '#1e1b4b',
             accentColor: '#10b981'
         },
 
         colorPresets: [
-            { name: 'Indigo FormaFAD', primary: '#4f46e5', secondary: '#0f172a', accent: '#10b981' },
+            { name: 'Indigo FormaFAD', primary: '#4f46e5', secondary: '#1e1b4b', accent: '#10b981' },
             { name: 'Blu Camera di Commercio', primary: '#0284c7', secondary: '#0c4a6e', accent: '#059669' },
             { name: 'Smeraldo Turismo', primary: '#0d9488', secondary: '#134e4a', accent: '#16a34a' },
             { name: 'Bordeaux Accademia', primary: '#be123c', secondary: '#4c0519', accent: '#d97706' },
-            { name: 'Oro Chiaro & Blu (Test Contrasto Scuro)', primary: '#facc15', secondary: '#172554', accent: '#10b981' }
+            { name: 'Oro Chiaro & Blu (Test Contrasto Tonale)', primary: '#facc15', secondary: '#1e3a8a', accent: '#10b981' },
+            { name: 'Tema Chiaro Sabbia & Terracotta', primary: '#ea580c', secondary: '#fef3c7', accent: '#059669' }
         ],
 
         courses: [
@@ -1785,19 +1872,41 @@ document.addEventListener('alpine:init', () => {
             ];
         },
 
-        getContrastText(hex) {
+        getYiq(hex) {
             const [r, g, b] = this.hexToRgb(hex);
-            const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-            return yiq >= 155 ? '#0f172a' : '#ffffff';
+            return ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        },
+
+        getDeepHarmonizedShade(hex, factor = 0.20) {
+            const [r, g, b] = this.hexToRgb(hex);
+            const dr = Math.max(6, Math.min(55, Math.round(r * factor))).toString(16).padStart(2, '0');
+            const dg = Math.max(8, Math.min(55, Math.round(g * factor))).toString(16).padStart(2, '0');
+            const db = Math.max(12, Math.min(65, Math.round(b * factor))).toString(16).padStart(2, '0');
+            return '#' + dr + dg + db;
+        },
+
+        mixHex(hex1, hex2, weight = 0.5) {
+            const [r1, g1, b1] = this.hexToRgb(hex1);
+            const [r2, g2, b2] = this.hexToRgb(hex2);
+            const r = Math.max(0, Math.min(255, Math.round(r1 * (1 - weight) + r2 * weight))).toString(16).padStart(2, '0');
+            const g = Math.max(0, Math.min(255, Math.round(g1 * (1 - weight) + g2 * weight))).toString(16).padStart(2, '0');
+            const b = Math.max(0, Math.min(255, Math.round(b1 * (1 - weight) + b2 * weight))).toString(16).padStart(2, '0');
+            return '#' + r + g + b;
+        },
+
+        getContrastText(hex) {
+            if (this.getYiq(hex) >= 155) {
+                return this.getDeepHarmonizedShade(hex, 0.18);
+            }
+            return '#ffffff';
         },
 
         getReadableOnLight(hex) {
+            if (this.getYiq(hex) <= 160) return hex;
             const [r, g, b] = this.hexToRgb(hex);
-            const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-            if (yiq <= 165) return hex;
-            const dr = Math.max(0, Math.round(r * 0.50)).toString(16).padStart(2, '0');
-            const dg = Math.max(0, Math.round(g * 0.50)).toString(16).padStart(2, '0');
-            const db = Math.max(0, Math.round(b * 0.50)).toString(16).padStart(2, '0');
+            const dr = Math.max(0, Math.round(r * 0.48)).toString(16).padStart(2, '0');
+            const dg = Math.max(0, Math.round(g * 0.48)).toString(16).padStart(2, '0');
+            const db = Math.max(0, Math.round(b * 0.48)).toString(16).padStart(2, '0');
             return '#' + dr + dg + db;
         },
 
@@ -1806,10 +1915,29 @@ document.addEventListener('alpine:init', () => {
             return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         },
 
+        onPrimaryColorInput() {
+            if (this.autoHarmonize) {
+                this.settings.brandColor = this.getDeepHarmonizedShade(this.settings.primaryColor, 0.26);
+            }
+            this.applyBrandCssVars();
+            this.saveToStorage();
+        },
+
+        harmonizeSecondaryFromPrimary() {
+            this.settings.brandColor = this.getDeepHarmonizedShade(this.settings.primaryColor, 0.26);
+            this.applyBrandCssVars();
+            this.saveToStorage();
+            this.showToast('Colore Secondario e Font accordati automaticamente dal Colore Primario!');
+        },
+
         applyBrandCssVars() {
             const root = document.documentElement.style;
             const p = this.settings.primaryColor || '#4f46e5';
-            const s = this.settings.brandColor || '#0f172a';
+            let s = this.settings.brandColor || '#1e1b4b';
+            if (s === '#0f172a' && p !== '#4f46e5') {
+                s = this.getDeepHarmonizedShade(p, 0.26);
+                this.settings.brandColor = s;
+            }
             const a = this.settings.accentColor || '#10b981';
 
             root.setProperty('--brand-primary', p);
@@ -1818,11 +1946,33 @@ document.addEventListener('alpine:init', () => {
             root.setProperty('--brand-primary-soft', this.getRgba(p, 0.10));
             root.setProperty('--brand-primary-border', this.getRgba(p, 0.26));
 
+            const secIsLight = this.getYiq(s) >= 155;
+            const secDeep = this.getDeepHarmonizedShade(s, 0.18);
+            const secMuted = secIsLight
+                ? this.mixHex(s, secDeep, 0.78)
+                : this.mixHex(s, '#ffffff', 0.78);
+            const secSurface = secIsLight
+                ? this.getRgba(secDeep, 0.08)
+                : 'rgba(255, 255, 255, 0.11)';
+            const secBorder = secIsLight
+                ? this.getRgba(secDeep, 0.18)
+                : 'rgba(255, 255, 255, 0.20)';
+            const secHighlight = secIsLight
+                ? this.getReadableOnLight(p)
+                : this.mixHex(p, '#ffffff', 0.62);
+
             root.setProperty('--brand-secondary', s);
             root.setProperty('--brand-secondary-contrast', this.getContrastText(s));
+            root.setProperty('--brand-secondary-muted', secMuted);
+            root.setProperty('--brand-secondary-surface', secSurface);
+            root.setProperty('--brand-secondary-border', secBorder);
+            root.setProperty('--brand-secondary-highlight', secHighlight);
 
             root.setProperty('--brand-accent', a);
             root.setProperty('--brand-accent-contrast', this.getContrastText(a));
+
+            root.setProperty('--brand-heading', this.getDeepHarmonizedShade(s, 0.22));
+            root.setProperty('--brand-body', this.getDeepHarmonizedShade(s, 0.32));
         },
 
         applyColorPreset(p) {
@@ -1849,15 +1999,17 @@ document.addEventListener('alpine:init', () => {
         setDemoLogo(mode = 'dark') {
             if (mode === 'white') {
                 this.settings.logoBg = 'dark';
-                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 56" width="230" height="56"><circle cx="28" cy="28" r="18" fill="#38bdf8"/><path d="M20 28l5 5 11-11" stroke="#0f172a" stroke-width="3.5" fill="none" stroke-linecap="round"/><text x="54" y="25" font-family="Plus Jakarta Sans, sans-serif" font-size="15" font-weight="800" fill="#ffffff">FORMACAMERA</text><text x="54" y="42" font-family="Plus Jakarta Sans, sans-serif" font-size="10" font-weight="600" fill="#cbd5e1">LOGO BIANCO SU BOX SCURO</text></svg>`;
+                const s = this.settings.brandColor || '#1e1b4b';
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 56" width="230" height="56"><circle cx="28" cy="28" r="18" fill="#38bdf8"/><path d="M20 28l5 5 11-11" stroke="${s}" stroke-width="3.5" fill="none" stroke-linecap="round"/><text x="54" y="25" font-family="Plus Jakarta Sans, sans-serif" font-size="15" font-weight="800" fill="#ffffff">FORMACAMERA</text><text x="54" y="42" font-family="Plus Jakarta Sans, sans-serif" font-size="10" font-weight="600" fill="#cbd5e1">LOGO BIANCO SU BOX BRAND</text></svg>`;
                 this.settings.logoUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
                 this.saveToStorage();
-                this.showToast('Logo Bianco caricato con Box Sfondo Scuro!');
+                this.showToast('Logo Bianco caricato con Box Sfondo Brand!');
             } else {
                 this.settings.logoBg = 'white';
                 const p = this.settings.primaryColor || '#0284c7';
                 const c = this.getContrastText(p);
-                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 56" width="230" height="56"><circle cx="28" cy="28" r="18" fill="${p}"/><path d="M20 28l5 5 11-11" stroke="${c}" stroke-width="3.5" fill="none" stroke-linecap="round"/><text x="54" y="25" font-family="Plus Jakarta Sans, sans-serif" font-size="15" font-weight="800" fill="#0f172a">ENTE FORMAZIONE</text><text x="54" y="42" font-family="Plus Jakarta Sans, sans-serif" font-size="10" font-weight="700" fill="#475569">ACCREDITATO MINISTERO</text></svg>`;
+                const h = this.getDeepHarmonizedShade(p, 0.22);
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 56" width="230" height="56"><circle cx="28" cy="28" r="18" fill="${p}"/><path d="M20 28l5 5 11-11" stroke="${c}" stroke-width="3.5" fill="none" stroke-linecap="round"/><text x="54" y="25" font-family="Plus Jakarta Sans, sans-serif" font-size="15" font-weight="800" fill="${h}">ENTE FORMAZIONE</text><text x="54" y="42" font-family="Plus Jakarta Sans, sans-serif" font-size="10" font-weight="700" fill="#475569">ACCREDITATO MINISTERO</text></svg>`;
                 this.settings.logoUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
                 this.saveToStorage();
                 this.showToast('Logo Scuro caricato con Box Sfondo Chiaro!');
@@ -1890,8 +2042,9 @@ document.addEventListener('alpine:init', () => {
             this.settings.logoUrl = '';
             this.settings.logoBg = 'white';
             this.settings.logoSize = 'md';
+            this.settings.hideBrandText = false;
             this.settings.primaryColor = '#4f46e5';
-            this.settings.brandColor = '#0f172a';
+            this.settings.brandColor = '#1e1b4b';
             this.settings.accentColor = '#10b981';
             this.applyBrandCssVars();
             this.saveToStorage();

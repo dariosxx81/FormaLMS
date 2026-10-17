@@ -374,11 +374,12 @@ class PlatformFullCollaudoTest extends TestCase
             'ateco_code' => '79.90',
             'cp_istat_code' => '3.4.1.5.2',
             'support_email' => 'fad@formacamera.it',
-            'primary_color' => '#fbbf24', // Bright yellow to test WCAG dark text contrast (#0f172a)
+            'primary_color' => '#fbbf24', // Bright yellow to test tonal dark contrast shade (not #0f172a)
             'secondary_color' => '#0c4a6e',
             'accent_color' => '#059669',
             'logo_bg' => 'dark',
             'logo_size' => 'lg',
+            'hide_brand_text_with_logo' => '1',
             'logo_file' => $fakeLogo,
             'allow_public_registration' => '1',
             'auto_approve_registration' => '1',
@@ -392,17 +393,19 @@ class PlatformFullCollaudoTest extends TestCase
         $this->assertEquals('#059669', $settings['accent_color']);
         $this->assertEquals('dark', $settings['logo_bg']);
         $this->assertEquals('lg', $settings['logo_size']);
-        $this->assertEquals('#0f172a', $settings['primary_contrast']); // Automatic dark text on bright yellow
+        $this->assertEquals('1', $settings['hide_brand_text_with_logo']);
+        $this->assertNotEquals('#0f172a', $settings['primary_contrast']); // Tonal deep shade of #fbbf24 instead of fixed #0f172a
+        $this->assertEquals('#2d220c', $settings['primary_contrast']);
         $this->assertEquals('#ffffff', $settings['secondary_contrast']); // Automatic white text on dark blue
         $this->assertStringContainsString('rgba(251, 191, 36, 0.1)', $settings['primary_soft_bg']);
         $this->assertStringContainsString('/storage/brand-logos/', $settings['logo_url']);
 
-        // Verify uploaded logo, WCAG contrast tokens, and custom CSS variables appear immediately in the Admin Header
+        // Verify uploaded logo, tonal contrast tokens, and custom CSS variables appear immediately in the Admin Header
         $this->actingAs($admin)->get(route('admin.dashboard'))
             ->assertStatus(200)
             ->assertSee($settings['logo_url'])
             ->assertSee('--brand-primary: #fbbf24')
-            ->assertSee('--brand-primary-contrast: #0f172a')
+            ->assertSee('--brand-primary-contrast: #2d220c')
             ->assertSee('--brand-secondary: #0c4a6e');
 
         // Verify updated White-Label name and logo appear immediately on Login page
