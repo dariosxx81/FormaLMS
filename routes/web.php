@@ -22,6 +22,9 @@ Route::get('/register', [AuthController::class, 'showRegister'])->name('register
 Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
 Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
 Route::post('/forgot-password', [AuthController::class, 'resetPasswordWithIdentity'])->name('password.reset.submit');
+Route::post('/forgot-password/email', [AuthController::class, 'sendPasswordResetLink'])->name('password.email');
+Route::get('/reset-password/{token}', [AuthController::class, 'showResetPasswordForm'])->name('password.reset.token');
+Route::post('/reset-password', [AuthController::class, 'resetPasswordWithToken'])->name('password.update');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/demo-switch/{user}', [AuthController::class, 'demoSwitch'])->name('demo.switch');
 

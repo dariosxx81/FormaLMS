@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\PasswordResetMail;
 use App\Models\ActivityLog;
 use App\Models\Course;
 use App\Models\Enrollment;
@@ -9,7 +10,10 @@ use App\Models\PlatformSetting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -187,6 +191,116 @@ class AuthController extends Controller
         return view('auth.forgot-password', compact('settings'));
     }
 
+    public function sendPasswordResetLink(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+        ]);
+
+        $email = strtolower(trim($validated['email']));
+        $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
+
+        if (!$user) {
+            return back()
+                ->withErrors(['email' => 'Nessun account registrato con questo indirizzo email.'])
+                ->onlyInput('email');
+        }
+
+        if ($user->status === 'suspended') {
+            return back()
+                ->withErrors(['email' => 'Questo account risulta sospeso dalla segreteria didattica.'])
+                ->onlyInput('email');
+        }
+
+        $plainToken = Str::random(64);
+
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $user->email],
+            [
+                'token' => Hash::make($plainToken),
+                'created_at' => now(),
+            ]
+        );
+
+        $settings = PlatformSetting::getAllSettings();
+        $resetUrl = route('password.reset.token', [
+            'token' => $plainToken,
+            'email' => $user->email,
+        ]);
+
+        Mail::to($user->email)->send(new PasswordResetMail($user, $resetUrl, $settings, 'link'));
+
+        ActivityLog::record(
+            'password_reset_request',
+            "Inviata email con link di recupero password a {$user->email}",
+            $user->id,
+            null,
+            null,
+            [],
+            $request
+        );
+
+        return back()
+            ->with('success', "Email di recupero password inviata a {$user->email}!")
+            ->with('reset_link_preview', $resetUrl);
+    }
+
+    public function showResetPasswordForm(Request $request, string $token)
+    {
+        $settings = PlatformSetting::getAllSettings();
+        $email = (string) $request->query('email', '');
+
+        return view('auth.reset-password', compact('settings', 'token', 'email'));
+    }
+
+    public function resetPasswordWithToken(Request $request)
+    {
+        $validated = $request->validate([
+            'token' => ['required', 'string'],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ]);
+
+        $email = strtolower(trim($validated['email']));
+        $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
+
+        if (!$user) {
+            return back()->withErrors(['email' => 'Account non trovato per questo indirizzo email.']);
+        }
+
+        if ($user->status === 'suspended') {
+            return back()->withErrors(['email' => 'Questo account risulta sospeso dalla segreteria didattica.']);
+        }
+
+        $record = DB::table('password_reset_tokens')->where('email', $user->email)->first();
+
+        if (!$record || !Hash::check($validated['token'], $record->token)) {
+            return back()->withErrors(['email' => 'Il link di recupero password non è valido o è scaduto. Richiedine uno nuovo.']);
+        }
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        DB::table('password_reset_tokens')->where('email', $user->email)->delete();
+
+        $settings = PlatformSetting::getAllSettings();
+        Mail::to($user->email)->send(new PasswordResetMail($user, null, $settings, 'changed'));
+
+        ActivityLog::record(
+            'password_reset',
+            "Password reimpostata tramite link email per {$user->full_name} ({$user->email})",
+            $user->id,
+            null,
+            null,
+            [],
+            $request
+        );
+
+        return redirect()->route('login')
+            ->with('success', 'Password reimpostata con successo tramite link email! Ora puoi accedere con la tua nuova password.');
+    }
+
     public function resetPasswordWithIdentity(Request $request)
     {
         $validated = $request->validate([
@@ -217,6 +331,9 @@ class AuthController extends Controller
         $user->update([
             'password' => Hash::make($validated['password']),
         ]);
+
+        $settings = PlatformSetting::getAllSettings();
+        Mail::to($user->email)->send(new PasswordResetMail($user, null, $settings, 'changed'));
 
         ActivityLog::record(
             'password_reset',

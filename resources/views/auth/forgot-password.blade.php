@@ -3,90 +3,131 @@
 @section('title', 'Recupero Password — ' . ($settings['platform_name'] ?? 'FormaFAD LMS'))
 
 @section('content')
-@php
-    $hasLogo = !empty($settings['logo_url']);
-    $hideBrandText = $hasLogo && (($settings['hide_brand_text_with_logo'] ?? '0') === '1');
-    $logoBg = $settings['logo_bg'] ?? 'white';
-    $logoSize = $settings['logo_size'] ?? 'md';
-    $fpLogoSizeClasses = match($logoSize) {
-        'sm' => 'h-9 max-w-[160px]',
-        'lg' => 'h-14 max-w-[260px]',
-        default => 'h-11 max-w-[210px]',
-    };
-    $fpLogoBgClasses = match($logoBg) {
-        'dark' => 'logo-box-dark border p-1.5 shadow-xs',
-        'transparent' => 'bg-transparent p-0.5',
-        default => 'bg-white border border-slate-200 p-1.5 shadow-2xs',
-    };
-@endphp
+<div x-data="{ mode: 'email' }"
+     class="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 sm:p-8"
+     style="background: radial-gradient(circle at top right, var(--brand-primary-soft), transparent 45%), radial-gradient(circle at bottom left, var(--brand-accent-soft), transparent 45%);">
 
-<div class="min-h-[calc(100vh-4rem)] flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-lg w-full bg-white rounded-3xl shadow-md border border-slate-200/90 overflow-hidden">
-        <!-- Branded Header -->
-        <div class="bg-slate-900 p-6 sm:p-7 flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3.5">
-                @if($hasLogo)
-                    <img src="{{ $settings['logo_url'] }}"
-                         alt="Logo"
-                         class="{{ $fpLogoSizeClasses }} {{ $fpLogoBgClasses }} w-auto object-contain rounded-xl shrink-0">
-                @else
-                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-extrabold text-sm shadow-xs shrink-0">
-                        FAD
-                    </div>
-                @endif
-                <div>
-                    @if(!$hideBrandText)
-                        <div class="text-[11px] font-bold text-indigo-300 uppercase tracking-wider">{{ $settings['platform_name'] ?? 'FormaFAD LMS' }}</div>
-                    @endif
-                    <h1 class="text-lg sm:text-xl font-extrabold text-white">Recupero & Reimpostazione Password</h1>
-                </div>
+    <div class="max-w-lg w-full bg-white rounded-3xl shadow-xl border border-slate-200/90 overflow-hidden">
+
+        <!-- Branded Top Banner -->
+        <div class="p-6 sm:p-8 text-white"
+             style="background: linear-gradient(135deg, var(--brand-secondary) 0%, var(--brand-secondary-dark) 100%);">
+            <div class="flex items-center justify-between gap-3 mb-4">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-[11px] font-bold uppercase tracking-wider">
+                    <span>🔑 Ripristino Credenziali</span>
+                </span>
+                <a href="{{ route('login') }}" class="text-xs font-bold text-white/80 hover:text-white underline">
+                    &larr; Torna al Login
+                </a>
             </div>
-            <a href="{{ route('login') }}" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-white shrink-0 transition">
-                &larr; Login
-            </a>
+            <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight">Hai dimenticato la password?</h1>
+            <p class="text-xs opacity-80 mt-1 leading-relaxed">
+                Puoi ricevere il <strong>Link di Ripristino via Email</strong> oppure reimpostarla subito verificando il tuo <strong>Codice Fiscale</strong>.
+            </p>
         </div>
 
-        <form method="POST" action="{{ route('password.reset.submit') }}" class="p-6 sm:p-8 space-y-4">
-            @csrf
-            <p class="text-xs text-slate-600 leading-relaxed">
-                Sei già registrato ma non ricordi la password? Verifica la tua identità inserendo l'<strong>Email</strong> e il <strong>Codice Fiscale</strong> associati al tuo profilo e imposta subito una nuova password.
-            </p>
+        <div class="p-6 sm:p-8 space-y-5">
 
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Indirizzo Email registrato *</label>
-                <input type="email" name="email" value="{{ old('email') }}" required placeholder="nome.cognome@email.it"
-                       class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-600 outline-none">
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Codice Fiscale *</label>
-                <input type="text" name="fiscal_code" value="{{ old('fiscal_code') }}" required maxlength="16" placeholder="BNCLNE84D52H501Q"
-                       class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm uppercase font-mono focus:border-indigo-600 outline-none">
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Nuova Password (min. 6 car.) *</label>
-                    <input type="password" name="password" required
-                           class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-600 outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Conferma Nuova Password *</label>
-                    <input type="password" name="password_confirmation" required
-                           class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-600 outline-none">
-                </div>
-            </div>
-
-            <div class="pt-3">
-                <button type="submit" class="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-extrabold text-sm transition shadow-xs cursor-pointer">
-                    Verifica Identità e Aggiorna Password &rarr;
+            <!-- Mode Selector Tabs -->
+            <div class="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-slate-100 text-xs font-extrabold">
+                <button type="button" @click="mode = 'email'"
+                        :class="mode === 'email' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'"
+                        class="py-2.5 px-3 rounded-xl transition cursor-pointer">
+                    📧 Ricevi Link via Email
+                </button>
+                <button type="button" @click="mode = 'identity'"
+                        :class="mode === 'identity' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'"
+                        class="py-2.5 px-3 rounded-xl transition cursor-pointer">
+                    🪪 Verifica Codice Fiscale
                 </button>
             </div>
 
-            <div class="text-center pt-2 text-[11px] text-slate-400">
-                Hai bisogno di assistenza? Scrivi a <a href="mailto:{{ $settings['support_email'] ?? 'segreteria@ente.it' }}" class="text-indigo-600 hover:underline font-semibold">{{ $settings['support_email'] ?? 'segreteria@ente.it' }}</a>
+            @if(session('reset_link_preview'))
+                <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs space-y-2">
+                    <div class="font-extrabold text-emerald-900">✓ Email di recupero inviata con successo!</div>
+                    <p class="text-emerald-800">
+                        Abbiamo inviato il link di reimpostazione all'indirizzo indicato.
+                    </p>
+                    <div class="pt-1">
+                        <a href="{{ session('reset_link_preview') }}"
+                           class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-2xs transition">
+                            <span>🔗 Apri Link di Reset Password (Anteprima Email) &rarr;</span>
+                        </a>
+                    </div>
+                </div>
+            @endif
+
+            <!-- MODE 1: Send Reset Link via Email -->
+            <form x-show="mode === 'email'" method="POST" action="{{ route('password.email') }}" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Email Registrata *</label>
+                    <input type="email" name="email" value="{{ old('email') }}" required
+                           placeholder="nome.cognome@dominio.it"
+                           class="w-full rounded-xl border border-slate-300 bg-slate-50/60 focus:bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 transition"
+                           style="--tw-ring-color: var(--brand-primary);">
+                    <p class="text-[11px] text-slate-500 mt-1.5">
+                        Ti invieremo un'email contenente il link sicuro per scegliere una nuova password.
+                    </p>
+                </div>
+
+                <button type="submit"
+                        class="w-full py-3.5 px-6 rounded-xl font-extrabold text-sm shadow-lg transition transform active:scale-[0.99] cursor-pointer"
+                        style="background-color: var(--brand-primary); color: var(--brand-primary-contrast);">
+                    Invia Email di Recupero Password &rarr;
+                </button>
+            </form>
+
+            <!-- MODE 2: Immediate Reset with Email + Fiscal Code -->
+            <form x-show="mode === 'identity'" method="POST" action="{{ route('password.reset.submit') }}" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Email Registrata *</label>
+                    <input type="email" name="email" value="{{ old('email') }}" required
+                           placeholder="nome.cognome@dominio.it"
+                           class="w-full rounded-xl border border-slate-300 bg-slate-50/60 focus:bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 transition"
+                           style="--tw-ring-color: var(--brand-primary);">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Codice Fiscale (Verifica Identità) *</label>
+                    <input type="text" name="fiscal_code" value="{{ old('fiscal_code') }}" required maxlength="16"
+                           placeholder="RSSMRA80A01H501U"
+                           class="w-full rounded-xl border border-slate-300 bg-slate-50/60 focus:bg-white px-4 py-3 text-sm text-slate-900 font-mono uppercase focus:outline-none focus:ring-2 transition"
+                           style="--tw-ring-color: var(--brand-primary);">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Nuova Password *</label>
+                        <input type="password" name="password" required minlength="6"
+                               placeholder="Minimo 6 caratteri"
+                               class="w-full rounded-xl border border-slate-300 bg-slate-50/60 focus:bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 transition"
+                               style="--tw-ring-color: var(--brand-primary);">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Conferma Password *</label>
+                        <input type="password" name="password_confirmation" required minlength="6"
+                               placeholder="Ripeti nuova password"
+                               class="w-full rounded-xl border border-slate-300 bg-slate-50/60 focus:bg-white px-4 py-3 text-sm text-slate-900 focus:outline-none focus:ring-2 transition"
+                               style="--tw-ring-color: var(--brand-primary);">
+                    </div>
+                </div>
+
+                <button type="submit"
+                        class="w-full py-3.5 px-6 rounded-xl font-extrabold text-sm shadow-lg transition transform active:scale-[0.99] cursor-pointer mt-2"
+                        style="background-color: var(--brand-primary); color: var(--brand-primary-contrast);">
+                    Reimposta Password e Accedi &rarr;
+                </button>
+            </form>
+
+            <div class="pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
+                Ricordi la password?
+                <a href="{{ route('login') }}" class="font-extrabold hover:underline ml-1" style="color: var(--brand-primary);">
+                    Torna alla schermata di Login
+                </a>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 @endsection

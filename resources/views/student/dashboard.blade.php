@@ -82,7 +82,7 @@
                         $modules = $course->modules->where('is_published', true);
                         $completedModulesCount = $modules->filter(fn($m) => $progressByModule[$m->id]->is_completed ?? false)->count();
                     @endphp
-                    <div class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 transition hover:border-slate-300">
+                    <div class="bg-white rounded-2xl border {{ $course->is_active ? 'border-slate-200/90 hover:border-slate-300' : 'border-amber-200 bg-slate-50/60 opacity-90' }} shadow-2xs p-6 transition">
                         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
                             <div class="space-y-1.5">
                                 <div class="flex flex-wrap items-center gap-2">
@@ -90,6 +90,11 @@
                                     <span class="px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[11px] font-bold border border-indigo-200 uppercase">
                                         {{ ucfirst($course->course_type) }}
                                     </span>
+                                    @if(!$course->is_active)
+                                        <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold">
+                                            ⏸ Corso Sospeso / Disattivato dalla Segreteria
+                                        </span>
+                                    @endif
                                     @if(!$course->has_sync_hours)
                                         <span class="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-bold">
                                             100% Piattaforma FAD
@@ -134,45 +139,53 @@
                                         </a>
                                     @endif
 
-                                    <a href="{{ route('student.courses.show', $course) }}"
-                                       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition">
-                                        <span>▶ Riprendi Lezione</span>
-                                    </a>
+                                    @if($course->is_active)
+                                        <a href="{{ route('student.courses.show', $course) }}"
+                                           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition">
+                                            <span>▶ Riprendi Lezione</span>
+                                        </a>
+                                    @else
+                                        <span class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold">
+                                            <span>🔒 Corso Sospeso</span>
+                                        </span>
+                                    @endif
                                 </div>
                             </div>
                         </div>
 
                         <!-- Compact Modules Strip -->
-                        <div class="mt-5 pt-4 border-t border-slate-100">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
-                                @foreach($modules as $mod)
-                                    @php
-                                        $mp = $progressByModule[$mod->id] ?? null;
-                                        $pct = $mp ? $mp->completion_percent : 0;
-                                        $done = $mp ? $mp->is_completed : false;
-                                    @endphp
-                                    <a href="{{ route('student.courses.module', [$course, $mod]) }}"
-                                       class="group rounded-xl p-3 border transition flex flex-col justify-between {{ $done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-slate-50/70 border-slate-200 hover:border-indigo-400 hover:bg-white' }}">
-                                        <div>
-                                            <div class="flex items-center justify-between gap-2 text-[10px] font-bold mb-1">
-                                                <span class="text-slate-500">MOD. {{ $mod->sort_order }}</span>
-                                                @if($done)
-                                                    <span class="text-emerald-700">✓ 100%</span>
-                                                @elseif($pct > 0)
-                                                    <span class="text-indigo-600">{{ $pct }}%</span>
-                                                @else
-                                                    <span class="text-slate-400">{{ $mod->formatted_duration }}</span>
-                                                @endif
+                        @if($course->is_active)
+                            <div class="mt-5 pt-4 border-t border-slate-100">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+                                    @foreach($modules as $mod)
+                                        @php
+                                            $mp = $progressByModule[$mod->id] ?? null;
+                                            $pct = $mp ? $mp->completion_percent : 0;
+                                            $done = $mp ? $mp->is_completed : false;
+                                        @endphp
+                                        <a href="{{ route('student.courses.module', [$course, $mod]) }}"
+                                           class="group rounded-xl p-3 border transition flex flex-col justify-between {{ $done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-slate-50/70 border-slate-200 hover:border-indigo-400 hover:bg-white' }}">
+                                            <div>
+                                                <div class="flex items-center justify-between gap-2 text-[10px] font-bold mb-1">
+                                                    <span class="text-slate-500">MOD. {{ $mod->sort_order }}</span>
+                                                    @if($done)
+                                                        <span class="text-emerald-700">✓ 100%</span>
+                                                    @elseif($pct > 0)
+                                                        <span class="text-indigo-600">{{ $pct }}%</span>
+                                                    @else
+                                                        <span class="text-slate-400">{{ $mod->formatted_duration }}</span>
+                                                    @endif
+                                                </div>
+                                                <div class="text-xs font-bold text-slate-900 group-hover:text-indigo-600 line-clamp-1">{{ $mod->title }}</div>
                                             </div>
-                                            <div class="text-xs font-bold text-slate-900 group-hover:text-indigo-600 line-clamp-1">{{ $mod->title }}</div>
-                                        </div>
-                                        <div class="mt-2 w-full h-1 bg-slate-200 rounded-full overflow-hidden">
-                                            <div class="h-full {{ $done ? 'bg-emerald-500' : 'bg-indigo-600' }}" style="width: {{ $pct }}%"></div>
-                                        </div>
-                                    </a>
-                                @endforeach
+                                            <div class="mt-2 w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                                                <div class="h-full {{ $done ? 'bg-emerald-500' : 'bg-indigo-600' }}" style="width: {{ $pct }}%"></div>
+                                            </div>
+                                        </a>
+                                    @endforeach
+                                </div>
                             </div>
-                        </div>
+                        @endif
                     </div>
                 @endforeach
             </div>

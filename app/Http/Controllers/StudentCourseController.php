@@ -20,6 +20,13 @@ class StudentCourseController extends Controller
     public function dashboard()
     {
         $user = auth()->user();
+
+        if ($user->status === 'suspended') {
+            auth()->logout();
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Il tuo account è stato sospeso o disattivato dalla segreteria didattica.']);
+        }
+
         $settings = PlatformSetting::getAllSettings();
 
         $enrollments = Enrollment::with(['course.modules.attachments'])
@@ -53,6 +60,12 @@ class StudentCourseController extends Controller
     public function redeemCode(Request $request)
     {
         $user = auth()->user();
+
+        if ($user->status === 'suspended') {
+            auth()->logout();
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Il tuo account è stato sospeso o disattivato dalla segreteria didattica.']);
+        }
 
         $data = $request->validate([
             'access_code' => ['required', 'string', 'max:50'],
@@ -138,6 +151,13 @@ class StudentCourseController extends Controller
     public function showCourse(Course $course, ?CourseModule $module = null)
     {
         $user = auth()->user();
+
+        if ($user->status === 'suspended') {
+            auth()->logout();
+            return redirect()->route('login')
+                ->withErrors(['email' => 'Il tuo account è stato sospeso o disattivato dalla segreteria didattica.']);
+        }
+
         $settings = PlatformSetting::getAllSettings();
 
         if (!$course->is_active && !$user->isAdmin()) {
@@ -182,6 +202,10 @@ class StudentCourseController extends Controller
             }) ?? $modules->first();
         } else {
             abort_unless($module->course_id === $course->id, 404);
+            if (!$module->is_published && !$user->isAdmin()) {
+                return redirect()->route('student.courses.show', $course)
+                    ->withErrors(['module' => 'Questo modulo è stato nascosto o disattivato dalla segreteria.']);
+            }
             $activeModule = $module;
         }
 
@@ -240,6 +264,13 @@ class StudentCourseController extends Controller
     {
         $user = auth()->user();
         abort_unless($module->course_id === $course->id, 404);
+
+        if ($user->status === 'suspended' || ((!$course->is_active || !$module->is_published) && !$user->isAdmin())) {
+            return response()->json([
+                'ok' => false,
+                'error' => 'Corso, modulo o account disattivato dalla segreteria.',
+            ], 403);
+        }
 
         $data = $request->validate([
             'session_token' => ['required', 'string', 'max:64'],

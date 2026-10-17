@@ -122,7 +122,7 @@ class AdminDashboardController extends Controller
         $syncHours = $enableSync ? (float) ($data['sync_required_hours'] ?? 0) : 0.0;
         $asyncHours = (float) $data['async_required_hours'];
         $totalHours = $enableSync
-            ? (float) ($data['total_hours'] ?: ($syncHours + $asyncHours))
+            ? (float) (($data['total_hours'] ?? null) ?: ($syncHours + $asyncHours))
             : $asyncHours;
 
         $data['course_type'] = $data['course_type'] ?? 'aggiornamento';
@@ -175,10 +175,11 @@ class AdminDashboardController extends Controller
         $syncHours = $enableSync ? (float) ($data['sync_required_hours'] ?? 0) : 0.0;
         $asyncHours = (float) $data['async_required_hours'];
         $totalHours = $enableSync
-            ? (float) ($data['total_hours'] ?: ($syncHours + $asyncHours))
+            ? (float) (($data['total_hours'] ?? null) ?: ($syncHours + $asyncHours))
             : $asyncHours;
 
         $data['code'] = !empty($data['code']) ? strtoupper(trim($data['code'])) : $course->code;
+        $data['course_type'] = $data['course_type'] ?? $course->course_type;
         $data['sync_required_hours'] = $syncHours;
         $data['async_required_hours'] = $asyncHours;
         $data['total_hours'] = max(0.5, $totalHours);

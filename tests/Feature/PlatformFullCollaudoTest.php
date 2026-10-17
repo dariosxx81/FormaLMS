@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\PasswordResetMail;
 use App\Models\ActivityLog;
 use App\Models\Course;
 use App\Models\CourseModule;
@@ -14,6 +15,7 @@ use App\Models\WatchLog;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -522,96 +524,372 @@ class PlatformFullCollaudoTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_11_admin_crud_courses_modules_users_password_recovery_and_course_code_redeem(): void
+    public function test_11_collaudo_punto_1_registrazione_mail_reset_password_login_e_codice_invito(): void
     {
+        Mail::fake();
+
         $admin = User::where('role', 'admin')->firstOrFail();
-        $course = Course::where('code', 'AGG-GT-2026-01')->firstOrFail();
+        $course1 = Course::where('code', 'AGG-GT-2026-01')->firstOrFail();
+        $course2 = Course::where('code', 'MONO-FAD-2026')->firstOrFail();
 
-        // 1. Admin creates a 100% FAD course with Zoom hours disabled (enable_sync_hours = 0) and a custom invite_code
-        $this->actingAs($admin)->post(route('admin.courses.store'), [
-            'code' => 'FAD-SOLO-2026',
-            'invite_code' => 'SEGRETO-FAD-99',
-            'title' => 'Corso 100% Piattaforma Senza Zoom',
-            'edition' => 'I Edizione',
-            'enable_sync_hours' => '0',
-            'sync_required_hours' => 25, // Should be forced to 0 because enable_sync_hours = 0
-            'async_required_hours' => 10,
-            'min_attendance_percent' => 80,
-            'presence_check_interval_minutes' => 30,
-        ])->assertSessionHasNoErrors();
+        // Set explicit invite codes on both courses
+        $course1->update(['invite_code' => 'INVITO-GT-2026']);
+        $course2->update(['invite_code' => 'INVITO-MONO-99']);
 
-        $fadOnlyCourse = Course::where('code', 'FAD-SOLO-2026')->firstOrFail();
-        $this->assertFalse($fadOnlyCourse->has_sync_hours);
-        $this->assertEquals(0.0, (float) $fadOnlyCourse->sync_required_hours);
-        $this->assertEquals(10.0, (float) $fadOnlyCourse->total_hours);
-        $this->assertEquals('SEGRETO-FAD-99', $fadOnlyCourse->access_code);
+        // 1. Auto-registrazione nuovo corsista con Codice Invito Corso -> Login automatico immediato e aggancio a Course 1
+        $regRes = $this->post('/register', [
+            'first_name' => 'Lorenzo',
+            'last_name' => 'Bellini',
+            'fiscal_code' => 'BLLLRN86D12H501W',
+            'birth_date' => '1986-04-12',
+            'birth_city' => 'Roma',
+            'birth_province' => 'RM',
+            'birth_country' => 'Italia',
+            'phone' => '+39 333 9876543',
+            'national_list_number' => 'GT-RM-19888',
+            'email' => 'lorenzo.bellini@guideroma.it',
+            'password' => 'Registrazione2026!',
+            'password_confirmation' => 'Registrazione2026!',
+            'invite_code' => 'INVITO-GT-2026',
+        ]);
 
-        // 2. Admin adds a module, updates it, toggles its publication status, and deletes a temporary module
-        $this->actingAs($admin)->post(route('admin.courses.modules.store', $fadOnlyCourse), [
-            'sort_order' => 1,
-            'title' => 'Modulo Unico Piattaforma',
-            'instructor_name' => 'Dott. Test',
-            'video_source_type' => 'url',
-            'video_url' => '/videos/lezione-demo.mp4',
-            'duration_minutes' => 600,
-        ])->assertSessionHasNoErrors();
+        $regRes->assertRedirect(route('student.dashboard'));
+        $lorenzo = User::where('email', 'lorenzo.bellini@guideroma.it')->firstOrFail();
+        $this->assertAuthenticatedAs($lorenzo);
+        $this->assertDatabaseHas('enrollments', [
+            'user_id' => $lorenzo->id,
+            'course_id' => $course1->id,
+        ]);
 
-        $mod = CourseModule::where('course_id', $fadOnlyCourse->id)->firstOrFail();
+        // 2. Logout e verifica Login con le credenziali appena registrate
+        $this->post('/logout')->assertRedirect(route('login'));
+        $this->assertGuest();
 
-        $this->actingAs($admin)->put(route('admin.modules.update', $mod), [
-            'sort_order' => 1,
-            'title' => 'Modulo Unico Piattaforma Aggiornato',
-            'instructor_name' => 'Dott. Test Modificato',
-            'video_source_type' => 'url',
-            'video_url' => '/videos/lezione-demo.mp4',
-            'duration_minutes' => 600,
-            'is_published' => '1',
-        ])->assertSessionHasNoErrors();
+        $this->post('/login', [
+            'email' => 'lorenzo.bellini@guideroma.it',
+            'password' => 'Registrazione2026!',
+        ])->assertRedirect(route('student.dashboard'));
+        $this->assertAuthenticatedAs($lorenzo);
 
-        $this->assertEquals('Modulo Unico Piattaforma Aggiornato', $mod->fresh()->title);
+        // 3. Aggancio a un SECONDO corso da utente già registrato tramite Codice Invito (POST /courses/redeem-code)
+        $this->actingAs($lorenzo)->post(route('student.courses.redeem-code'), [
+            'access_code' => 'CODICE-INESISTENTE-000',
+        ])->assertSessionHasErrors('access_code');
 
-        // 3. Already-registered student links to the new course using ONLY the secret invite_code (no catalog choice)
-        $sara = User::where('email', 'sara.lombardi@guideroma.it')->firstOrFail();
-        $this->actingAs($sara)->post(route('student.courses.redeem-code'), [
-            'access_code' => 'SEGRETO-FAD-99',
+        $this->actingAs($lorenzo)->post(route('student.courses.redeem-code'), [
+            'access_code' => 'INVITO-MONO-99',
         ])->assertRedirect(route('student.dashboard'));
 
         $this->assertDatabaseHas('enrollments', [
-            'user_id' => $sara->id,
-            'course_id' => $fadOnlyCourse->id,
+            'user_id' => $lorenzo->id,
+            'course_id' => $course2->id,
         ]);
 
-        // 4. Password recovery flow via Email + Fiscal Code (/forgot-password)
+        // 4. Password Dimenticata CON INVIO MAIL (POST /forgot-password/email -> Link Token -> POST /reset-password -> Login)
+        $this->post('/logout');
+
+        $mailReq = $this->post(route('password.email'), [
+            'email' => 'lorenzo.bellini@guideroma.it',
+        ]);
+        $mailReq->assertSessionHasNoErrors()
+            ->assertSessionHas('reset_link_preview');
+
+        $capturedResetUrl = null;
+        Mail::assertSent(PasswordResetMail::class, function (PasswordResetMail $mail) use ($lorenzo, &$capturedResetUrl) {
+            $capturedResetUrl = $mail->resetUrl;
+            return $mail->hasTo($lorenzo->email) && $mail->mode === 'link' && !empty($mail->resetUrl);
+        });
+
+        $this->assertNotNull($capturedResetUrl);
+
+        // Parse token from the emailed URL and open the GET /reset-password/{token} page
+        $path = parse_url($capturedResetUrl, PHP_URL_PATH);
+        $token = basename($path);
+
+        $this->get(route('password.reset.token', ['token' => $token, 'email' => $lorenzo->email]))
+            ->assertStatus(200)
+            ->assertSee('Imposta la tua Nuova Password');
+
+        // Submit the new password using the emailed token
+        $this->post(route('password.update'), [
+            'token' => $token,
+            'email' => $lorenzo->email,
+            'password' => 'NuovaPassDaMail2026!',
+            'password_confirmation' => 'NuovaPassDaMail2026!',
+        ])->assertRedirect(route('login'));
+
+        // Verify confirmation email was also dispatched
+        Mail::assertSent(PasswordResetMail::class, function (PasswordResetMail $mail) use ($lorenzo) {
+            return $mail->hasTo($lorenzo->email) && $mail->mode === 'changed';
+        });
+
+        // Login with the new password set via email link (old password must fail)
+        $this->post('/login', [
+            'email' => $lorenzo->email,
+            'password' => 'Registrazione2026!',
+        ])->assertSessionHasErrors('email');
+
+        $this->post('/login', [
+            'email' => $lorenzo->email,
+            'password' => 'NuovaPassDaMail2026!',
+        ])->assertRedirect(route('student.dashboard'));
+        $this->assertAuthenticatedAs($lorenzo);
+
+        // 5. Verifica anche il secondo metodo (Email + Codice Fiscale) + Login
         $this->post('/logout');
         $this->post(route('password.reset.submit'), [
-            'email' => $sara->email,
-            'fiscal_code' => $sara->fiscal_code,
-            'password' => 'NuovaPassword2026!',
-            'password_confirmation' => 'NuovaPassword2026!',
+            'email' => $lorenzo->email,
+            'fiscal_code' => 'BLLLRN86D12H501W',
+            'password' => 'NuovaPassDaCF2026!',
+            'password_confirmation' => 'NuovaPassDaCF2026!',
         ])->assertRedirect(route('login'));
 
         $this->post('/login', [
-            'email' => $sara->email,
-            'password' => 'NuovaPassword2026!',
+            'email' => $lorenzo->email,
+            'password' => 'NuovaPassDaCF2026!',
         ])->assertRedirect(route('student.dashboard'));
-        $this->post('/logout');
+    }
 
-        // 5. Admin updates user profile, toggles suspension, and deletes a temporary course
-        $this->actingAs($admin)->put(route('admin.users.update', $sara), [
-            'first_name' => 'Sara',
-            'last_name' => 'Lombardi Modificata',
-            'fiscal_code' => $sara->fiscal_code,
-            'email' => $sara->email,
-            'status' => 'active',
+    public function test_12_collaudo_punto_2_corsi_moduli_opzioni_disattivazione_ed_effetti_sull_utente(): void
+    {
+        $admin = User::where('role', 'admin')->firstOrFail();
+        $sara = User::where('email', 'sara.lombardi@guideroma.it')->firstOrFail();
+
+        // 1. Admin creates a new course with specific configurable options (Hybrid: Zoom enabled + strict_tab_pause + presence check)
+        $this->actingAs($admin)->post(route('admin.courses.store'), [
+            'code' => 'COLLAUDO-CORSO-02',
+            'invite_code' => 'COD-COLLAUDO-02',
+            'title' => 'Corso Collaudo Opzioni Configurabili',
+            'edition' => 'Edizione Speciale 2026',
+            'enable_sync_hours' => '1',
+            'sync_required_hours' => 10,
+            'async_required_hours' => 10,
+            'min_attendance_percent' => 85,
+            'strict_tab_pause' => '1',
+            'presence_check_interval_minutes' => 15,
         ])->assertSessionHasNoErrors();
 
-        $this->assertEquals('Lombardi Modificata', $sara->fresh()->last_name);
+        $course = Course::where('code', 'COLLAUDO-CORSO-02')->firstOrFail();
+        $this->assertTrue($course->has_sync_hours);
+        $this->assertEquals(10.0, (float) $course->sync_required_hours);
+        $this->assertEquals(20.0, (float) $course->total_hours);
+        $this->assertEquals(85, $course->min_attendance_percent);
+        $this->assertTrue($course->strict_tab_pause);
+        $this->assertEquals(15, $course->presence_check_interval_minutes);
 
-        $this->actingAs($admin)->patch(route('admin.courses.toggle-status', $fadOnlyCourse));
-        $this->assertFalse($fadOnlyCourse->fresh()->is_active);
+        // 2. Admin adds 2 video modules
+        $this->actingAs($admin)->post(route('admin.courses.modules.store', $course), [
+            'sort_order' => 1,
+            'title' => 'Modulo 1 Collaudo',
+            'instructor_name' => 'Prof. Primo',
+            'video_source_type' => 'url',
+            'video_url' => '/videos/lezione-demo.mp4',
+            'duration_minutes' => 300, // 5h
+        ])->assertSessionHasNoErrors();
 
-        $this->actingAs($admin)->delete(route('admin.courses.destroy', $fadOnlyCourse));
-        $this->assertDatabaseMissing('courses', ['id' => $fadOnlyCourse->id]);
+        $this->actingAs($admin)->post(route('admin.courses.modules.store', $course), [
+            'sort_order' => 2,
+            'title' => 'Modulo 2 Collaudo',
+            'instructor_name' => 'Prof. Secondo',
+            'video_source_type' => 'url',
+            'video_url' => '/videos/lezione-demo.mp4',
+            'duration_minutes' => 300, // 5h
+        ])->assertSessionHasNoErrors();
+
+        $mod1 = CourseModule::where('course_id', $course->id)->where('sort_order', 1)->firstOrFail();
+        $mod2 = CourseModule::where('course_id', $course->id)->where('sort_order', 2)->firstOrFail();
+
+        // 3. Enroll Sara with 10h Zoom and verify options reflect in Student Dashboard & Course Player
+        $this->actingAs($admin)->post(route('admin.enrollments.assign'), [
+            'user_id' => $sara->id,
+            'course_id' => $course->id,
+            'sync_hours_completed' => 10,
+        ])->assertSessionHasNoErrors();
+
+        $enrollment = Enrollment::where('user_id', $sara->id)->where('course_id', $course->id)->firstOrFail();
+        // With 10h Zoom out of 20h total -> 50% attendance
+        $this->assertEquals(50.0, (float) $enrollment->attendance_percent);
+
+        $this->actingAs($sara)->get(route('student.courses.show', $course))
+            ->assertStatus(200)
+            ->assertSee('strictTabPause: true')
+            ->assertSee('presenceIntervalMinutes: 15');
+
+        // 4. Admin updates course configuration: DISABLES Zoom hours (enable_sync_hours = 0) and changes threshold to 90%
+        $this->actingAs($admin)->put(route('admin.courses.update', $course), [
+            'code' => 'COLLAUDO-CORSO-02',
+            'invite_code' => 'COD-COLLAUDO-02-MOD',
+            'title' => 'Corso Collaudo Convertito 100% Piattaforma',
+            'edition' => 'II Edizione',
+            'enable_sync_hours' => '0',
+            'sync_required_hours' => 10, // Ignored because enable_sync_hours = 0
+            'async_required_hours' => 10,
+            'min_attendance_percent' => 90,
+            'strict_tab_pause' => '0',
+            'presence_check_interval_minutes' => 0,
+        ])->assertSessionHasNoErrors();
+
+        $course->refresh();
+        $enrollment->refresh();
+        $this->assertFalse($course->has_sync_hours);
+        $this->assertEquals(0.0, (float) $course->sync_required_hours);
+        $this->assertEquals(10.0, (float) $course->total_hours);
+        $this->assertEquals(90, $course->min_attendance_percent);
+        $this->assertFalse($course->strict_tab_pause);
+        // Because Zoom hours are now disabled on the course, Sara's attendance is recalculated strictly from platform FAD hours (0h / 10h = 0%)
+        $this->assertEquals(0.0, (float) $enrollment->attendance_percent);
+
+        // Verify Student Dashboard now shows "100% Piattaforma FAD" and "Soglia attestato: 90%"
+        $this->actingAs($sara)->get(route('student.dashboard'))
+            ->assertStatus(200)
+            ->assertSee('Corso Collaudo Convertito 100% Piattaforma')
+            ->assertSee('100% Piattaforma FAD')
+            ->assertSee('Soglia attestato: 90%');
+
+        // 5. Admin unpublishes (hides) Module 2 -> verify student cannot see or access Module 2 or send heartbeats to it
+        $this->actingAs($admin)->patch(route('admin.modules.toggle-status', $mod2));
+        $this->assertFalse($mod2->fresh()->is_published);
+
+        $this->actingAs($sara)->get(route('student.courses.module', [$course, $mod2]))
+            ->assertRedirect(route('student.courses.show', $course));
+
+        $this->actingAs($sara)->postJson(route('student.modules.heartbeat', [$course, $mod2]), [
+            'session_token' => 'test_tok_hidden_mod',
+            'current_time' => 60,
+            'delta_watched_seconds' => 10,
+            'event_type' => 'timeupdate',
+        ])->assertStatus(403);
+
+        // 6. DEACTIVATE COURSE (PATCH /admin/courses/{course}/toggle-status) -> Verify what happens to the enrolled student!
+        $this->actingAs($admin)->patch(route('admin.courses.toggle-status', $course));
+        $this->assertFalse($course->fresh()->is_active);
+
+        // 6a. On Student Dashboard: student sees the course card marked as "Corso Sospeso / Disattivato dalla Segreteria" and "🔒 Corso Sospeso"
+        $this->actingAs($sara)->get(route('student.dashboard'))
+            ->assertStatus(200)
+            ->assertSee('Corso Sospeso / Disattivato dalla Segreteria')
+            ->assertSee('Corso Sospeso');
+
+        // 6b. Direct access to /courses/{course} is blocked and redirects back to dashboard with error
+        $this->actingAs($sara)->get(route('student.courses.show', $course))
+            ->assertRedirect(route('student.dashboard'))
+            ->assertSessionHasErrors('course');
+
+        // 6c. Heartbeat telemetry on deactivated course is blocked with 403
+        $this->actingAs($sara)->postJson(route('student.modules.heartbeat', [$course, $mod1]), [
+            'session_token' => 'test_tok_deactivated_course',
+            'current_time' => 60,
+            'delta_watched_seconds' => 10,
+            'event_type' => 'timeupdate',
+        ])->assertStatus(403);
+
+        // 6d. Redeeming the invite code of a deactivated course is rejected
+        $elena = User::where('email', 'elena.bianchi@guideroma.it')->firstOrFail();
+        $this->actingAs($elena)->post(route('student.courses.redeem-code'), [
+            'access_code' => 'COD-COLLAUDO-02-MOD',
+        ])->assertSessionHasErrors('access_code');
+
+        // 7. Reactivate the course -> Student can immediately resume the course!
+        $this->actingAs($admin)->patch(route('admin.courses.toggle-status', $course));
+        $this->assertTrue($course->fresh()->is_active);
+
+        $this->actingAs($sara)->get(route('student.courses.show', $course))
+            ->assertStatus(200);
+
+        // 8. Delete Module 2 and then Delete Course
+        $this->actingAs($admin)->delete(route('admin.modules.destroy', $mod2));
+        $this->assertDatabaseMissing('course_modules', ['id' => $mod2->id]);
+
+        $this->actingAs($admin)->delete(route('admin.courses.destroy', $course));
+        $this->assertDatabaseMissing('courses', ['id' => $course->id]);
+    }
+
+    public function test_13_collaudo_punto_4_gestione_utenti_iscrizioni_sospensione_csv_e_ore_zoom(): void
+    {
+        $admin = User::where('role', 'admin')->firstOrFail();
+        $course1 = Course::where('code', 'AGG-GT-2026-01')->firstOrFail();
+        $course2 = Course::where('code', 'AGG-GT-2026-02')->firstOrFail();
+
+        // 1. Admin creates a new student manually with multi-course assignment and initial Zoom hours
+        $this->actingAs($admin)->post(route('admin.users.store'), [
+            'first_name' => 'Matteo',
+            'last_name' => 'Ferri',
+            'fiscal_code' => 'FRRMTT83B14H501K',
+            'birth_date' => '1983-02-14',
+            'birth_city' => 'Roma',
+            'birth_province' => 'RM',
+            'birth_country' => 'Italia',
+            'email' => 'matteo.ferri@guideroma.it',
+            'phone' => '+39 340 1122334',
+            'password' => 'MatteoIniziale2026!',
+            'course_ids' => [$course1->id, $course2->id],
+            'sync_hours_completed' => 15,
+        ])->assertSessionHasNoErrors();
+
+        $matteo = User::where('email', 'matteo.ferri@guideroma.it')->firstOrFail();
+        $this->assertEquals(2, $matteo->enrollments()->count());
+
+        // 2. Admin edits Matteo's user data AND resets his password directly from the Admin Panel
+        $this->actingAs($admin)->put(route('admin.users.update', $matteo), [
+            'first_name' => 'Matteo',
+            'last_name' => 'Ferri Aggiornato',
+            'fiscal_code' => 'FRRMTT83B14H501K',
+            'birth_city' => 'Viterbo',
+            'birth_province' => 'VT',
+            'email' => 'matteo.ferri@guideroma.it',
+            'status' => 'active',
+            'password' => 'ResetDaAdmin2026!',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertEquals('Ferri Aggiornato', $matteo->fresh()->last_name);
+        $this->assertEquals('Viterbo', $matteo->fresh()->birth_city);
+
+        // Verify Matteo can log in with the new password set by Admin
+        $this->post('/logout');
+        $this->post('/login', [
+            'email' => 'matteo.ferri@guideroma.it',
+            'password' => 'ResetDaAdmin2026!',
+        ])->assertRedirect(route('student.dashboard'));
+
+        // 3. Admin SUSPENDS Matteo (PATCH /admin/users/{user}/toggle-status) -> Verify what happens to Matteo!
+        $this->actingAs($admin)->patch(route('admin.users.toggle-status', $matteo));
+        $this->assertEquals('suspended', $matteo->fresh()->status);
+
+        // 3a. If Matteo tries to access Student Dashboard while suspended, he is logged out and redirected to login
+        $this->actingAs($matteo->fresh())->get(route('student.dashboard'))
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('email');
+
+        // 3b. If Matteo tries to log in at /login while suspended, login is rejected
+        $this->post('/login', [
+            'email' => 'matteo.ferri@guideroma.it',
+            'password' => 'ResetDaAdmin2026!',
+        ])->assertSessionHasErrors('email');
+
+        // 3c. Admin REACTIVATES Matteo -> Matteo can access the platform again
+        $this->actingAs($admin)->patch(route('admin.users.toggle-status', $matteo));
+        $this->assertEquals('active', $matteo->fresh()->status);
+
+        $this->actingAs($matteo->fresh())->get(route('student.dashboard'))
+            ->assertStatus(200);
+
+        // 4. Admin updates Matteo's Zoom hours inline on Course 1
+        $enr1 = Enrollment::where('user_id', $matteo->id)->where('course_id', $course1->id)->firstOrFail();
+        $this->actingAs($admin)->put(route('admin.enrollments.sync-hours', $enr1), [
+            'sync_hours_completed' => 20,
+        ])->assertSessionHasNoErrors();
+        $this->assertEquals(20.0, (float) $enr1->fresh()->sync_hours_completed);
+
+        // 5. Admin removes Matteo's single enrollment from Course 2 without deleting Matteo's account
+        $enr2 = Enrollment::where('user_id', $matteo->id)->where('course_id', $course2->id)->firstOrFail();
+        $this->actingAs($admin)->delete(route('admin.enrollments.destroy', $enr2));
+        $this->assertDatabaseMissing('enrollments', ['id' => $enr2->id]);
+        $this->assertDatabaseHas('users', ['id' => $matteo->id]);
+
+        // 6. Admin permanently deletes Matteo's account
+        $this->actingAs($admin)->delete(route('admin.users.destroy', $matteo));
+        $this->assertDatabaseMissing('users', ['id' => $matteo->id]);
     }
 }
+
 
