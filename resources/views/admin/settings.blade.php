@@ -8,6 +8,7 @@
         platformName: @js($settings['platform_name'] ?? 'FormaFAD LMS'),
         providerName: @js($settings['provider_name'] ?? 'Ente di Formazione Accreditato'),
         logoPreview: @js($settings['logo_url'] ?? ''),
+        logoUrlInput: @js($settings['logo_url'] ?? ''),
         logoBg: @js($settings['logo_bg'] ?? 'white'),
         logoSize: @js($settings['logo_size'] ?? 'md'),
         removeLogo: false,
@@ -75,6 +76,7 @@
             const file = event.target.files[0];
             if (!file) return;
             this.removeLogo = false;
+            this.logoUrlInput = '';
             const reader = new FileReader();
             reader.onload = (e) => { this.logoPreview = e.target.result; };
             reader.readAsDataURL(file);
@@ -84,11 +86,15 @@
             if (mode === 'white') {
                 this.logoBg = 'dark';
                 const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 230 56' width='230' height='56'><circle cx='28' cy='28' r='18' fill='#38bdf8'/><path d='M20 28l5 5 11-11' stroke='#0f172a' stroke-width='3.5' fill='none' stroke-linecap='round'/><text x='54' y='25' font-family='Plus Jakarta Sans, sans-serif' font-size='15' font-weight='800' fill='#ffffff'>FORMACAMERA</text><text x='54' y='42' font-family='Plus Jakarta Sans, sans-serif' font-size='10' font-weight='600' fill='#cbd5e1'>LOGO BIANCO SU SFONDO SCURO</text></svg>`;
-                this.logoPreview = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+                const uri = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+                this.logoPreview = uri;
+                this.logoUrlInput = uri;
             } else {
                 this.logoBg = 'white';
                 const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 230 56' width='230' height='56'><circle cx='28' cy='28' r='18' fill='${this.primaryColor}'/><path d='M20 28l5 5 11-11' stroke='${this.getContrastText(this.primaryColor)}' stroke-width='3.5' fill='none' stroke-linecap='round'/><text x='54' y='25' font-family='Plus Jakarta Sans, sans-serif' font-size='15' font-weight='800' fill='#0f172a'>ENTE FORMAZIONE</text><text x='54' y='42' font-family='Plus Jakarta Sans, sans-serif' font-size='10' font-weight='700' fill='#475569'>ACCREDITATO MINISTERO</text></svg>`;
-                this.logoPreview = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+                const uri = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+                this.logoPreview = uri;
+                this.logoUrlInput = uri;
             }
         }
      }">
@@ -245,7 +251,7 @@
 
                     <div>
                         <label class="block font-bold text-slate-600 mb-1 text-[11px]">Oppure URL diretto del Logo</label>
-                        <input type="text" name="logo_url" x-model="logoPreview" placeholder="https://.../logo-ente.png" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs">
+                        <input type="text" name="logo_url" x-model="logoUrlInput" @input="logoPreview = logoUrlInput" placeholder="https://.../logo-ente.png" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs">
                     </div>
                 </div>
 

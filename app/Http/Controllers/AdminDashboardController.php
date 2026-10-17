@@ -695,7 +695,7 @@ class AdminDashboardController extends Controller
             'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'accent_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'logo_file' => ['nullable', 'file', 'mimes:png,jpg,jpeg,svg,webp', 'max:4096'],
-            'logo_url' => ['nullable', 'string', 'max:500'],
+            'logo_url' => ['nullable', 'string', 'max:65000'],
             'logo_bg' => ['nullable', 'in:white,dark,transparent'],
             'logo_size' => ['nullable', 'in:sm,md,lg'],
         ]);
