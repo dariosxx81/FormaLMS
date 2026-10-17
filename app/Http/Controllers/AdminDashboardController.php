@@ -696,6 +696,8 @@ class AdminDashboardController extends Controller
             'accent_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'logo_file' => ['nullable', 'file', 'mimes:png,jpg,jpeg,svg,webp', 'max:4096'],
             'logo_url' => ['nullable', 'string', 'max:500'],
+            'logo_bg' => ['nullable', 'in:white,dark,transparent'],
+            'logo_size' => ['nullable', 'in:sm,md,lg'],
         ]);
 
         unset($data['logo_file']);
@@ -709,6 +711,8 @@ class AdminDashboardController extends Controller
             unset($data['logo_url']);
         }
 
+        $data['logo_bg'] = $data['logo_bg'] ?? 'white';
+        $data['logo_size'] = $data['logo_size'] ?? 'md';
         $data['primary_color'] = $data['primary_color'] ?? '#4f46e5';
         $data['secondary_color'] = $data['secondary_color'] ?? '#0f172a';
         $data['accent_color'] = $data['accent_color'] ?? '#10b981';

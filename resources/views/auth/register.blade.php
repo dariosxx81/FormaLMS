@@ -5,13 +5,20 @@
 @section('content')
 <div class="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
-        <div class="flex items-center justify-between border-b border-slate-200 pb-5 mb-6">
-            <div>
-                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Modulo Iscrizione Telematica</span>
-                <h1 class="text-2xl font-extrabold text-slate-900 mt-0.5">Registrazione Anagrafica Corsista</h1>
-                <p class="text-xs text-slate-500 mt-1">
-                    I dati anagrafici richiesti sono obbligatori ai fini del rilascio dell'Attestato Ufficiale valido su tutto il territorio nazionale (Allegati 3 e 4 - Linee Guida B Ministero del Turismo).
-                </p>
+        <div class="flex items-center justify-between border-b border-slate-200 pb-5 mb-6 gap-4">
+            <div class="flex items-center gap-3.5">
+                @if(!empty($settings['logo_url']))
+                    <img src="{{ $settings['logo_url'] }}"
+                         alt="Logo {{ $settings['platform_name'] ?? 'Ente' }}"
+                         class="h-12 w-auto max-w-[180px] object-contain rounded-xl shrink-0 {{ ($settings['logo_bg'] ?? 'white') === 'dark' ? 'bg-slate-900 p-1.5' : (($settings['logo_bg'] ?? 'white') === 'transparent' ? 'bg-transparent' : 'bg-white border border-slate-200 p-1') }}">
+                @endif
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Modulo Iscrizione Telematica</span>
+                    <h1 class="text-2xl font-extrabold text-slate-900 mt-0.5">Registrazione Anagrafica Corsista</h1>
+                    <p class="text-xs text-slate-500 mt-1">
+                        I dati anagrafici richiesti sono obbligatori ai fini del rilascio dell'Attestato Ufficiale valido su tutto il territorio nazionale (Allegati 3 e 4 - Linee Guida B Ministero del Turismo).
+                    </p>
+                </div>
             </div>
             <a href="{{ route('login') }}" class="text-xs font-semibold text-slate-600 hover:text-indigo-600 shrink-0">
                 &larr; Torna al Login

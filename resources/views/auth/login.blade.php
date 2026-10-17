@@ -8,6 +8,13 @@
 
         <!-- Left Column: Institutional Info & 1-Click Demo Access -->
         <div class="lg:col-span-7 bg-slate-900 text-white rounded-2xl p-8 shadow-xl border border-slate-800">
+            @if(!empty($settings['logo_url']))
+                <div class="mb-4">
+                    <img src="{{ $settings['logo_url'] }}"
+                         alt="Logo {{ $settings['platform_name'] ?? 'Ente' }}"
+                         class="h-12 w-auto max-w-[200px] object-contain rounded-xl {{ ($settings['logo_bg'] ?? 'white') === 'dark' ? 'bg-slate-800 border border-slate-700 p-1.5' : (($settings['logo_bg'] ?? 'white') === 'transparent' ? 'bg-transparent p-0.5' : 'bg-white p-1.5') }}">
+                </div>
+            @endif
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-semibold mb-4">
                 <span>Piattaforma Telematica Asincrona & Sincrona</span>
             </div>

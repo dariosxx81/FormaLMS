@@ -13,19 +13,48 @@
     <style>
         :root {
             --brand-primary: #4f46e5;
+            --brand-primary-contrast: #ffffff;
+            --brand-primary-readable: #4f46e5;
+            --brand-primary-soft: rgba(79, 70, 229, 0.10);
+            --brand-primary-border: rgba(79, 70, 229, 0.26);
             --brand-secondary: #0f172a;
+            --brand-secondary-contrast: #ffffff;
             --brand-accent: #10b981;
+            --brand-accent-contrast: #ffffff;
         }
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         [x-cloak] { display: none !important; }
-        /* Dynamic White-Label Color Overrides */
-        .bg-indigo-600 { background-color: var(--brand-primary) !important; }
-        .hover\:bg-indigo-500:hover, .hover\:bg-indigo-600:hover { background-color: var(--brand-primary) !important; filter: brightness(1.08); }
-        .text-indigo-600, .text-indigo-700 { color: var(--brand-primary) !important; }
-        .border-indigo-500, .border-indigo-600 { border-color: var(--brand-primary) !important; }
-        .bg-slate-900 { background-color: var(--brand-secondary) !important; }
-        .bg-emerald-600, .bg-emerald-500 { background-color: var(--brand-accent) !important; }
-        /* Hide scrollbars on mobile horizontal tab bar */
+        /* 1. Brand Primary Buttons, Active Tabs & Progress Bars (with automatic WCAG text contrast!) */
+        .bg-indigo-600, .bg-indigo-500 {
+            background-color: var(--brand-primary) !important;
+            color: var(--brand-primary-contrast) !important;
+        }
+        .hover\:bg-indigo-500:hover, .hover\:bg-indigo-600:hover {
+            background-color: var(--brand-primary) !important;
+            color: var(--brand-primary-contrast) !important;
+            filter: brightness(1.07);
+        }
+        /* 2. Readable Brand Text on Light Cards (auto-darkened if brand color is too bright) */
+        .text-indigo-600, .text-indigo-700, .text-indigo-800, .text-indigo-950 {
+            color: var(--brand-primary-readable) !important;
+        }
+        .border-indigo-500, .border-indigo-600, .border-indigo-400 {
+            border-color: var(--brand-primary) !important;
+        }
+        /* 3. Soft 10% Opacity Tints for Badges & Info Boxes (prevents tone-on-tone unreadability) */
+        .bg-indigo-50, .bg-indigo-50\/70, .bg-indigo-50\/80, .bg-indigo-100 {
+            background-color: var(--brand-primary-soft) !important;
+            color: var(--brand-primary-readable) !important;
+        }
+        .border-indigo-200, .border-indigo-300 {
+            border-color: var(--brand-primary-border) !important;
+        }
+        /* 4. Brand Accent (Certificates & Eligibility) */
+        .bg-emerald-600, .bg-emerald-500 {
+            background-color: var(--brand-accent) !important;
+            color: var(--brand-accent-contrast) !important;
+        }
+        /* NOTE: .bg-slate-900 is intentionally NOT overridden so the Video Player & dark telemetry cards stay high-contrast dark! */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @media print {
@@ -35,20 +64,21 @@
 </head>
 <body x-data="formaFadPreview" class="min-h-full flex flex-col text-slate-800 antialiased">
 
-    <!-- Top Status & Quick Reset Bar -->
-    <div class="text-slate-200 text-xs border-b border-slate-800 no-print" :style="'background-color: ' + settings.brandColor">
+    <!-- Top Status & Quick Reset Bar (Uses Secondary Brand Color + Auto WCAG Contrast) -->
+    <div class="text-xs border-b border-black/10 no-print"
+         :style="'background-color: ' + settings.brandColor + '; color: ' + getContrastText(settings.brandColor)">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2 truncate">
-                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/20 border border-white/20 shrink-0">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     DEMO INTERATTIVA
                 </span>
-                <span class="text-slate-200 truncate text-[11px]">
-                    <strong class="text-white" x-text="settings.platformName"></strong> • <span x-text="settings.providerName"></span>
+                <span class="truncate text-[11px] opacity-95">
+                    <strong x-text="settings.platformName"></strong> • <span x-text="settings.providerName"></span>
                 </span>
             </div>
             <button @click="resetDemoData()"
-                    class="px-2.5 py-1 rounded bg-slate-800/80 hover:bg-red-900/60 text-slate-200 hover:text-white border border-slate-700 text-[11px] font-semibold shrink-0 cursor-pointer">
+                    class="px-2.5 py-1 rounded bg-black/25 hover:bg-red-600 text-white border border-white/20 text-[11px] font-semibold shrink-0 cursor-pointer">
                 Reset Dati
             </button>
         </div>
@@ -58,14 +88,24 @@
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs no-print">
         <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
             <!-- Top Row: Brand + Active Student Selector -->
-            <div class="h-14 flex items-center justify-between gap-2">
+            <div class="min-h-14 py-1.5 flex items-center justify-between gap-2">
                 <div @click="currentView = 'student'" class="flex items-center gap-2.5 cursor-pointer min-w-0">
                     <template x-if="settings.logoUrl">
-                        <img :src="settings.logoUrl" alt="Logo Aziendale" class="h-9 w-auto max-w-[140px] object-contain rounded-xl border border-slate-200 bg-white p-1 shadow-2xs shrink-0">
+                        <img :src="settings.logoUrl"
+                             alt="Logo Aziendale"
+                             :class="{
+                                'h-8 max-w-[130px]': settings.logoSize === 'sm',
+                                'h-10 max-w-[165px]': !settings.logoSize || settings.logoSize === 'md',
+                                'h-12 max-w-[210px]': settings.logoSize === 'lg',
+                                'bg-white border border-slate-200 p-1 shadow-2xs': !settings.logoBg || settings.logoBg === 'white',
+                                'bg-slate-900 border border-slate-700 p-1.5 shadow-xs': settings.logoBg === 'dark',
+                                'bg-transparent p-0.5': settings.logoBg === 'transparent'
+                             }"
+                             class="w-auto object-contain rounded-xl shrink-0 transition">
                     </template>
                     <template x-if="!settings.logoUrl">
-                        <div class="w-9 h-9 rounded-xl text-white flex items-center justify-center font-extrabold text-sm shadow-xs shrink-0"
-                             :style="'background-color: ' + settings.primaryColor">
+                        <div class="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-sm shadow-xs shrink-0"
+                             :style="'background-color: ' + settings.primaryColor + '; color: ' + getContrastText(settings.primaryColor)">
                             FAD
                         </div>
                     </template>
@@ -90,27 +130,27 @@
             <!-- Second Row: Scrollable Mobile & Desktop 5-Tab Bar (Always Visible on Smartphone!) -->
             <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-2 border-t border-slate-100">
                 <button @click="currentView = 'student'"
-                        :class="currentView === 'student' ? 'bg-slate-900 text-white shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                        :class="currentView === 'student' ? 'bg-indigo-600 shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
                         class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0">
                     1. ▶ Aula Corsista & Player (MP4 / YouTube)
                 </button>
                 <button @click="currentView = 'register_page'"
-                        :class="currentView === 'register_page' ? 'bg-slate-900 text-white shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                        :class="currentView === 'register_page' ? 'bg-indigo-600 shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
                         class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0">
                     2. 📝 Modulo Registrazione Utente
                 </button>
                 <button @click="currentView = 'admin_courses'"
-                        :class="currentView === 'admin_courses' ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                        :class="currentView === 'admin_courses' ? 'bg-indigo-600 shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
                         class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0">
                     3. ⚙ Admin: Corsi (1..N Moduli) & Opzioni
                 </button>
                 <button @click="currentView = 'admin_users'"
-                        :class="currentView === 'admin_users' ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                        :class="currentView === 'admin_users' ? 'bg-indigo-600 shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
                         class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0">
                     4. 👥 Admin: Iscritti, Ore Zoom & Audit
                 </button>
                 <button @click="currentView = 'admin_whitelabel'"
-                        :class="currentView === 'admin_whitelabel' ? 'bg-indigo-600 text-white shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
+                        :class="currentView === 'admin_whitelabel' ? 'bg-indigo-600 shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
                         class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0">
                     5. 🎨 Admin: White-Label Ente
                 </button>
@@ -784,80 +824,133 @@
                 </div>
             </div>
 
-            <!-- LIVE PREVIEW BAR -->
+            <!-- LIVE MULTI-ELEMENT CONTRAST PREVIEW -->
             <div class="rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-                <div class="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-white flex items-center justify-between"
-                     :style="'background-color: ' + settings.brandColor">
-                    <span>Anteprima Live Header & Colori Scelti</span>
-                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold text-white"
-                          :style="'background-color: ' + settings.accentColor">
+                <div class="px-4 py-2 text-[11px] font-bold flex flex-wrap items-center justify-between gap-2"
+                     :style="'background-color: ' + settings.brandColor + '; color: ' + getContrastText(settings.brandColor)">
+                    <span>1. Barra Istituzionale (Contrasto Testo Auto: <strong x-text="getContrastText(settings.brandColor) === '#ffffff' ? 'Bianco' : 'Scuro'"></strong>)</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold"
+                          :style="'background-color: ' + settings.accentColor + '; color: ' + getContrastText(settings.accentColor)">
                         ✓ Attestato Sbloccato (80%)
                     </span>
                 </div>
-                <div class="p-4 bg-white flex flex-wrap items-center justify-between gap-4">
-                    <div class="flex items-center gap-3">
-                        <template x-if="settings.logoUrl">
-                            <img :src="settings.logoUrl" alt="Logo Preview" class="h-11 w-auto max-w-[160px] object-contain rounded-xl border border-slate-200 bg-white p-1">
-                        </template>
-                        <template x-if="!settings.logoUrl">
-                            <div class="w-11 h-11 rounded-xl text-white flex items-center justify-center font-extrabold text-base shadow-xs"
-                                 :style="'background-color: ' + settings.primaryColor">
-                                FAD
+                <div class="p-4 sm:p-5 bg-white space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <template x-if="settings.logoUrl">
+                                <img :src="settings.logoUrl"
+                                     alt="Logo Preview"
+                                     :class="{
+                                        'h-8 max-w-[130px]': settings.logoSize === 'sm',
+                                        'h-11 max-w-[175px]': !settings.logoSize || settings.logoSize === 'md',
+                                        'h-14 max-w-[225px]': settings.logoSize === 'lg',
+                                        'bg-white border border-slate-200 p-1 shadow-2xs': !settings.logoBg || settings.logoBg === 'white',
+                                        'bg-slate-900 border border-slate-700 p-1.5 shadow-xs': settings.logoBg === 'dark',
+                                        'bg-transparent p-0.5': settings.logoBg === 'transparent'
+                                     }"
+                                     class="w-auto object-contain rounded-xl transition">
+                            </template>
+                            <template x-if="!settings.logoUrl">
+                                <div class="w-11 h-11 rounded-xl flex items-center justify-center font-extrabold text-base shadow-xs"
+                                     :style="'background-color: ' + settings.primaryColor + '; color: ' + getContrastText(settings.primaryColor)">
+                                    FAD
+                                </div>
+                            </template>
+                            <div>
+                                <div class="font-extrabold text-slate-900 text-sm sm:text-base" x-text="settings.platformName"></div>
+                                <div class="text-xs text-slate-500" x-text="settings.providerName"></div>
                             </div>
-                        </template>
-                        <div>
-                            <div class="font-extrabold text-slate-900 text-sm sm:text-base" x-text="settings.platformName"></div>
-                            <div class="text-xs text-slate-500" x-text="settings.providerName"></div>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-3.5 py-2 rounded-xl text-xs font-bold shadow-2xs"
+                                  :style="'background-color: ' + settings.primaryColor + '; color: ' + getContrastText(settings.primaryColor)">
+                                Bottone Primario (Auto-Contrasto)
+                            </span>
+                            <span class="px-3 py-1.5 rounded-xl text-xs font-bold border"
+                                  :style="'background-color: ' + getRgba(settings.primaryColor, 0.10) + '; border-color: ' + getRgba(settings.primaryColor, 0.28) + '; color: ' + getReadableOnLight(settings.primaryColor)">
+                                Badge Tinta 10% (Sempre Leggibile)
+                            </span>
                         </div>
                     </div>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span class="px-3 py-1.5 rounded-xl text-white text-xs font-bold"
-                              :style="'background-color: ' + settings.primaryColor">
-                            Colore Primario
-                        </span>
-                        <span class="px-3 py-1.5 rounded-xl text-white text-xs font-bold"
-                              :style="'background-color: ' + settings.brandColor">
-                            Colore Header
-                        </span>
-                        <span class="px-3 py-1.5 rounded-xl text-white text-xs font-bold"
-                              :style="'background-color: ' + settings.accentColor">
-                            Colore Accento
-                        </span>
+
+                    <!-- Protected Dark Video Player Preview -->
+                    <div class="bg-slate-900 text-white rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs border border-slate-800">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold text-[10px]">
+                                🛡 PLAYER VIDEO PROTETTO
+                            </span>
+                            <span class="text-slate-200 font-semibold">Il Player Video e i box telemetria restano sempre in tema scuro ad alto contrasto</span>
+                        </div>
+                        <div class="w-32 h-2 bg-slate-800 rounded-full overflow-hidden">
+                            <div class="h-full w-3/4 rounded-full" :style="'background-color: ' + settings.primaryColor"></div>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- BOX 1: CARICAMENTO LOGO AZIENDALE & SCELTA COLORI BASE -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
-                <!-- Colonna Sinistra: Caricamento Logo Aziendale -->
+                <!-- Colonna Sinistra: Caricamento Logo Aziendale + Sfondo/Grandezza -->
                 <div class="lg:col-span-5 space-y-3">
-                    <div class="font-extrabold text-sm text-slate-900">1. Carica Logo Aziendale / Ente</div>
+                    <div class="font-extrabold text-sm text-slate-900">1. Logo Aziendale & Adattamento Box</div>
                     <p class="text-[11px] text-slate-500">
-                        Carica un'immagine dal tuo telefono o computer (PNG, JPG, SVG, WEBP) oppure prova il logo istituzionale demo con 1 click.
+                        Carica un'immagine e scegli lo <strong>Sfondo Box Logo</strong> (Chiaro, Scuro per loghi bianchi o Trasparente) e la <strong>Dimensione</strong>.
                     </p>
 
                     <div class="p-4 rounded-xl bg-white border border-dashed border-slate-300 flex flex-col items-center justify-center text-center gap-2.5">
                         <template x-if="settings.logoUrl">
                             <div class="space-y-2">
-                                <img :src="settings.logoUrl" alt="Logo Caricato" class="h-14 mx-auto object-contain">
-                                <button type="button" @click="removeLogo()" class="text-[11px] font-bold text-red-600 hover:underline cursor-pointer">
-                                    ✕ Rimuovi logo grafico e ripristina badge "FAD"
-                                </button>
+                                <div class="inline-block rounded-xl"
+                                     :class="{
+                                        'bg-white border border-slate-200 p-2': !settings.logoBg || settings.logoBg === 'white',
+                                        'bg-slate-900 border border-slate-700 p-2': settings.logoBg === 'dark',
+                                        'bg-slate-100 p-2': settings.logoBg === 'transparent'
+                                     }">
+                                    <img :src="settings.logoUrl" alt="Logo Caricato" class="h-12 mx-auto object-contain">
+                                </div>
+                                <div>
+                                    <button type="button" @click="removeLogo()" class="text-[11px] font-bold text-red-600 hover:underline cursor-pointer">
+                                        ✕ Rimuovi logo grafico e ripristina badge "FAD"
+                                    </button>
+                                </div>
                             </div>
                         </template>
                         <template x-if="!settings.logoUrl">
                             <div class="text-slate-400 text-[11px] py-1">Nessun logo grafico caricato (visibile badge "FAD")</div>
                         </template>
 
-                        <div class="flex flex-wrap items-center justify-center gap-2 w-full">
-                            <label class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer transition">
-                                <span>📁 Carica Logo da Telefono / PC</span>
+                        <div class="flex flex-wrap items-center justify-center gap-1.5 w-full">
+                            <label class="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-bold text-xs cursor-pointer transition">
+                                <span>📁 Carica File Logo</span>
                                 <input type="file" accept="image/*" @change="onLogoFileUpload($event)" class="hidden">
                             </label>
-                            <button type="button" @click="setDemoLogo()"
-                                    class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold text-xs cursor-pointer">
-                                ✨ Prova Logo Demo
+                            <button type="button" @click="setDemoLogo('dark')"
+                                    class="px-2.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-300 font-bold text-[11px] cursor-pointer">
+                                Demo Logo Scuro
                             </button>
+                            <button type="button" @click="setDemoLogo('white')"
+                                    class="px-2.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] cursor-pointer">
+                                Demo Logo Bianco
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1 text-[11px]">Sfondo Box Logo</label>
+                            <select x-model="settings.logoBg" @change="saveToStorage()" class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-xs font-bold">
+                                <option value="white">Chiaro (Bianco)</option>
+                                <option value="dark">Scuro (Per loghi bianchi)</option>
+                                <option value="transparent">Trasparente</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1 text-[11px]">Dimensione Logo</label>
+                            <select x-model="settings.logoSize" @change="saveToStorage()" class="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-2 text-xs font-bold">
+                                <option value="sm">Compatto (32px)</option>
+                                <option value="md">Standard (40px)</option>
+                                <option value="lg">Grande (52px)</option>
+                            </select>
                         </div>
                     </div>
 
@@ -869,23 +962,23 @@
 
                 <!-- Colonna Destra: Colori Base & Palette Istituzionali -->
                 <div class="lg:col-span-7 space-y-4">
-                    <div class="font-extrabold text-sm text-slate-900">2. Cambia i Colori Base della Piattaforma</div>
+                    <div class="font-extrabold text-sm text-slate-900">2. Colori Base con Protezione Leggibilità Automatica</div>
                     <p class="text-[11px] text-slate-500">
-                        Tocca una delle <strong>5 Palette Pronte</strong> qui sotto oppure clicca sui quadratini colorati per scegliere qualsiasi tonalità personalizzata.
+                        Se scegli un colore molto chiaro (es. <em>Oro Chiaro</em>), il testo sui bottoni diventa automaticamente scuro e i badge usano una tinta morbida al 10%.
                     </p>
 
                     <!-- 5 Preset Palette Buttons -->
                     <div>
-                        <div class="text-[11px] font-bold text-slate-600 mb-1.5">Palette Colori Pronte (1-Click):</div>
+                        <div class="text-[11px] font-bold text-slate-600 mb-1.5">Palette Colori Testate (1-Click):</div>
                         <div class="flex flex-wrap gap-2">
                             <template x-for="p in colorPresets" :key="p.name">
                                 <button type="button"
                                         @click="applyColorPreset(p)"
                                         class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs text-[11px] font-bold text-slate-800 cursor-pointer transition">
                                     <span class="flex items-center gap-0.5">
-                                        <span class="w-3 h-3 rounded-full" :style="'background-color:' + p.primary"></span>
-                                        <span class="w-3 h-3 rounded-full" :style="'background-color:' + p.secondary"></span>
-                                        <span class="w-3 h-3 rounded-full" :style="'background-color:' + p.accent"></span>
+                                        <span class="w-3 h-3 rounded-full border border-black/10" :style="'background-color:' + p.primary"></span>
+                                        <span class="w-3 h-3 rounded-full border border-black/10" :style="'background-color:' + p.secondary"></span>
+                                        <span class="w-3 h-3 rounded-full border border-black/10" :style="'background-color:' + p.accent"></span>
                                     </span>
                                     <span x-text="p.name"></span>
                                 </button>
@@ -896,24 +989,33 @@
                     <!-- 3 Selettori Colore Base -->
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div class="p-3 rounded-xl bg-white border border-slate-200">
-                            <label class="block font-bold text-slate-700 text-[11px] mb-1.5">Colore Primario (Bottoni & Tab)</label>
+                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Colore Primario (Bottoni & Tab)</label>
                             <div class="flex items-center gap-2">
                                 <input type="color" x-model="settings.primaryColor" @input="applyBrandCssVars(); saveToStorage()" class="h-9 w-10 rounded border border-slate-300 cursor-pointer shrink-0">
                                 <input type="text" x-model="settings.primaryColor" @input="applyBrandCssVars(); saveToStorage()" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-xs uppercase">
                             </div>
+                            <div class="text-[10px] text-slate-400 mt-1">
+                                Testo: <strong class="text-slate-700" x-text="getContrastText(settings.primaryColor) === '#ffffff' ? 'Bianco (#FFF)' : 'Scuro (#0F172A)'"></strong>
+                            </div>
                         </div>
                         <div class="p-3 rounded-xl bg-white border border-slate-200">
-                            <label class="block font-bold text-slate-700 text-[11px] mb-1.5">Colore Secondario (Header & Box)</label>
+                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Barra Superiore Ente</label>
                             <div class="flex items-center gap-2">
                                 <input type="color" x-model="settings.brandColor" @input="applyBrandCssVars(); saveToStorage()" class="h-9 w-10 rounded border border-slate-300 cursor-pointer shrink-0">
                                 <input type="text" x-model="settings.brandColor" @input="applyBrandCssVars(); saveToStorage()" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-xs uppercase">
                             </div>
+                            <div class="text-[10px] text-slate-400 mt-1">
+                                Testo: <strong class="text-slate-700" x-text="getContrastText(settings.brandColor) === '#ffffff' ? 'Bianco (#FFF)' : 'Scuro (#0F172A)'"></strong>
+                            </div>
                         </div>
                         <div class="p-3 rounded-xl bg-white border border-slate-200">
-                            <label class="block font-bold text-slate-700 text-[11px] mb-1.5">Colore Accento (Idoneità & Badge)</label>
+                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Colore Accento (Attestati)</label>
                             <div class="flex items-center gap-2">
                                 <input type="color" x-model="settings.accentColor" @input="applyBrandCssVars(); saveToStorage()" class="h-9 w-10 rounded border border-slate-300 cursor-pointer shrink-0">
                                 <input type="text" x-model="settings.accentColor" @input="applyBrandCssVars(); saveToStorage()" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 font-mono text-xs uppercase">
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-1">
+                                Testo: <strong class="text-slate-700" x-text="getContrastText(settings.accentColor) === '#ffffff' ? 'Bianco (#FFF)' : 'Scuro (#0F172A)'"></strong>
                             </div>
                         </div>
                     </div>
@@ -1204,6 +1306,8 @@ document.addEventListener('alpine:init', () => {
             ateco: '79.90',
             cpIstat: '3.4.1.5.2',
             logoUrl: '',
+            logoBg: 'white',
+            logoSize: 'md',
             primaryColor: '#4f46e5',
             brandColor: '#0f172a',
             accentColor: '#10b981'
@@ -1214,7 +1318,7 @@ document.addEventListener('alpine:init', () => {
             { name: 'Blu Camera di Commercio', primary: '#0284c7', secondary: '#0c4a6e', accent: '#059669' },
             { name: 'Smeraldo Turismo', primary: '#0d9488', secondary: '#134e4a', accent: '#16a34a' },
             { name: 'Bordeaux Accademia', primary: '#be123c', secondary: '#4c0519', accent: '#d97706' },
-            { name: 'Blu & Oro Ministeriale', primary: '#1d4ed8', secondary: '#172554', accent: '#ca8a04' }
+            { name: 'Oro Chiaro & Blu (Test Contrasto Scuro)', primary: '#facc15', secondary: '#172554', accent: '#10b981' }
         ],
 
         courses: [
@@ -1671,10 +1775,54 @@ document.addEventListener('alpine:init', () => {
             this.showToast(`Modulo ${nextOrder} (${mod.sourceType === 'youtube' ? 'YouTube Mascherato' : 'MP4'}) aggiunto!`);
         },
 
+        hexToRgb(hex) {
+            const clean = (hex || '#4f46e5').replace('#', '');
+            if (clean.length !== 6) return [79, 70, 229];
+            return [
+                parseInt(clean.substring(0, 2), 16) || 0,
+                parseInt(clean.substring(2, 4), 16) || 0,
+                parseInt(clean.substring(4, 6), 16) || 0
+            ];
+        },
+
+        getContrastText(hex) {
+            const [r, g, b] = this.hexToRgb(hex);
+            const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            return yiq >= 155 ? '#0f172a' : '#ffffff';
+        },
+
+        getReadableOnLight(hex) {
+            const [r, g, b] = this.hexToRgb(hex);
+            const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            if (yiq <= 165) return hex;
+            const dr = Math.max(0, Math.round(r * 0.50)).toString(16).padStart(2, '0');
+            const dg = Math.max(0, Math.round(g * 0.50)).toString(16).padStart(2, '0');
+            const db = Math.max(0, Math.round(b * 0.50)).toString(16).padStart(2, '0');
+            return '#' + dr + dg + db;
+        },
+
+        getRgba(hex, alpha) {
+            const [r, g, b] = this.hexToRgb(hex);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        },
+
         applyBrandCssVars() {
-            document.documentElement.style.setProperty('--brand-primary', this.settings.primaryColor || '#4f46e5');
-            document.documentElement.style.setProperty('--brand-secondary', this.settings.brandColor || '#0f172a');
-            document.documentElement.style.setProperty('--brand-accent', this.settings.accentColor || '#10b981');
+            const root = document.documentElement.style;
+            const p = this.settings.primaryColor || '#4f46e5';
+            const s = this.settings.brandColor || '#0f172a';
+            const a = this.settings.accentColor || '#10b981';
+
+            root.setProperty('--brand-primary', p);
+            root.setProperty('--brand-primary-contrast', this.getContrastText(p));
+            root.setProperty('--brand-primary-readable', this.getReadableOnLight(p));
+            root.setProperty('--brand-primary-soft', this.getRgba(p, 0.10));
+            root.setProperty('--brand-primary-border', this.getRgba(p, 0.26));
+
+            root.setProperty('--brand-secondary', s);
+            root.setProperty('--brand-secondary-contrast', this.getContrastText(s));
+
+            root.setProperty('--brand-accent', a);
+            root.setProperty('--brand-accent-contrast', this.getContrastText(a));
         },
 
         applyColorPreset(p) {
@@ -1698,11 +1846,22 @@ document.addEventListener('alpine:init', () => {
             reader.readAsDataURL(file);
         },
 
-        setDemoLogo() {
-            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" width="220" height="60"><rect width="220" height="60" rx="12" fill="${this.settings.brandColor || '#0c4a6e'}"/><circle cx="32" cy="30" r="18" fill="${this.settings.primaryColor || '#0284c7'}"/><path d="M24 30l6 6 12-12" stroke="#ffffff" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="60" y="27" font-family="Plus Jakarta Sans, sans-serif" font-size="15" font-weight="800" fill="#ffffff">ENTE FORMAZIONE</text><text x="60" y="44" font-family="Plus Jakarta Sans, sans-serif" font-size="10" font-weight="600" fill="#93c5fd">ACCREDITATO MINISTERO</text></svg>`;
-            this.settings.logoUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
-            this.saveToStorage();
-            this.showToast('Logo Demo Istituzionale applicato!');
+        setDemoLogo(mode = 'dark') {
+            if (mode === 'white') {
+                this.settings.logoBg = 'dark';
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 56" width="230" height="56"><circle cx="28" cy="28" r="18" fill="#38bdf8"/><path d="M20 28l5 5 11-11" stroke="#0f172a" stroke-width="3.5" fill="none" stroke-linecap="round"/><text x="54" y="25" font-family="Plus Jakarta Sans, sans-serif" font-size="15" font-weight="800" fill="#ffffff">FORMACAMERA</text><text x="54" y="42" font-family="Plus Jakarta Sans, sans-serif" font-size="10" font-weight="600" fill="#cbd5e1">LOGO BIANCO SU BOX SCURO</text></svg>`;
+                this.settings.logoUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+                this.saveToStorage();
+                this.showToast('Logo Bianco caricato con Box Sfondo Scuro!');
+            } else {
+                this.settings.logoBg = 'white';
+                const p = this.settings.primaryColor || '#0284c7';
+                const c = this.getContrastText(p);
+                const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 230 56" width="230" height="56"><circle cx="28" cy="28" r="18" fill="${p}"/><path d="M20 28l5 5 11-11" stroke="${c}" stroke-width="3.5" fill="none" stroke-linecap="round"/><text x="54" y="25" font-family="Plus Jakarta Sans, sans-serif" font-size="15" font-weight="800" fill="#0f172a">ENTE FORMAZIONE</text><text x="54" y="42" font-family="Plus Jakarta Sans, sans-serif" font-size="10" font-weight="700" fill="#475569">ACCREDITATO MINISTERO</text></svg>`;
+                this.settings.logoUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+                this.saveToStorage();
+                this.showToast('Logo Scuro caricato con Box Sfondo Chiaro!');
+            }
         },
 
         removeLogo() {
@@ -1718,7 +1877,7 @@ document.addEventListener('alpine:init', () => {
             this.settings.primaryColor = '#0284c7';
             this.settings.brandColor = '#0c4a6e';
             this.settings.accentColor = '#059669';
-            this.setDemoLogo();
+            this.setDemoLogo('white');
             this.applyBrandCssVars();
             this.saveToStorage();
             this.showToast('Applicato preset: FormaCamera (con Logo & Colori Camera di Commercio)');
@@ -1729,6 +1888,8 @@ document.addEventListener('alpine:init', () => {
             this.settings.providerName = 'Ente di Formazione Accreditato';
             this.settings.legalRep = 'Dott.ssa Paola Gentile';
             this.settings.logoUrl = '';
+            this.settings.logoBg = 'white';
+            this.settings.logoSize = 'md';
             this.settings.primaryColor = '#4f46e5';
             this.settings.brandColor = '#0f172a';
             this.settings.accentColor = '#10b981';
