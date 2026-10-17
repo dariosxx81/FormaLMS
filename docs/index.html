@@ -174,7 +174,7 @@
                 </div>
             </div>
 
-            <!-- Second Row: Scrollable Mobile & Desktop 5-Tab Bar (Always Visible on Smartphone!) -->
+            <!-- Second Row: Scrollable Mobile & Desktop 6-Tab Bar (Always Visible on Smartphone!) -->
             <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-2 border-t border-slate-100">
                 <button @click="currentView = 'student'"
                         :class="currentView === 'student' ? 'bg-indigo-600 shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
@@ -184,22 +184,27 @@
                 <button @click="currentView = 'register_page'"
                         :class="currentView === 'register_page' ? 'bg-indigo-600 shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
                         class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0">
-                    2. 📝 Modulo Registrazione Utente
+                    2. 📝 Registrazione, Codice Corso & Recupero Password
                 </button>
                 <button @click="currentView = 'admin_courses'"
                         :class="currentView === 'admin_courses' ? 'bg-indigo-600 shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
                         class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0">
-                    3. ⚙ Admin: Corsi (1..N Moduli) & Opzioni
+                    3. ⚙ Admin: CRUD Corsi/Moduli & Switch Zoom
                 </button>
                 <button @click="currentView = 'admin_users'"
                         :class="currentView === 'admin_users' ? 'bg-indigo-600 shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
                         class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0">
-                    4. 👥 Admin: Iscritti, Ore Zoom & Audit
+                    4. 👥 Admin: CRUD Utenti, Sospensione & Zoom
                 </button>
                 <button @click="currentView = 'admin_whitelabel'"
                         :class="currentView === 'admin_whitelabel' ? 'bg-indigo-600 shadow-2xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"
                         class="px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition cursor-pointer shrink-0">
                     5. 🎨 Admin: White-Label Ente
+                </button>
+                <button @click="currentView = 'capitolato_preventivo'"
+                        :class="currentView === 'capitolato_preventivo' ? 'bg-emerald-600 shadow-2xs' : 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'"
+                        class="px-3 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap transition cursor-pointer shrink-0">
+                    6. 📄 Capitolato Tecnico & Preventivo (€ 2.500)
                 </button>
             </div>
         </div>
@@ -217,23 +222,44 @@
     <!-- ===================================================================== -->
     <main x-show="currentView === 'student'" class="flex-1 max-w-7xl w-full mx-auto py-5 px-3 sm:px-6 lg:px-8 space-y-6 no-print">
 
-        <!-- Course Selector Bar (Allows testing multi-module vs 1-module courses!) -->
-        <div class="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div class="flex items-center gap-2 text-xs">
-                <span class="font-extrabold text-slate-700">Corso selezionato:</span>
+        <!-- Course Selector Bar + Unlock New Course by Secret Code (No Public Catalog!) -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+                <span class="font-extrabold text-slate-700">I Miei Corsi Abilitati:</span>
                 <select x-model.number="activeCourseId" @change="onCourseChange()"
                         class="rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-900">
                     <template x-for="c in courses" :key="c.id">
-                        <option :value="c.id" x-text="'[' + c.code + '] ' + c.title + ' (' + c.modules.length + (c.modules.length === 1 ? ' modulo)' : ' moduli)')"></option>
+                        <option :value="c.id" x-text="'[' + c.code + '] ' + c.title + (c.isActive === false ? ' (⏸ SOSPESO)' : '')"></option>
                     </template>
                 </select>
+                <span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-bold border border-indigo-200 text-[11px]"
+                      x-text="activeCourse.hasSyncHours ? 'Corso Ibrido (' + activeCourse.syncHours + 'h Zoom + ' + activeCourse.asyncHours + 'h FAD)' : '100% Piattaforma FAD (' + activeCourse.asyncHours + 'h • Senza Zoom)'"></span>
             </div>
-            <div class="flex items-center gap-2 text-[11px]">
-                <span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-bold border border-indigo-200"
-                      x-text="activeCourse.hasSyncHours ? 'Corso Misto (' + activeCourse.syncHours + 'h Sincrone + ' + activeCourse.asyncHours + 'h FAD)' : 'Corso 100% Asincrono FAD (' + activeCourse.asyncHours + 'h)'"></span>
-                <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-bold"
-                      x-text="activeCourse.modules.length + (activeCourse.modules.length === 1 ? ' Modulo Video' : ' Moduli Video')"></span>
+
+            <!-- Redeem Course Code Form -->
+            <form @submit.prevent="redeemCourseCodeDemo()" class="flex items-center gap-2 text-xs">
+                <span class="text-slate-500 font-bold">🔑 Hai un Codice Corso?</span>
+                <input type="text" x-model="redeemCodeInput" required placeholder="Es. INVITO-MONO-99"
+                       class="w-40 rounded-xl border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-mono uppercase font-bold">
+                <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold cursor-pointer transition shrink-0">
+                    Abilita Corso &rarr;
+                </button>
+            </form>
+        </div>
+
+        <!-- Warning Banner when Course is Suspended / Deactivated by Admin -->
+        <div x-cloak x-show="activeCourse.isActive === false"
+             class="p-4 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <div class="font-extrabold text-sm">⏸ Corso Temporaneamente Sospeso / Disattivato dalla Segreteria</div>
+                <p class="text-amber-800 mt-0.5">
+                    L'accesso al player video è bloccato finché l'amministratore non riattiva il corso. Le ore e gli attestati già maturati restano salvati in archivio.
+                </p>
             </div>
+            <button @click="activeCourse.isActive = true; saveToStorage(); showToast('Corso riattivato!')"
+                    class="px-3.5 py-2 rounded-xl bg-amber-700 text-white font-bold cursor-pointer shrink-0">
+                ▶ Riattiva Corso (Simulazione Admin)
+            </button>
         </div>
 
         <!-- Student Summary & Unified Progress Banner -->
@@ -577,92 +603,163 @@
     </main>
 
     <!-- ===================================================================== -->
-    <!-- TAB 2: DEDICATED PUBLIC USER SELF-REGISTRATION PAGE (`/register`)     -->
+    <!-- TAB 2: PUBLIC REGISTRATION (WITH SECRET CODE) & PASSWORD RECOVERY     -->
     <!-- ===================================================================== -->
-    <main x-cloak x-show="currentView === 'register_page'" class="flex-1 max-w-3xl w-full mx-auto py-6 px-3 sm:px-6 lg:px-8 no-print">
-        <div class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
-            <div class="border-b border-slate-200 pb-4 mb-6">
-                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Pagina Pubblica Dedicata al Corsista (/register)</span>
-                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">Modulo di Auto-Registrazione e Iscrizione Corso</h1>
-                <p class="text-xs text-slate-500 mt-1">
-                    L'utente compila in autonomia i propri dati anagrafici (richiesti per la generazione automatica dell'Attestato Ministeriale Allegato 3/4) e sceglie a quale corso iscriversi.
-                </p>
-            </div>
+    <main x-cloak x-show="currentView === 'register_page'" class="flex-1 max-w-6xl w-full mx-auto py-6 px-3 sm:px-6 lg:px-8 no-print">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-            <form @submit.prevent="addNewStudent(); currentView = 'student'" class="space-y-5 text-xs">
-                <div class="bg-indigo-50/70 border border-indigo-200 rounded-xl p-4">
-                    <label class="block font-bold text-indigo-950 mb-1.5">Seleziona il Corso a cui iscriverti *</label>
-                    <select x-model.number="activeCourseId" class="w-full rounded-xl border border-indigo-300 bg-white px-3 py-2.5 text-xs font-bold text-slate-900">
-                        <template x-for="c in courses" :key="c.id">
-                            <option :value="c.id" x-text="'[' + c.code + '] ' + c.title + ' (' + c.totalHours + 'h)'"></option>
-                        </template>
-                    </select>
+            <!-- Left (7 cols): Auto-Registrazione Senza Catalogo Libero (Solo Codice Segreto) -->
+            <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+                <div class="border-b border-slate-200 pb-4 mb-5">
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Pagina Pubblica Auto-Registrazione (/register)</span>
+                    <h1 class="text-xl font-extrabold text-slate-900 mt-0.5">Registrazione Anagrafica & Codice Corso</h1>
+                    <p class="text-xs text-slate-500 mt-1">
+                        Il corsista <strong>non vede alcun catalogo pubblico di corsi</strong>: inserisce i propri dati anagrafici e il <strong>Codice Invito Segreto</strong> comunicato dalla Segreteria.
+                    </p>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Nome *</label>
-                        <input type="text" x-model="newStudentForm.firstName" required placeholder="Es. Giulia" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                <form @submit.prevent="addNewStudent(); currentView = 'student'" class="space-y-4 text-xs">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Nome *</label>
+                            <input type="text" x-model="newStudentForm.firstName" required placeholder="Es. Giulia" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Cognome *</label>
+                            <input type="text" x-model="newStudentForm.lastName" required placeholder="Es. De Santis" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Codice Fiscale *</label>
+                            <input type="text" x-model="newStudentForm.fiscalCode" required placeholder="DSNGLI85E55H501Z" class="w-full rounded-xl border border-slate-300 px-3 py-2 uppercase font-mono">
+                        </div>
                     </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Data di Nascita *</label>
+                            <input type="date" x-model="newStudentForm.birthDate" required class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Comune di Nascita *</label>
+                            <input type="text" x-model="newStudentForm.birthCity" required placeholder="Roma" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Provincia (Sigla) *</label>
+                            <input type="text" x-model="newStudentForm.birthProvince" required maxlength="2" placeholder="RM" class="w-full rounded-xl border border-slate-300 px-3 py-2 uppercase">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Indirizzo Email *</label>
+                            <input type="email" x-model="newStudentForm.email" required placeholder="giulia.desantis@email.it" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">N. Iscrizione Elenco Nazionale (opz.)</label>
+                            <input type="text" x-model="newStudentForm.nationalList" placeholder="ENGT-RM-00812" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        </div>
+                    </div>
+
+                    <div class="bg-indigo-50/70 border border-indigo-200 rounded-xl p-4">
+                        <label class="block font-bold text-indigo-950 mb-1">🔑 Codice Invito / Codice Corso (fornito dalla Segreteria)</label>
+                        <input type="text" x-model="newStudentForm.inviteCode" placeholder="Es. INVITO-GT-2026 oppure INVITO-MONO-99"
+                               class="w-full rounded-xl border border-indigo-300 bg-white px-3 py-2.5 text-xs font-mono uppercase font-bold text-slate-900">
+                        <p class="text-[11px] text-slate-500 mt-1">
+                            Codici attivi nella demo: <code class="font-bold text-indigo-700">INVITO-GT-2026</code> (Corso 50h) oppure <code class="font-bold text-indigo-700">INVITO-MONO-99</code> (Corso 100% FAD).
+                        </p>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-200 flex justify-end">
+                        <button type="submit" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs transition cursor-pointer">
+                            Completa Registrazione e Accedi all'Aula FAD &rarr;
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right (5 cols): Recupero Password con Invio Mail o Verifica Codice Fiscale (/forgot-password) -->
+            <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-4 text-xs"
+                 x-data="{ recMode: 'email', recEmail: 'sara.lombardi@guideroma.it', recCf: 'LMBSRA88L62F839T', recNewPass: 'NuovaPass2026!', mailSentPreview: false }">
+                <div class="border-b border-slate-200 pb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Recupero Credenziali (/forgot-password)</span>
+                    <h2 class="text-lg font-extrabold text-slate-900 mt-0.5">Password Dimenticata & Invio Mail</h2>
+                    <p class="text-[11px] text-slate-500 mt-0.5">
+                        L'utente già registrato può ricevere il <strong>Link di Reset via Email</strong> oppure reimpostarla subito con <strong>Email + Codice Fiscale</strong>.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-slate-100 font-bold">
+                    <button type="button" @click="recMode = 'email'"
+                            :class="recMode === 'email' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500'"
+                            class="py-2 rounded-lg cursor-pointer">
+                        📧 Invio Link via Email
+                    </button>
+                    <button type="button" @click="recMode = 'cf'"
+                            :class="recMode === 'cf' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500'"
+                            class="py-2 rounded-lg cursor-pointer">
+                        🪪 Verifica Codice Fiscale
+                    </button>
+                </div>
+
+                <!-- Mode A: Email Link -->
+                <div x-show="recMode === 'email'" class="space-y-3">
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Cognome *</label>
-                        <input type="text" x-model="newStudentForm.lastName" required placeholder="Es. De Santis" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        <label class="block font-bold text-slate-700 mb-1">Email Registrata *</label>
+                        <input type="email" x-model="recEmail" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    </div>
+                    <button type="button"
+                            @click="mailSentPreview = true; showToast('Email con link /reset-password/{token} inviata a ' + recEmail)"
+                            class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold cursor-pointer">
+                        Invia Email di Recupero Password &rarr;
+                    </button>
+
+                    <div x-cloak x-show="mailSentPreview" class="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 space-y-2">
+                        <div class="font-extrabold text-emerald-900">✓ Email inviata con Link Token Crittografico!</div>
+                        <p class="text-[11px] text-emerald-800">
+                            Cliccando sul link ricevuto via mail (<code>/reset-password/token...</code>), l'utente imposta la nuova password e riceve conferma via email.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Mode B: Identity Fiscal Code -->
+                <div x-show="recMode === 'cf'" class="space-y-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-1">Email Registrata *</label>
+                        <input type="email" x-model="recEmail" class="w-full rounded-xl border border-slate-300 px-3 py-2">
                     </div>
                     <div>
                         <label class="block font-bold text-slate-700 mb-1">Codice Fiscale *</label>
-                        <input type="text" x-model="newStudentForm.fiscalCode" required placeholder="DSNGLI85E55H501Z" class="w-full rounded-xl border border-slate-300 px-3 py-2 uppercase font-mono">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Data di Nascita *</label>
-                        <input type="date" x-model="newStudentForm.birthDate" required class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        <input type="text" x-model="recCf" class="w-full rounded-xl border border-slate-300 px-3 py-2 font-mono uppercase">
                     </div>
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Comune di Nascita *</label>
-                        <input type="text" x-model="newStudentForm.birthCity" required placeholder="Roma" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        <label class="block font-bold text-slate-700 mb-1">Nuova Password *</label>
+                        <input type="text" x-model="recNewPass" class="w-full rounded-xl border border-slate-300 px-3 py-2 font-mono">
                     </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Provincia (Sigla) *</label>
-                        <input type="text" x-model="newStudentForm.birthProvince" required maxlength="2" placeholder="RM" class="w-full rounded-xl border border-slate-300 px-3 py-2 uppercase">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">Indirizzo Email *</label>
-                        <input type="email" x-model="newStudentForm.email" required placeholder="giulia.desantis@email.it" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    </div>
-                    <div>
-                        <label class="block font-bold text-slate-700 mb-1">N. Iscrizione Elenco Nazionale (opzionale)</label>
-                        <input type="text" x-model="newStudentForm.nationalList" placeholder="ENGT-RM-00812" class="w-full rounded-xl border border-slate-300 px-3 py-2">
-                    </div>
-                </div>
-
-                <div class="pt-4 border-t border-slate-200 flex justify-end">
-                    <button type="submit" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white font-extrabold text-xs transition cursor-pointer">
-                        Completa Registrazione e Accedi subito all'Aula FAD &rarr;
+                    <button type="button"
+                            @click="showToast('Password aggiornata con successo per ' + recEmail + '!')"
+                            class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold cursor-pointer">
+                        Verifica Identità e Salva Nuova Password &rarr;
                     </button>
                 </div>
-            </form>
+            </div>
+
         </div>
     </main>
 
     <!-- ===================================================================== -->
-    <!-- TAB 3: ADMIN — COURSES (1 OR N MODULES) & CONFIGURABLE OPTIONS        -->
+    <!-- TAB 3: ADMIN — COURSES & MODULES FULL CRUD + ZOOM HOURS SWITCH        -->
     <!-- ===================================================================== -->
     <main x-cloak x-show="currentView === 'admin_courses'" class="flex-1 max-w-7xl w-full mx-auto py-6 px-3 sm:px-6 lg:px-8 space-y-6 no-print">
 
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <span class="text-xs font-bold uppercase text-indigo-600">Configurazione Flessibile per Singolo Corso</span>
-                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900">Gestione Corsi (da 1 a N Moduli) & Opzioni Player</h1>
-                <p class="text-xs text-slate-500">Ogni corso può avere 1 solo modulo oppure N moduli, essere Misto (con ore Sincrone Zoom) o 100% FAD, e avere Popup Presenza / YouTube Mascherato.</p>
+                <span class="text-xs font-bold uppercase text-indigo-600">Backend Admin — Gestione Completa Corsi & Moduli</span>
+                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900">Modifica, Disattivazione, Cancellazione & Opzione Ore Zoom</h1>
+                <p class="text-xs text-slate-500">Abilita o disattiva le ore di Zoom (per vedere solo le ore maturate in piattaforma), gestisci il Codice Invito Segreto e modifica/nascondi/elimina corsi e moduli.</p>
             </div>
             <div class="flex flex-wrap gap-2">
                 <button @click="newCourseModal = true" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-indigo-600 text-white text-xs font-bold cursor-pointer">
-                    + Crea Nuovo Corso (1 o N Moduli)
+                    + Crea Nuovo Corso
                 </button>
                 <button @click="addModuleModal = true" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold cursor-pointer">
                     + Aggiungi Modulo (MP4 / YouTube)
@@ -670,30 +767,63 @@
             </div>
         </div>
 
-        <!-- Configurable Switches for the Active Course -->
+        <!-- Configurable Switches & Status Actions for the Active Course -->
         <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
-                <div>
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                <div class="flex flex-wrap items-center gap-2">
                     <span class="text-xs font-mono font-bold text-indigo-600" x-text="activeCourse.code"></span>
-                    <h2 class="text-base font-extrabold text-slate-900" x-text="'Opzioni Configurabili del Corso: ' + activeCourse.title"></h2>
+                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold"
+                          :class="activeCourse.isActive !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                          x-text="activeCourse.isActive !== false ? '● Corso Attivo' : '⏸ Corso Sospeso / Disattivato'"></span>
+                    <span class="px-2.5 py-0.5 rounded-lg bg-indigo-50 border border-indigo-200 text-[11px] font-mono font-bold text-indigo-700"
+                          x-text="'🔑 Codice Segreto: ' + (activeCourse.inviteCode || activeCourse.code)"></span>
                 </div>
-                <select x-model.number="activeCourseId" class="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-bold">
-                    <template x-for="c in courses" :key="c.id">
-                        <option :value="c.id" x-text="c.code + ' (' + c.modules.length + ' moduli)'"></option>
-                    </template>
-                </select>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <select x-model.number="activeCourseId" class="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-bold">
+                        <template x-for="c in courses" :key="c.id">
+                            <option :value="c.id" x-text="c.code + ' — ' + c.title"></option>
+                        </template>
+                    </select>
+
+                    <button @click="activeCourse.isActive = (activeCourse.isActive === false ? true : false); saveToStorage(); showToast(activeCourse.isActive ? 'Corso riattivato!' : 'Corso sospeso! Gli iscritti vedono il corso bloccato.')"
+                            class="px-3 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition"
+                            :class="activeCourse.isActive !== false ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100' : 'bg-emerald-600 text-white border-emerald-600'">
+                        <span x-text="activeCourse.isActive !== false ? '⏸ Disattiva / Sospendi Corso' : '▶ Riattiva Corso'"></span>
+                    </button>
+
+                    <button @click="deleteActiveCourseDemo()"
+                            class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold cursor-pointer">
+                        🗑 Elimina Corso
+                    </button>
+                </div>
+            </div>
+
+            <!-- Editable Course Title & Secret Invite Code -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div class="md:col-span-2">
+                    <label class="block font-bold text-slate-700 mb-1">Titolo Corso (Modificabile in tempo reale)</label>
+                    <input type="text" x-model="activeCourse.title" @change="saveToStorage(); showToast('Titolo corso aggiornato!')"
+                           class="w-full rounded-xl border border-slate-300 px-3 py-2 font-bold">
+                </div>
+                <div>
+                    <label class="block font-bold text-indigo-800 mb-1">🔑 Codice Segreto Invito Corso</label>
+                    <input type="text" x-model="activeCourse.inviteCode" @change="saveToStorage(); showToast('Codice Invito aggiornato!')"
+                           placeholder="Es. INVITO-GT-2026"
+                           class="w-full rounded-xl border border-indigo-300 bg-indigo-50/40 px-3 py-2 font-mono uppercase font-bold">
+                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                 <!-- Toggle 1: Enable/Disable Synchronous (Zoom) Hours -->
                 <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between gap-3">
                     <div>
-                        <div class="font-extrabold text-slate-900">1. Gestione Ore Sincrone (Zoom)</div>
-                        <p class="text-[11px] text-slate-500 mt-1">Attiva se il corso prevede una quota di ore sincrone su Zoom da sommare alle ore video FAD. Disattiva se il corso è 100% video asincrono.</p>
+                        <div class="font-extrabold text-slate-900">1. Abilita Ore Sincrone (Zoom)</div>
+                        <p class="text-[11px] text-slate-500 mt-1">Se disattivato, il corso esclude Zoom e mostra/calcola <strong>solo le ore maturate nella piattaforma FAD</strong>.</p>
                     </div>
                     <label class="inline-flex items-center gap-2 font-bold text-indigo-700 cursor-pointer">
-                        <input type="checkbox" x-model="activeCourse.hasSyncHours" @change="saveToStorage(); showToast('Impostazione Ore Sincrone aggiornata')" class="rounded text-indigo-600 w-4 h-4">
-                        <span x-text="activeCourse.hasSyncHours ? 'ATTIVO (Misto Zoom + FAD)' : 'DISATTIVO (100% Solo Video FAD)'"></span>
+                        <input type="checkbox" x-model="activeCourse.hasSyncHours" @change="onToggleCourseSyncHours()" class="rounded text-indigo-600 w-4 h-4">
+                        <span x-text="activeCourse.hasSyncHours ? 'ATTIVO (Ibrido Zoom + FAD)' : 'DISATTIVO (Solo Ore Piattaforma FAD)'"></span>
                     </label>
                 </div>
 
@@ -724,7 +854,7 @@
             </div>
         </div>
 
-        <!-- Modules List of Active Course (1 or Multiple Modules) -->
+        <!-- Modules List of Active Course (With Edit, Hide/Publish & Delete) -->
         <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-2xs space-y-4">
             <div class="flex items-center justify-between">
                 <div>
@@ -732,7 +862,7 @@
                         Moduli Didattici di <span class="text-indigo-600" x-text="activeCourse.code"></span>
                         (<span x-text="activeCourse.modules.length"></span> <span x-text="activeCourse.modules.length === 1 ? 'modulo' : 'moduli'"></span>)
                     </h3>
-                    <p class="text-xs text-slate-500">Puoi comporre un corso con 1 singolo modulo (es. 1 webinar registrato) oppure con 5, 10 o più moduli, usando file MP4 o YouTube con loghi mascherati.</p>
+                    <p class="text-xs text-slate-500">Puoi modificare il titolo, mettere in bozza/nascondere o eliminare qualsiasi modulo.</p>
                 </div>
                 <button @click="addModuleModal = true" class="px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs font-bold cursor-pointer">
                     + Aggiungi Modulo
@@ -741,21 +871,33 @@
 
             <div class="space-y-3">
                 <template x-for="mod in activeCourse.modules" :key="mod.id">
-                    <div class="p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div>
-                            <div class="flex items-center gap-2">
+                    <div class="p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                         :class="mod.isPublished === false ? 'opacity-60 bg-slate-50' : 'bg-white'">
+                        <div class="flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
                                 <span class="px-2 py-0.5 rounded bg-slate-900 text-white text-[11px] font-bold" x-text="'MODULO ' + mod.order"></span>
                                 <span class="px-2 py-0.5 rounded text-[11px] font-bold"
                                       :class="mod.sourceType === 'youtube' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'"
                                       x-text="mod.sourceType === 'youtube' ? '🛡 YouTube Mascherato (No-Logo)' : '🎬 File Video .MP4'"></span>
+                                <span x-show="mod.isPublished === false" class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">
+                                    ⏸ Nascosto / Bozza
+                                </span>
                             </div>
-                            <div class="font-extrabold text-sm text-slate-900 mt-1" x-text="mod.title"></div>
-                            <div class="text-xs text-slate-500" x-text="'Docente: ' + mod.instructor"></div>
+                            <input type="text" x-model="mod.title" @change="saveToStorage(); showToast('Titolo modulo aggiornato!')"
+                                   class="font-extrabold text-sm text-slate-900 mt-1.5 w-full rounded-lg border border-transparent hover:border-slate-300 focus:border-indigo-500 px-1.5 py-0.5">
+                            <div class="text-xs text-slate-500 px-1.5" x-text="'Docente: ' + mod.instructor"></div>
                         </div>
-                        <div class="flex items-center gap-2 shrink-0">
+                        <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+                            <button @click="mod.isPublished = (mod.isPublished === false ? true : false); saveToStorage(); showToast(mod.isPublished === false ? 'Modulo nascosto ai corsisti' : 'Modulo pubblicato')"
+                                    class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer"
+                                    x-text="mod.isPublished === false ? '▶ Pubblica' : '⏸ Nascondi'"></button>
+                            <button @click="deleteModuleDemo(mod.id)"
+                                    class="px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold cursor-pointer">
+                                🗑
+                            </button>
                             <button @click="selectModule(mod); currentView = 'student'"
                                     class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold cursor-pointer">
-                                ▶ Apri nel Player
+                                ▶ Apri Player
                             </button>
                         </div>
                     </div>
@@ -765,19 +907,19 @@
     </main>
 
     <!-- ===================================================================== -->
-    <!-- TAB 4: ADMIN — ENROLLED STUDENTS, ZOOM SYNC HOURS & STUDENT AUDIT      -->
+    <!-- TAB 4: ADMIN — USERS CRUD, SUSPENSION, PASSWORD RESET & ZOOM HOURS    -->
     <!-- ===================================================================== -->
     <main x-cloak x-show="currentView === 'admin_users'" class="flex-1 max-w-7xl w-full mx-auto py-6 px-3 sm:px-6 lg:px-8 space-y-6 no-print">
 
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <span class="text-xs font-bold uppercase text-indigo-600">Registro Presenze & Audit Individuale</span>
-                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900">Iscritti, Caricamento Ore Sincrone (Zoom) & Audit Corsista</h1>
-                <p class="text-xs text-slate-500">Modifica le ore Zoom, importa da CSV o clicca su "Audit Corsista" per ispezionare tutti i log di quel singolo partecipante.</p>
+                <span class="text-xs font-bold uppercase text-indigo-600">Backend Admin — Gestione Utenti & Registro Presenze</span>
+                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900">Modifica, Sospensione, Cancellazione Utenti & Ore Zoom</h1>
+                <p class="text-xs text-slate-500">Modifica anagrafica e password, sospendi/riattiva o elimina gli iscritti, aggiorna le ore Zoom (visibili solo se abilitate sul corso) e scarica i PDF ufficiali.</p>
             </div>
             <div class="flex flex-wrap gap-2">
                 <button @click="csvImportModal = true" class="px-3.5 py-2 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold cursor-pointer">
-                    Importa CSV Iscritti / Zoom
+                    📥 Importa CSV Iscritti / Zoom
                 </button>
                 <a href="./pdf/Registro_Presenze_AGG-GT-2026-01.pdf" download class="px-3.5 py-2 rounded-xl bg-red-600 text-white text-xs font-bold">
                     PDF Registro Corso &darr;
@@ -790,21 +932,26 @@
                 <table class="w-full text-left border-collapse text-xs">
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
-                            <th class="py-3.5 px-4">Corsista & CF</th>
-                            <th class="py-3.5 px-4">Ore Sincrone (Zoom)</th>
-                            <th class="py-3.5 px-4">Moduli FAD</th>
+                            <th class="py-3.5 px-4">Corsista, CF & Stato</th>
+                            <th class="py-3.5 px-4" x-show="activeCourse.hasSyncHours">Ore Sincrone (Zoom)</th>
+                            <th class="py-3.5 px-4">Moduli Piattaforma FAD</th>
                             <th class="py-3.5 px-4">Totale & %</th>
-                            <th class="py-3.5 px-4 text-right">Audit & Attestato</th>
+                            <th class="py-3.5 px-4 text-right">Azioni Admin & Certificati</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200">
                         <template x-for="stu in students" :key="stu.id">
-                            <tr class="hover:bg-slate-50">
+                            <tr class="hover:bg-slate-50" :class="stu.status === 'suspended' ? 'opacity-60 bg-rose-50/30' : ''">
                                 <td class="py-4 px-4">
-                                    <div class="font-extrabold text-sm text-slate-900" x-text="stu.firstName + ' ' + stu.lastName"></div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-extrabold text-sm text-slate-900" x-text="stu.firstName + ' ' + stu.lastName"></span>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                              :class="stu.status === 'suspended' ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'"
+                                              x-text="stu.status === 'suspended' ? '⏸ Sospeso' : '● Attivo'"></span>
+                                    </div>
                                     <div class="text-[11px] font-mono text-slate-500" x-text="stu.fiscalCode + ' • ' + stu.email"></div>
                                 </td>
-                                <td class="py-4 px-4">
+                                <td class="py-4 px-4" x-show="activeCourse.hasSyncHours">
                                     <div class="flex items-center gap-1.5">
                                         <input type="number" step="0.5" min="0" max="50" x-model.number="stu.syncHours"
                                                @change="saveToStorage(); showToast('Ore Sincrone aggiornate per ' + stu.firstName)"
@@ -825,18 +972,31 @@
                                 <td class="py-4 px-4">
                                     <span class="font-extrabold text-slate-900" x-text="getStudentTotalHours(stu) + 'h'"></span>
                                     <span class="ml-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
-                                          :class="getStudentPercentage(stu) >= 80 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
+                                          :class="getStudentPercentage(stu) >= activeCourse.minPercent ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'"
                                           x-text="getStudentPercentage(stu) + '%'"></span>
                                 </td>
-                                <td class="py-4 px-4 text-right space-x-1">
-                                    <button @click="auditModalStudent = stu"
-                                            class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold cursor-pointer">
-                                        🔍 Audit Corsista
-                                    </button>
-                                    <button @click="openCertificatePreview(stu)"
-                                            class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold cursor-pointer">
-                                        Attestato
-                                    </button>
+                                <td class="py-4 px-4 text-right">
+                                    <div class="inline-flex flex-wrap items-center justify-end gap-1">
+                                        <button @click="stu.status = (stu.status === 'suspended' ? 'active' : 'suspended'); saveToStorage(); showToast(stu.status === 'suspended' ? 'Utente sospeso (accesso bloccato)' : 'Utente riattivato')"
+                                                class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-bold cursor-pointer"
+                                                x-text="stu.status === 'suspended' ? '▶ Riattiva' : '⏸ Sospendi'"></button>
+                                        <button @click="showToast('Password reimpostata per ' + stu.email)"
+                                                class="px-2.5 py-1.5 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold cursor-pointer">
+                                            🔑 Reset Pass
+                                        </button>
+                                        <button @click="auditModalStudent = stu"
+                                                class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold cursor-pointer">
+                                            🔍 Audit
+                                        </button>
+                                        <button @click="openCertificatePreview(stu)"
+                                                class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold cursor-pointer">
+                                            Attestato
+                                        </button>
+                                        <button @click="deleteStudentDemo(stu.id)"
+                                                class="px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold cursor-pointer">
+                                            🗑
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         </template>
@@ -1140,6 +1300,144 @@
     </main>
 
     <!-- ===================================================================== -->
+    <!-- TAB 6: CAPITOLATO TECNICO-FUNZIONALE & PREVENTIVO ECONOMICO (€ 2.500) -->
+    <!-- ===================================================================== -->
+    <main x-cloak x-show="currentView === 'capitolato_preventivo'" class="flex-1 max-w-6xl w-full mx-auto py-6 px-3 sm:px-6 lg:px-8 space-y-6 no-print">
+
+        <!-- Top Download Banner -->
+        <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold uppercase">
+                    Documentazione Ufficiale di Progetto
+                </span>
+                <h1 class="text-xl sm:text-2xl font-extrabold mt-1">Capitolato Tecnico-Funzionale & Preventivo Economico</h1>
+                <p class="text-xs text-slate-300 mt-0.5">
+                    Scarica i documenti ufficiali in formato PDF pronti per la stampa o consulta il dettaglio completo qui sotto.
+                </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5 shrink-0">
+                <a href="./pdf/Preventivo_Piattaforma_FormaLMS_2500.pdf" download
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-sm transition">
+                    <span>📄 Scarica Preventivo (€ 2.500) PDF &darr;</span>
+                </a>
+                <a href="./pdf/Capitolato_Tecnico_Funzionale_FormaLMS.pdf" download
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold shadow-sm transition">
+                    <span>📘 Scarica Capitolato Tecnico PDF &darr;</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Preventivo Economico Card (€ 2.500,00) -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-2xs space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-4">
+                <div>
+                    <span class="text-xs font-bold uppercase text-emerald-600">Offerta Economica Chiavi in Mano</span>
+                    <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Preventivo di Fornitura Piattaforma FAD White-Label</h2>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-extrabold text-slate-900">€ 2.500,00</div>
+                    <div class="text-[11px] text-slate-500">Licenza Proprietaria • Zero Canoni per Utente</div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase text-slate-500">
+                            <th class="py-3 px-4 w-16">Cod.</th>
+                            <th class="py-3 px-4">Modulo Funzionale & Descrizione Attività</th>
+                            <th class="py-3 px-4 text-right w-32">Importo</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        <tr>
+                            <td class="py-3.5 px-4 font-mono font-bold text-indigo-600">MOD-01</td>
+                            <td class="py-3.5 px-4">
+                                <div class="font-extrabold text-slate-900">Architettura Core LMS White-Label & Personalizzazione Grafica Adattiva</div>
+                                <div class="text-slate-500 mt-0.5">Caricamento Logo Aziendale, opzione "Solo Logo", selettore 3 Colori Base con contrasto automatico WCAG e armonizzazione su Login, Dashboard, Player e PDF.</div>
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 450,00</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3.5 px-4 font-mono font-bold text-indigo-600">MOD-02</td>
+                            <td class="py-3.5 px-4">
+                                <div class="font-extrabold text-slate-900">Motore Corsi Flessibile (Ibrido Zoom + FAD oppure 100% Piattaforma) & Player Anti-Skip</div>
+                                <div class="text-slate-500 mt-0.5">Corsi da 1 a N moduli, switch abilitazione/disattivazione Ore Zoom, Player HTML5 MP4 e YouTube Mascherato (No-Logo Shield), Anti-Skip, blocco 1.0x e pausa cambio scheda.</div>
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 700,00</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3.5 px-4 font-mono font-bold text-indigo-600">MOD-03</td>
+                            <td class="py-3.5 px-4">
+                                <div class="font-extrabold text-slate-900">Sistema di Telemetria Heartbeat, Verifica Presenza & Registro Audit Ispettorato</div>
+                                <div class="text-slate-500 mt-0.5">Salvataggio automatico ogni 5s dei secondi reali, tracciamento IP, User-Agent, popup presenza periodico e tracciamento download dispense PDF.</div>
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 500,00</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3.5 px-4 font-mono font-bold text-indigo-600">MOD-04</td>
+                            <td class="py-3.5 px-4">
+                                <div class="font-extrabold text-slate-900">Generatore Automatico Certificati Ministeriali (Allegato 3 e 4 con QR Code) & Registri</div>
+                                <div class="text-slate-500 mt-0.5">Sblocco automatico Attestato Finale Allegato 4 (PDF con QR Code SVG), Scheda Progettazione Allegato 3 (PDF), Registro Presenze (PDF/CSV) e Fascicolo Audit (PDF).</div>
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 450,00</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3.5 px-4 font-mono font-bold text-indigo-600">MOD-05</td>
+                            <td class="py-3.5 px-4">
+                                <div class="font-extrabold text-slate-900">Backend Admin Completo (CRUD), Codici Segreti Corso, Recupero Password via Mail & Collaudo</div>
+                                <div class="text-slate-500 mt-0.5">Modifica/Sospensione/Cancellazione Corsi, Moduli e Utenti; auto-registrazione senza catalogo pubblico (aggancio solo con Codice Invito o Admin); recupero password via Email Link + CF; import CSV e 15 test automatici.</div>
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 400,00</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-slate-900 text-white font-extrabold text-sm">
+                            <td colspan="2" class="py-3.5 px-4">TOTALE FORNITURA CHIAVI IN MANO (IVA / oneri esclusi se applicabili)</td>
+                            <td class="py-3.5 px-4 text-right">€ 2.500,00</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Capitolato Tecnico-Funzionale Grid -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-2xs space-y-5 text-xs">
+            <div class="border-b border-slate-200 pb-3">
+                <span class="text-xs font-bold uppercase text-indigo-600">Specifiche di Prodotto</span>
+                <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Capitolato Tecnico-Funzionale Completo</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                    <div class="font-extrabold text-sm text-slate-900">1. Registrazione Controllata, Codici Corso & Recupero Password</div>
+                    <p class="text-slate-600 leading-relaxed">
+                        Nessun catalogo pubblico dei corsi: l'utente si registra in <code>/register</code> e si aggancia a un corso (o a corsi successivi dalla Dashboard) esclusivamente tramite <strong>Codice Segreto Corso</strong> fornito dalla Segreteria o assegnazione Admin. Recupero password con <strong>invio Email Link Token</strong> (<code>/reset-password/{token}</code>) e verifica <strong>Codice Fiscale</strong>.
+                    </p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                    <div class="font-extrabold text-sm text-slate-900">2. Gestione Corsi & Opzione Ore Zoom Disattivabili</div>
+                    <p class="text-slate-600 leading-relaxed">
+                        Creazione, modifica, sospensione (<code>is_active</code>) e cancellazione corsi e moduli. Possibilità di <strong>disattivare le ore di Zoom</strong> per singolo corso: in tal caso la piattaforma mostra e calcola esclusivamente le ore maturate nei moduli video FAD.
+                    </p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                    <div class="font-extrabold text-sm text-slate-900">3. Player Video Anti-Skip (MP4 & YouTube No-Logo)</div>
+                    <p class="text-slate-600 leading-relaxed">
+                        Blocco dello scorrimento in avanti oltre il secondo massimo guardato, blocco velocità <code>1.0x</code>, pausa automatica al cambio scheda browser, popup verifica presenza e salvataggio Heartbeat ogni 5s con IP e User-Agent.
+                    </p>
+                </div>
+                <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                    <div class="font-extrabold text-sm text-slate-900">4. Gestione Utenti, Sospensione & Certificazioni PDF</div>
+                    <p class="text-slate-600 leading-relaxed">
+                        Modifica anagrafica e reset password da Admin, sospensione immediata account (con disconnessione sessioni attive), rimozione singola iscrizione o cancellazione utente. Generazione automatica PDF Allegato 3, Allegato 4 con QR Code, Registro Presenze e Fascicolo Audit.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===================================================================== -->
     <!-- MODAL: INDIVIDUAL STUDENT AUDIT DOSSIER                               -->
     <!-- ===================================================================== -->
     <div x-cloak x-show="auditModalStudent !== null"
@@ -1158,7 +1456,7 @@
                     <div class="grid grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
                         <div>
                             <div class="text-slate-500">Ore Sincrone (Zoom)</div>
-                            <div class="font-extrabold text-slate-900 text-sm" x-text="auditModalStudent.syncHours + 'h'"></div>
+                            <div class="font-extrabold text-slate-900 text-sm" x-text="(activeCourse.hasSyncHours ? auditModalStudent.syncHours : 0) + 'h'"></div>
                         </div>
                         <div>
                             <div class="text-slate-500">Ore Asincrone (FAD)</div>
@@ -1261,7 +1559,7 @@
                 </div>
                 <label class="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-200 font-bold">
                     <input type="checkbox" x-model="newCourseForm.hasSyncHours" class="rounded text-indigo-600">
-                    <span>Prevede anche Ore Sincrone (Zoom) oltre ai moduli FAD</span>
+                    <span>Abilita Ore Sincrone (Zoom) oltre ai moduli FAD</span>
                 </label>
                 <div class="flex justify-end gap-2 pt-3 border-t border-slate-200">
                     <button type="button" @click="newCourseModal = false" class="px-4 py-2 rounded-xl border border-slate-300 font-semibold">Annulla</button>
@@ -1345,7 +1643,7 @@
                         IL PRESENTE ATTESTATO È VALIDO SU TUTTO IL TERRITORIO NAZIONALE
                     </div>
                     <div class="pt-3 font-sans text-xs flex justify-between gap-4">
-                        <div>Roma, 16/10/2026</div>
+                        <div>Roma, 17/10/2026</div>
                         <div class="text-right font-bold" x-text="settings.legalRep"></div>
                     </div>
                 </div>
@@ -1373,6 +1671,7 @@ document.addEventListener('alpine:init', () => {
         csvImportModal: false,
         newCourseModal: false,
         addModuleModal: false,
+        redeemCodeInput: '',
 
         // YouTube Masked Player State
         ytIsPlaying: false,
@@ -1412,6 +1711,8 @@ document.addEventListener('alpine:init', () => {
             {
                 id: 1,
                 code: 'AGG-GT-2026-01',
+                inviteCode: 'INVITO-GT-2026',
+                isActive: true,
                 type: 'aggiornamento',
                 title: 'Corso di Aggiornamento Guide Turistiche: Patrimonio Storico-Artistico e Diritto del Turismo (5 Moduli)',
                 thematicArea: 'Storia dell\'Arte, Disciplina dei Beni Culturali e Diritto del Turismo',
@@ -1424,16 +1725,18 @@ document.addEventListener('alpine:init', () => {
                 asyncHours: 5,
                 minPercent: 80,
                 modules: [
-                    { id: 1, order: 1, sourceType: 'mp4', youtubeId: 'M7lc1UVf-VE', title: 'Riforma della Professione di Guida Turistica: Legge 190/2023 e D.M. 88/2024', instructor: 'Prof. Avv. Roberto Ferretti', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', attachmentTitle: 'Dispensa Modulo 1 - Legge 190-2023.pdf' },
-                    { id: 2, order: 2, sourceType: 'youtube', youtubeId: 'M7lc1UVf-VE', title: 'Codice dei Beni Culturali e Valorizzazione Museale (YouTube No-Logo)', instructor: 'Prof.ssa Chiara Montanari', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', attachmentTitle: 'Slide Modulo 2 - Patrimonio Museale.pdf' },
-                    { id: 3, order: 3, sourceType: 'mp4', youtubeId: 'M7lc1UVf-VE', title: 'Accessibilità e Inclusività dell\'Offerta Turistica', instructor: 'Dott.ssa Laura Pellegrini', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', attachmentTitle: 'Guida Modulo 3 - Accessibilita.pdf' },
-                    { id: 4, order: 4, sourceType: 'youtube', youtubeId: 'M7lc1UVf-VE', title: 'Storytelling Digitale del Patrimonio Monumentale (YouTube No-Logo)', instructor: 'Prof. Alessandro De Luca', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', attachmentTitle: 'Dispensa Modulo 4 - Storytelling.pdf' },
-                    { id: 5, order: 5, sourceType: 'mp4', youtubeId: 'M7lc1UVf-VE', title: 'Adempimenti Fiscali, Sicurezza e Deontologia Professionale', instructor: 'Dott. Stefano Marchetti', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4', attachmentTitle: 'Formulario Modulo 5 - Deontologia.pdf' }
+                    { id: 1, order: 1, isPublished: true, sourceType: 'mp4', youtubeId: 'M7lc1UVf-VE', title: 'Riforma della Professione di Guida Turistica: Legge 190/2023 e D.M. 88/2024', instructor: 'Prof. Avv. Roberto Ferretti', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', attachmentTitle: 'Dispensa Modulo 1 - Legge 190-2023.pdf' },
+                    { id: 2, order: 2, isPublished: true, sourceType: 'youtube', youtubeId: 'M7lc1UVf-VE', title: 'Codice dei Beni Culturali e Valorizzazione Museale (YouTube No-Logo)', instructor: 'Prof.ssa Chiara Montanari', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', attachmentTitle: 'Slide Modulo 2 - Patrimonio Museale.pdf' },
+                    { id: 3, order: 3, isPublished: true, sourceType: 'mp4', youtubeId: 'M7lc1UVf-VE', title: 'Accessibilità e Inclusività dell\'Offerta Turistica', instructor: 'Dott.ssa Laura Pellegrini', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', attachmentTitle: 'Guida Modulo 3 - Accessibilita.pdf' },
+                    { id: 4, order: 4, isPublished: true, sourceType: 'youtube', youtubeId: 'M7lc1UVf-VE', title: 'Storytelling Digitale del Patrimonio Monumentale (YouTube No-Logo)', instructor: 'Prof. Alessandro De Luca', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', attachmentTitle: 'Dispensa Modulo 4 - Storytelling.pdf' },
+                    { id: 5, order: 5, isPublished: true, sourceType: 'mp4', youtubeId: 'M7lc1UVf-VE', title: 'Adempimenti Fiscali, Sicurezza e Deontologia Professionale', instructor: 'Dott. Stefano Marchetti', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4', attachmentTitle: 'Formulario Modulo 5 - Deontologia.pdf' }
                 ]
             },
             {
                 id: 2,
                 code: 'MONO-FAD-2026',
+                inviteCode: 'INVITO-MONO-99',
+                isActive: true,
                 type: 'aggiornamento',
                 title: 'Seminario Monografico 100% FAD: Sicurezza e Primo Soccorso nei Gruppi Turistici (1 Singolo Modulo)',
                 thematicArea: 'Diritto e Sicurezza dell\'Offerta Turistica',
@@ -1446,21 +1749,21 @@ document.addEventListener('alpine:init', () => {
                 asyncHours: 4,
                 minPercent: 80,
                 modules: [
-                    { id: 1, order: 1, sourceType: 'youtube', youtubeId: 'M7lc1UVf-VE', title: 'Modulo Unico (4h) — Gestione Emergenze e Sicurezza Gruppi Turistici', instructor: 'Dott. Marco Rinaldi', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', attachmentTitle: 'Manuale Modulo Unico Sicurezza.pdf' }
+                    { id: 1, order: 1, isPublished: true, sourceType: 'youtube', youtubeId: 'M7lc1UVf-VE', title: 'Modulo Unico (4h) — Gestione Emergenze e Sicurezza Gruppi Turistici', instructor: 'Dott. Marco Rinaldi', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', attachmentTitle: 'Manuale Modulo Unico Sicurezza.pdf' }
                 ]
             }
         ],
 
         students: [
-            { id: 1, firstName: 'Elena', lastName: 'Bianchi', fiscalCode: 'BNCLNE84D52H501Q', birthDate: '1984-04-12', birthCity: 'Roma', birthProvince: 'RM', email: 'elena.bianchi@guideroma.it', nationalList: 'ENGT-RM-01492', syncHours: 20, moduleProgress: { 1: 100, 2: 100, 3: 100, 4: 100, 5: 100 } },
-            { id: 2, firstName: 'Marco', lastName: 'Valeri', fiscalCode: 'VLRMRC79H18H501W', birthDate: '1979-06-18', birthCity: 'Viterbo', birthProvince: 'VT', email: 'marco.valeri@guideroma.it', nationalList: 'ENGT-VT-00381', syncHours: 19, moduleProgress: { 1: 100, 2: 100, 3: 100, 4: 40, 5: 0 } },
-            { id: 3, firstName: 'Sara', lastName: 'Lombardi', fiscalCode: 'LMBSRA88L62F839T', birthDate: '1988-07-22', birthCity: 'Napoli', birthProvince: 'NA', email: 'sara.lombardi@guideroma.it', nationalList: 'ENGT-NA-02104', syncHours: 17, moduleProgress: { 1: 100, 2: 100, 3: 0, 4: 0, 5: 0 } }
+            { id: 1, firstName: 'Elena', lastName: 'Bianchi', fiscalCode: 'BNCLNE84D52H501Q', birthDate: '1984-04-12', birthCity: 'Roma', birthProvince: 'RM', email: 'elena.bianchi@guideroma.it', nationalList: 'ENGT-RM-01492', status: 'active', syncHours: 20, moduleProgress: { 1: 100, 2: 100, 3: 100, 4: 100, 5: 100 } },
+            { id: 2, firstName: 'Marco', lastName: 'Valeri', fiscalCode: 'VLRMRC79H18H501W', birthDate: '1979-06-18', birthCity: 'Viterbo', birthProvince: 'VT', email: 'marco.valeri@guideroma.it', nationalList: 'ENGT-VT-00381', status: 'active', syncHours: 19, moduleProgress: { 1: 100, 2: 100, 3: 100, 4: 40, 5: 0 } },
+            { id: 3, firstName: 'Sara', lastName: 'Lombardi', fiscalCode: 'LMBSRA88L62F839T', birthDate: '1988-07-22', birthCity: 'Napoli', birthProvince: 'NA', email: 'sara.lombardi@guideroma.it', nationalList: 'ENGT-NA-02104', status: 'active', syncHours: 17, moduleProgress: { 1: 100, 2: 100, 3: 0, 4: 0, 5: 0 } }
         ],
 
         activeModuleId: 3,
         maxVideoTimeWatched: 0,
 
-        newStudentForm: { firstName: '', lastName: '', fiscalCode: '', email: '', birthDate: '1986-05-14', birthCity: 'Roma', birthProvince: 'RM', nationalList: '', syncHours: 20 },
+        newStudentForm: { firstName: '', lastName: '', fiscalCode: '', email: '', birthDate: '1986-05-14', birthCity: 'Roma', birthProvince: 'RM', nationalList: '', inviteCode: 'INVITO-GT-2026', syncHours: 20 },
         newCourseForm: { code: 'CORSO-2026-NEW', title: 'Nuovo Corso di Formazione Professionale', initialModulesCount: 1, hasSyncHours: false },
         newModuleForm: { sourceType: 'youtube', title: '', instructor: '', youtubeId: 'M7lc1UVf-VE' },
         csvText: "Paola;Gentili;GNTPLA81C45H501U;paola.gentili@guideroma.it;1981-03-05;Roma;RM;20\nLorenzo;Fabbri;FBBLRN79A12F205K;lorenzo.fabbri@guideroma.it;1979-01-12;Milano;MI;20",
@@ -1483,7 +1786,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         init() {
-            const saved = localStorage.getItem('formafad_preview_v2');
+            const saved = localStorage.getItem('formafad_preview_v3');
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
@@ -1508,7 +1811,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         saveToStorage() {
-            localStorage.setItem('formafad_preview_v2', JSON.stringify({
+            localStorage.setItem('formafad_preview_v3', JSON.stringify({
                 students: this.students,
                 settings: this.settings,
                 courses: this.courses
@@ -1516,7 +1819,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         resetDemoData() {
-            localStorage.removeItem('formafad_preview_v2');
+            localStorage.removeItem('formafad_preview_v3');
             window.location.reload();
         },
 
@@ -1754,6 +2057,16 @@ document.addEventListener('alpine:init', () => {
         },
 
         addNewStudent() {
+            const code = (this.newStudentForm.inviteCode || '').trim().toUpperCase();
+            const matchedCourse = this.courses.find(c => (c.inviteCode || '').toUpperCase() === code || (c.code || '').toUpperCase() === code);
+            if (!matchedCourse) {
+                this.showToast('⚠️ Codice Invito Corso non valido! Usa uno dei codici segreti mostrati sopra (es. INV-GT2026).');
+                return;
+            }
+            if (matchedCourse.isActive === false) {
+                this.showToast('⛔ Questo corso è attualmente SOSPESO dalla Segreteria: nuove iscrizioni bloccate.');
+                return;
+            }
             const id = Date.now();
             const s = {
                 id,
@@ -1765,14 +2078,88 @@ document.addEventListener('alpine:init', () => {
                 birthProvince: (this.newStudentForm.birthProvince || 'RM').toUpperCase(),
                 email: this.newStudentForm.email,
                 nationalList: this.newStudentForm.nationalList || 'ENGT-RM-08812',
-                syncHours: this.activeCourse.hasSyncHours ? 20 : 0,
+                status: 'active',
+                syncHours: matchedCourse.hasSyncHours ? 20 : 0,
                 moduleProgress: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
             };
             this.students.unshift(s);
             this.activeStudentId = s.id;
-            this.pushStudentAudit(s, 'AUTO_REGISTRAZIONE', `Utente registrato autonomamente dal modulo /register`);
+            this.activeCourseId = matchedCourse.id;
+            this.onCourseChange();
+            this.pushStudentAudit(s, 'AUTO_REGISTRAZIONE', `Utente registrato con Codice Invito ${matchedCourse.inviteCode} sul corso ${matchedCourse.code}`);
             this.saveToStorage();
-            this.showToast(`Benvenuto ${s.firstName} ${s.lastName}! Registrazione completata.`);
+            this.showToast(`Benvenuto ${s.firstName} ${s.lastName}! Agganciato al corso ${matchedCourse.code}.`);
+        },
+
+        redeemCourseCodeDemo() {
+            const code = (this.redeemCourseCodeInput || '').trim().toUpperCase();
+            const matched = this.courses.find(c => (c.inviteCode || '').toUpperCase() === code || (c.code || '').toUpperCase() === code);
+            if (!matched) {
+                this.showToast('⚠️ Codice Invito Corso non trovato. Riprova con INV-GT2026 o INV-SIC2026.');
+                return;
+            }
+            if (matched.isActive === false) {
+                this.showToast('⛔ Corso SOSPESO dalla Segreteria: impossibile sbloccare il corso.');
+                return;
+            }
+            this.activeCourseId = matched.id;
+            this.onCourseChange();
+            this.pushStudentAudit(this.activeStudent, 'CODICE_INVITO', `Sbloccato e agganciato nuovo corso ${matched.code} tramite codice ${matched.inviteCode}`);
+            this.saveToStorage();
+            this.showToast(`🔓 Corso "${matched.title}" sbloccato e selezionato per ${this.activeStudent.firstName} ${this.activeStudent.lastName}!`);
+        },
+
+        onToggleCourseSyncHours() {
+            if (this.activeCourse.hasSyncHours) {
+                if (!this.activeCourse.syncHours) this.activeCourse.syncHours = 20;
+                this.activeCourse.totalHours = Number(this.activeCourse.syncHours) + Number(this.activeCourse.asyncHours);
+                this.showToast('🎥 Ore Sincrone (Zoom) ABILITATE: visibili nel riepilogo ore corsista e sommate al totale.');
+            } else {
+                this.activeCourse.totalHours = Number(this.activeCourse.asyncHours);
+                this.showToast('💻 Modalità 100% FAD Asincrona: Ore Zoom nascoste e ricalcolo basato solo sulle ore piattaforma!');
+            }
+            this.saveToStorage();
+        },
+
+        deleteActiveCourseDemo() {
+            if (this.courses.length <= 1) {
+                this.showToast('⚠️ Impossibile eliminare l\'unico corso rimasto nella demo.');
+                return;
+            }
+            const removedTitle = this.activeCourse.title;
+            this.courses = this.courses.filter(c => c.id !== this.activeCourse.id);
+            this.activeCourseId = this.courses[0].id;
+            this.onCourseChange();
+            this.saveToStorage();
+            this.showToast(`🗑️ Corso "${removedTitle}" eliminato definitivamente.`);
+        },
+
+        deleteModuleDemo(modId) {
+            if (this.activeCourse.modules.length <= 1) {
+                this.showToast('⚠️ Un corso deve avere almeno 1 modulo didattico.');
+                return;
+            }
+            this.activeCourse.modules = this.activeCourse.modules.filter(m => m.id !== modId);
+            this.activeCourse.modules.forEach((m, idx) => { m.order = idx + 1; });
+            this.activeCourse.asyncHours = this.activeCourse.modules.length;
+            this.activeCourse.totalHours = (this.activeCourse.hasSyncHours ? Number(this.activeCourse.syncHours) : 0) + this.activeCourse.asyncHours;
+            this.activeModuleId = this.activeCourse.modules[0].id;
+            this.saveToStorage();
+            this.showToast('🗑️ Modulo rimosso e monte ore ricalcolato.');
+        },
+
+        deleteStudentDemo(stuId) {
+            if (this.students.length <= 1) {
+                this.showToast('⚠️ Impossibile eliminare l\'ultimo corsista della demo.');
+                return;
+            }
+            const stu = this.students.find(s => s.id === stuId);
+            this.students = this.students.filter(s => s.id !== stuId);
+            if (Number(this.activeStudentId) === stuId) {
+                this.activeStudentId = this.students[0].id;
+            }
+            this.saveToStorage();
+            this.showToast(`🗑️ Corsista ${stu ? stu.firstName + ' ' + stu.lastName : ''} rimosso dal registro.`);
         },
 
         importCsvStudents() {
@@ -1790,6 +2177,7 @@ document.addEventListener('alpine:init', () => {
                         birthDate: parts[4] ? parts[4].trim() : '1982-04-10',
                         birthCity: parts[5] ? parts[5].trim() : 'Roma',
                         birthProvince: parts[6] ? parts[6].trim().toUpperCase() : 'RM',
+                        status: 'active',
                         syncHours: parts[7] ? Number(parts[7]) : 20,
                         moduleProgress: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
                     };
@@ -1821,6 +2209,8 @@ document.addEventListener('alpine:init', () => {
             const c = {
                 id: Date.now(),
                 code: this.newCourseForm.code.toUpperCase(),
+                inviteCode: 'INV-' + Math.random().toString(36).substring(2, 7).toUpperCase(),
+                isActive: true,
                 type: 'aggiornamento',
                 title: this.newCourseForm.title,
                 thematicArea: 'Ambito Tematico D.M. 88/2024',
@@ -1838,13 +2228,13 @@ document.addEventListener('alpine:init', () => {
             this.activeCourseId = c.id;
             this.newCourseModal = false;
             this.saveToStorage();
-            this.showToast(`Corso ${c.code} creato con ${count} ${count === 1 ? 'modulo' : 'moduli'}!`);
+            this.showToast(`Corso ${c.code} creato (Codice Invito Segreto: ${c.inviteCode})!`);
         },
 
         addNewModule() {
             const nextOrder = this.activeCourse.modules.length + 1;
             const mod = {
-                id: nextOrder,
+                id: Date.now(),
                 order: nextOrder,
                 sourceType: this.newModuleForm.sourceType,
                 youtubeId: 'M7lc1UVf-VE',
