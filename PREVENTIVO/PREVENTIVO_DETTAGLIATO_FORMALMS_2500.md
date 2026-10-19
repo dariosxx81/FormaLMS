@@ -140,16 +140,14 @@ flowchart TD
 
 ## 4. Modalità di Pagamento e Condizioni Contrattuali
 
-1. **Scaglioni di Pagamento**:
-   * **40% (€ 1.000,00 IVA inclusa)** a titolo di acconto all'accettazione del preventivo e avvio dei lavori.
-   * **30% (€ 750,00 IVA inclusa)** al rilascio della versione **Beta funzionante** in ambiente di prova per i test della Segreteria.
-   * **30% (€ 750,00 IVA inclusa)** a saldo finale, a conclusione del collaudo e avvenuto deploy in produzione.
+1. **Modalità di Pagamento (A Fine Lavori)**:
+   * **100% (€ 2.500,00 IVA inclusa) a fine lavori**, in unica soluzione a conclusione del collaudo finale e avvenuto deploy in produzione della piattaforma.
 2. **Proprietà del Software e Assenza di Canoni**:
    * Il software viene fornito a FormaCamera con **licenza d'uso proprietaria senza limiti sul numero di corsi, moduli, corsisti o attestati emessi**. FormaCamera potrà utilizzare la piattaforma liberamente nel tempo per tutti i corsi futuri senza dover corrispondere alcuna royalty allo sviluppatore.
 3. **Esclusioni Esplicite**:
    * I costi vivi per server/VPS, connettività, storage cloud per i video e registrazione/rinnovo del dominio web restano a carico di FormaCamera.
 4. **Tempi di Realizzazione e Consegna**:
-   * Versione Beta funzionante per verifica interna: entro **10 giorni lavorativi** dall'acconto.
+   * Versione Beta funzionante per verifica interna: entro **10 giorni lavorativi** dall'avvio lavori.
    * Rilascio definitivo in produzione: entro **15-20 giorni solari** dall'avvio dei lavori.
 
 ---
