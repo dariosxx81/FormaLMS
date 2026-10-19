@@ -204,7 +204,7 @@
                 <button @click="currentView = 'capitolato_preventivo'"
                         :class="currentView === 'capitolato_preventivo' ? 'bg-emerald-600 shadow-2xs' : 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'"
                         class="px-3 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap transition cursor-pointer shrink-0">
-                    6. 📄 Capitolato Tecnico & Preventivo (€ 2.500)
+                    6. 📄 Preventivo (€ 2.500 IVA Inc.) & Scheda Prodotto
                 </button>
             </div>
         </div>
@@ -1310,15 +1310,19 @@
                 <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-bold uppercase">
                     Documentazione Ufficiale di Progetto
                 </span>
-                <h1 class="text-xl sm:text-2xl font-extrabold mt-1">Capitolato Tecnico-Funzionale & Preventivo Economico</h1>
+                <h1 class="text-xl sm:text-2xl font-extrabold mt-1">Preventivo Economico, Scheda Prodotto & Capitolato</h1>
                 <p class="text-xs text-slate-300 mt-0.5">
-                    Scarica i documenti ufficiali in formato PDF pronti per la stampa o consulta il dettaglio completo qui sotto.
+                    Scarica i documenti ufficiali in formato PDF per FormaCamera o consulta il dettaglio completo qui sotto.
                 </p>
             </div>
             <div class="flex flex-wrap items-center gap-2.5 shrink-0">
                 <a href="./pdf/Preventivo_Piattaforma_FormaLMS_2500.pdf" download
                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold shadow-sm transition">
-                    <span>📄 Scarica Preventivo (€ 2.500) PDF &darr;</span>
+                    <span>📄 Scarica Preventivo (€ 2.500 IVA Inc.) PDF &darr;</span>
+                </a>
+                <a href="./pdf/Scheda_Prodotto_FormaLMS.pdf" download
+                   class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-extrabold shadow-sm transition">
+                    <span>📑 Scarica Scheda Prodotto (2 Pag.) PDF &darr;</span>
                 </a>
                 <a href="./pdf/Capitolato_Tecnico_Funzionale_FormaLMS.pdf" download
                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-extrabold shadow-sm transition">
@@ -1327,16 +1331,28 @@
             </div>
         </div>
 
-        <!-- Preventivo Economico Card (€ 2.500,00) -->
+        <!-- Preventivo Economico Card (€ 2.500,00 IVA INCLUSA) -->
         <div class="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-2xs space-y-5">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-4">
                 <div>
-                    <span class="text-xs font-bold uppercase text-emerald-600">Offerta Economica Chiavi in Mano</span>
+                    <span class="text-xs font-bold uppercase text-emerald-600">Offerta Economica Chiavi in Mano — FormaCamera</span>
                     <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Preventivo di Fornitura Piattaforma FAD White-Label</h2>
                 </div>
                 <div class="text-right">
                     <div class="text-2xl font-extrabold text-slate-900">€ 2.500,00</div>
-                    <div class="text-[11px] text-slate-500">Licenza Proprietaria • Zero Canoni per Utente</div>
+                    <div class="text-xs font-extrabold text-emerald-600">IVA INCLUSA • Prezzo a Corpo Finito</div>
+                    <div class="text-[11px] text-slate-500 mt-0.5">Licenza Proprietaria • Zero Canoni per Utente</div>
+                </div>
+            </div>
+
+            <!-- Box Avviso Condizioni Infrastrutturali -->
+            <div class="p-4 bg-amber-50/80 border border-amber-200 rounded-xl text-amber-900 text-xs flex items-start gap-3">
+                <span class="text-base shrink-0">⚠️</span>
+                <div class="space-y-0.5">
+                    <div class="font-bold">Condizioni Infrastrutturali (Server e Dominio a Carico di FormaCamera):</div>
+                    <p class="text-amber-800 leading-relaxed text-[11.5px]">
+                        Tutti i costi vivi relativi al server di hosting/VPS (o cloud instance), alla banda, allo spazio di archiviazione per i video e alla registrazione/mantenimento del nome a dominio sono ad esclusivo carico di <strong>FormaCamera</strong>. Lo sviluppatore garantisce l'assistenza tecnica sistemistica gratuita per la configurazione iniziale, il deploy e la messa in linea della piattaforma.
+                    </p>
                 </div>
             </div>
 
@@ -1353,48 +1369,64 @@
                         <tr>
                             <td class="py-3.5 px-4 font-mono font-bold text-indigo-600">MOD-01</td>
                             <td class="py-3.5 px-4">
-                                <div class="font-extrabold text-slate-900">Architettura Core LMS White-Label & Personalizzazione Grafica Adattiva</div>
-                                <div class="text-slate-500 mt-0.5">Caricamento Logo Aziendale, opzione "Solo Logo", selettore 3 Colori Base con contrasto automatico WCAG e armonizzazione su Login, Dashboard, Player e PDF.</div>
+                                <div class="font-extrabold text-slate-900">Core LMS, Autenticazione Multi-Device Protetta, Reset Password & Codici Segreti</div>
+                                <div class="text-slate-500 mt-0.5">Setup Laravel 12 (PHP 8.2+), database relazionale, login brandizzato FormaCamera, blocco accessi simultanei con stesso account. Auto-registrazione senza catalogo pubblico e aggancio corsi tramite Codice Invito Segreto. Recupero password via Email Link + CF.</div>
                             </td>
-                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 450,00</td>
+                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 400,00</td>
                         </tr>
                         <tr>
                             <td class="py-3.5 px-4 font-mono font-bold text-indigo-600">MOD-02</td>
                             <td class="py-3.5 px-4">
-                                <div class="font-extrabold text-slate-900">Motore Corsi Flessibile (Ibrido Zoom + FAD oppure 100% Piattaforma) & Player Anti-Skip</div>
-                                <div class="text-slate-500 mt-0.5">Corsi da 1 a N moduli, switch abilitazione/disattivazione Ore Zoom, Player HTML5 MP4 e YouTube Mascherato (No-Logo Shield), Anti-Skip, blocco 1.0x e pausa cambio scheda.</div>
+                                <div class="font-extrabold text-slate-900">Motore Didattico Ibrido (Zoom + FAD) & Player Video Anti-Skip</div>
+                                <div class="text-slate-500 mt-0.5">Corsi modulari (1 a N lezioni), switch Ore Sincrone Zoom ON/OFF per erogazione ibrida (20h Zoom + 5h FAD) o 100% FAD. Player Alpine.js con blocco seekbar (Anti-Skip), blocco velocità 1.0x, pausa al cambio scheda (<code>tab_blur_pause</code>) e YouTube Shield No-Logo.</div>
                             </td>
-                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 700,00</td>
+                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 650,00</td>
                         </tr>
                         <tr>
                             <td class="py-3.5 px-4 font-mono font-bold text-indigo-600">MOD-03</td>
                             <td class="py-3.5 px-4">
-                                <div class="font-extrabold text-slate-900">Sistema di Telemetria Heartbeat, Verifica Presenza & Registro Audit Ispettorato</div>
-                                <div class="text-slate-500 mt-0.5">Salvataggio automatico ogni 5s dei secondi reali, tracciamento IP, User-Agent, popup presenza periodico e tracciamento download dispense PDF.</div>
+                                <div class="font-extrabold text-slate-900">Telemetria Heartbeat Server-Side (5s), Pop-up Presenza Attiva & Registro Audit</div>
+                                <div class="text-slate-500 mt-0.5">Salvataggio automatico ogni 5s dei secondi reali trascorsi, pop-up presenza a intervalli con timer di risposta a scalare (60s), tracciamento immutabile di IP, date, orari esatti e download dispense PDF a prova di ispezione ministeriale.</div>
                             </td>
-                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 500,00</td>
+                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 400,00</td>
                         </tr>
                         <tr>
                             <td class="py-3.5 px-4 font-mono font-bold text-indigo-600">MOD-04</td>
                             <td class="py-3.5 px-4">
-                                <div class="font-extrabold text-slate-900">Generatore Automatico Certificati Ministeriali (Allegato 3 e 4 con QR Code) & Registri</div>
-                                <div class="text-slate-500 mt-0.5">Sblocco automatico Attestato Finale Allegato 4 (PDF con QR Code SVG), Scheda Progettazione Allegato 3 (PDF), Registro Presenze (PDF/CSV) e Fascicolo Audit (PDF).</div>
+                                <div class="font-extrabold text-slate-900">Gestione Utenti, Import CSV Corsisti & Riconciliazione Presenze Zoom</div>
+                                <div class="text-slate-500 mt-0.5">Pannello segreteria didattica, importazione massiva corsisti via CSV, importazione automatica del report presenze Zoom con calcolo immediato della percentuale di frequenza complessiva rispetto alla soglia minima dell'80% (Art. 6 Linee Guida B).</div>
                             </td>
-                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 450,00</td>
+                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 350,00</td>
                         </tr>
                         <tr>
                             <td class="py-3.5 px-4 font-mono font-bold text-indigo-600">MOD-05</td>
                             <td class="py-3.5 px-4">
-                                <div class="font-extrabold text-slate-900">Backend Admin Completo (CRUD), Codici Segreti Corso, Recupero Password via Mail & Collaudo</div>
-                                <div class="text-slate-500 mt-0.5">Modifica/Sospensione/Cancellazione Corsi, Moduli e Utenti; auto-registrazione senza catalogo pubblico (aggancio solo con Codice Invito o Admin); recupero password via Email Link + CF; import CSV e 15 test automatici.</div>
+                                <div class="font-extrabold text-slate-900">Certificazioni Ufficiali Ministeriali PDF (Allegato 3, Allegato 4 con QR Code) & Registri</div>
+                                <div class="text-slate-500 mt-0.5">Generazione automatica dell'Attestato di Frequenza (Allegato 4) con QR Code SVG di autenticità, Scheda Progettazione Corso (Allegato 3), Registro Presenze Consolidato (PDF + CSV per invio PEC al Ministero) e Fascicolo Probante Telemetrico individuale.</div>
                             </td>
                             <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 400,00</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3.5 px-4 font-mono font-bold text-indigo-600">MOD-06</td>
+                            <td class="py-3.5 px-4">
+                                <div class="font-extrabold text-slate-900">Personalizzazione Grafica White-Label Istituzionale FormaCamera</div>
+                                <div class="text-slate-500 mt-0.5">Adattamento completo con Logo FormaCamera (opzione "Solo Logo"), colori ufficiali Camera di Commercio di Roma e conformità agli standard di contrasto e accessibilità WCAG.</div>
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 150,00</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3.5 px-4 font-mono font-bold text-indigo-600">MOD-07</td>
+                            <td class="py-3.5 px-4">
+                                <div class="font-extrabold text-slate-900">Stress Test (80-100 Utenti), Messa in Linea su Server FormaCamera & 30gg Garanzia</div>
+                                <div class="text-slate-500 mt-0.5">Test di carico per 80-100 utenti concorrenti, configurazione e deploy su server/VPS FormaCamera, formazione alla segreteria e 30 giorni di assistenza tecnica e bug fixing inclusi dal lancio.</div>
+                            </td>
+                            <td class="py-3.5 px-4 text-right font-extrabold text-slate-900">€ 150,00</td>
                         </tr>
                     </tbody>
                     <tfoot>
                         <tr class="bg-slate-900 text-white font-extrabold text-sm">
-                            <td colspan="2" class="py-3.5 px-4">TOTALE FORNITURA CHIAVI IN MANO (IVA / oneri esclusi se applicabili)</td>
-                            <td class="py-3.5 px-4 text-right">€ 2.500,00</td>
+                            <td colspan="2" class="py-3.5 px-4">TOTALE COMPLESSIVO FORNITURA CHIAVI IN MANO</td>
+                            <td class="py-3.5 px-4 text-right text-emerald-400">€ 2.500,00 IVA INCLUSA</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -1431,6 +1463,44 @@
                     <div class="font-extrabold text-sm text-slate-900">4. Gestione Utenti, Sospensione & Certificazioni PDF</div>
                     <p class="text-slate-600 leading-relaxed">
                         Modifica anagrafica e reset password da Admin, sospensione immediata account (con disconnessione sessioni attive), rimozione singola iscrizione o cancellazione utente. Generazione automatica PDF Allegato 3, Allegato 4 con QR Code, Registro Presenze e Fascicolo Audit.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gemini Notebook & Presentazione Multimediale Card -->
+        <div class="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-md border border-indigo-700/50 space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-800 pb-4">
+                <div>
+                    <span class="px-2.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-200 border border-indigo-400/30 text-[10px] font-bold uppercase tracking-wider">
+                        ✨ Intelligenza Artificiale & Presentazione Multimediale
+                    </span>
+                    <h3 class="text-base sm:text-lg font-extrabold text-white mt-1">Dossier Presentazione per Google NotebookLM & Gemini</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-indigo-200 bg-indigo-950/60 px-3 py-1.5 rounded-lg border border-indigo-700/60 font-mono">
+                        📁 Cartella PREVENTIVO/
+                    </span>
+                </div>
+            </div>
+            <p class="text-xs text-indigo-100 leading-relaxed">
+                È stato predisposto un pacchetto completo per presentare il progetto alla direzione di <strong>FormaCamera</strong> sfruttando <strong>Google NotebookLM</strong> e <strong>Gemini</strong>:
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div class="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-800/60 space-y-1">
+                    <div class="font-extrabold text-white flex items-center gap-1.5">
+                        <span>🎙️</span> <span>Audio Overview / Podcast per il CDA</span>
+                    </div>
+                    <p class="text-indigo-200 text-[11px] leading-relaxed">
+                        Caricando il file <code>NOTEBOOK_PRESENTAZIONE_GEMINI.md</code> su NotebookLM è possibile generare un podcast con due voci sintetiche che spiegano in 10 minuti perché questa soluzione è perfetta per FormaCamera.
+                    </p>
+                </div>
+                <div class="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-800/60 space-y-1">
+                    <div class="font-extrabold text-white flex items-center gap-1.5">
+                        <span>📊</span> <span>Jupyter Notebook Slide Deck (.ipynb)</span>
+                    </div>
+                    <p class="text-indigo-200 text-[11px] leading-relaxed">
+                        Il file <code>Presentazione_FormaLMS_Gemini_Notebook.ipynb</code> contiene 10 slide complete con simulatore Python di frequenza soglia 80% ed è eseguibile su Colab, Jupyter o VS Code.
                     </p>
                 </div>
             </div>
