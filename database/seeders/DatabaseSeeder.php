@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             'platform_name' => 'FormaFAD LMS',
             'platform_subtitle' => 'Piattaforma Telematica White-Label per Corsi di Aggiornamento e Specializzazione (Linee Guida B)',
             'provider_name' => 'Ente di Formazione Accreditato',
-            'provider_legal_rep' => 'Dott.ssa Paola Gentile',
+            'provider_legal_rep' => 'Dott.ssa Paola Scamardi',
             'provider_address' => 'Via dell\'Umiltà 48, 00187 Roma (RM)',
             'ateco_code' => '79.90',
             'cp_istat_code' => '3.4.1.5.2',

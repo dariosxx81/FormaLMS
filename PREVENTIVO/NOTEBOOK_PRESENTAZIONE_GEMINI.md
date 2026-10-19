@@ -17,7 +17,7 @@
 ### SLIDE 1: Copertina Istituzionale
 * **Titolo**: Piattaforma E-Learning FAD Dedicata per Guide Turistiche
 * **Sottotitolo**: Conformità alle Linee Guida B del Ministero del Turismo (D.M. 88/2024 e Legge 190/2023)
-* **Destinatario**: FormaCamera — Azienda Speciale Camera di Commercio di Roma
+* **Destinatario**: FormaCamera — Azienda Speciale Camera di Commercio di Roma (Att.ne Dott.ssa Paola Scamardi)
 * **Relatore**: Dario — Consulente Sviluppo Web & Software Freelance
 * **Note per il relatore**: Introdurre la sfida: digitalizzare l'obbligo triennale di aggiornamento delle guide turistiche (50 ore a triennio, corsi da 25 ore) con una soluzione proprietaria, economica e a norma di legge.
 
