@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FormaFAD LMS — Anteprima Completa Mobile & Desktop (Linee Guida B)</title>
+    <title>Formacamera — Piattaforma LMS (Anteprima Completa Mobile & Desktop)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
@@ -12,21 +12,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --brand-primary: #4f46e5;
+            --brand-primary: #a30000;
             --brand-primary-contrast: #ffffff;
-            --brand-primary-readable: #4f46e5;
-            --brand-primary-soft: rgba(79, 70, 229, 0.10);
-            --brand-primary-border: rgba(79, 70, 229, 0.26);
-            --brand-secondary: #1e1b4b;
+            --brand-primary-readable: #a30000;
+            --brand-primary-soft: rgba(163, 0, 0, 0.10);
+            --brand-primary-border: rgba(163, 0, 0, 0.26);
+            --brand-secondary: #a30000;
             --brand-secondary-contrast: #ffffff;
-            --brand-secondary-muted: rgba(255, 255, 255, 0.78);
+            --brand-secondary-muted: #ebb2b2;
             --brand-secondary-surface: rgba(255, 255, 255, 0.11);
             --brand-secondary-border: rgba(255, 255, 255, 0.20);
-            --brand-secondary-highlight: #a5b4fc;
-            --brand-accent: #10b981;
-            --brand-accent-contrast: #ffffff;
-            --brand-heading: #11102e;
-            --brand-body: #1e1b4b;
+            --brand-secondary-highlight: #dc9e9e;
+            --brand-accent: #f0f0ef;
+            --brand-accent-contrast: #2b2b2b;
+            --brand-heading: #24080c;
+            --brand-body: #34080c;
         }
         body { font-family: 'Plus Jakarta Sans', sans-serif; color: var(--brand-body); }
         [x-cloak] { display: none !important; }
@@ -1752,24 +1752,25 @@ document.addEventListener('alpine:init', () => {
         ytPercent: 0,
         ytTimer: null,
 
-        autoHarmonize: true,
+        autoHarmonize: false,
 
         settings: {
-            platformName: 'FormaFAD LMS',
-            providerName: 'Ente di Formazione Accreditato',
+            platformName: 'Formacamera',
+            providerName: 'Piattaforma LMS',
             legalRep: 'Dott.ssa Paola Scamardi',
             ateco: '79.90',
             cpIstat: '3.4.1.5.2',
-            logoUrl: '',
+            logoUrl: './assets/formacamera-logo.png',
             logoBg: 'white',
-            logoSize: 'md',
-            hideBrandText: false,
-            primaryColor: '#4f46e5',
-            brandColor: '#1e1b4b',
-            accentColor: '#10b981'
+            logoSize: 'lg',
+            hideBrandText: true,
+            primaryColor: '#a30000',
+            brandColor: '#a30000',
+            accentColor: '#f0f0ef'
         },
 
         colorPresets: [
+            { name: 'Rosso Formacamera (Configurazione Locale)', primary: '#a30000', secondary: '#a30000', accent: '#f0f0ef' },
             { name: 'Indigo FormaFAD', primary: '#4f46e5', secondary: '#1e1b4b', accent: '#10b981' },
             { name: 'Blu Camera di Commercio', primary: '#0284c7', secondary: '#0c4a6e', accent: '#059669' },
             { name: 'Smeraldo Turismo', primary: '#0d9488', secondary: '#134e4a', accent: '#16a34a' },
@@ -1857,7 +1858,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         init() {
-            const saved = localStorage.getItem('formafad_preview_v3');
+            const saved = localStorage.getItem('formafad_preview_v4');
             if (saved) {
                 try {
                     const parsed = JSON.parse(saved);
@@ -1882,7 +1883,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         saveToStorage() {
-            localStorage.setItem('formafad_preview_v3', JSON.stringify({
+            localStorage.setItem('formafad_preview_v4', JSON.stringify({
                 students: this.students,
                 settings: this.settings,
                 courses: this.courses
@@ -1890,7 +1891,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         resetDemoData() {
-            localStorage.removeItem('formafad_preview_v3');
+            localStorage.removeItem('formafad_preview_v4');
             window.location.reload();
         },
 
@@ -2484,16 +2485,20 @@ document.addEventListener('alpine:init', () => {
         },
 
         applyFormaCameraPreset() {
-            this.settings.platformName = 'FormaCamera VideoFAD';
-            this.settings.providerName = 'FormaCamera - Azienda Speciale Camera di Commercio di Roma';
+            this.settings.platformName = 'Formacamera';
+            this.settings.providerName = 'Piattaforma LMS';
             this.settings.legalRep = 'Dott.ssa Paola Scamardi';
-            this.settings.primaryColor = '#0284c7';
-            this.settings.brandColor = '#0c4a6e';
-            this.settings.accentColor = '#059669';
-            this.setDemoLogo('white');
+            this.settings.logoUrl = './assets/formacamera-logo.png';
+            this.settings.logoBg = 'white';
+            this.settings.logoSize = 'lg';
+            this.settings.hideBrandText = true;
+            this.settings.primaryColor = '#a30000';
+            this.settings.brandColor = '#a30000';
+            this.settings.accentColor = '#f0f0ef';
+            this.autoHarmonize = false;
             this.applyBrandCssVars();
             this.saveToStorage();
-            this.showToast('Applicato preset: FormaCamera (con Logo & Colori Camera di Commercio)');
+            this.showToast('Applicato preset: Formacamera (Logo e Colori #a30000 della tua istanza locale)');
         },
 
         applyNeutralPreset() {
