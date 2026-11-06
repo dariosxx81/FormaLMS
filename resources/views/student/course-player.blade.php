@@ -19,11 +19,17 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2.5">
-            <div class="px-3.5 py-2 rounded-xl bg-slate-900 text-white text-xs flex items-center gap-2.5 shadow-2xs">
-                <span class="w-2 h-2 rounded-full" :class="isPlaying ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'"></span>
+            <div class="px-3.5 py-2 rounded-xl text-white text-xs flex items-center gap-2.5 shadow-2xs transition-colors duration-300"
+                 :class="courseAttendancePercent >= minAttendancePercent ? 'bg-emerald-950 border border-emerald-500/40 text-emerald-100' : 'bg-slate-900 border border-slate-800'">
+                <span class="w-2 h-2 rounded-full" :class="isPlaying ? 'bg-emerald-400 animate-ping' : (courseAttendancePercent >= minAttendancePercent ? 'bg-emerald-400' : 'bg-amber-400')"></span>
                 <div class="font-bold">
-                    Frequenza Corso: <span x-text="courseAttendancePercent"></span>%
+                    Frequenza Corso: <span x-text="courseAttendancePercent" :class="courseAttendancePercent >= minAttendancePercent ? 'text-emerald-300 font-black' : ''"></span>%
                     <span class="text-slate-300 font-normal ml-1">(<span x-text="totalCourseHours"></span>h / {{ $course->total_hours }}h)</span>
+                    <template x-if="courseAttendancePercent >= minAttendancePercent">
+                        <span class="ml-1.5 px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-300 text-[10px] font-extrabold uppercase tracking-wider">
+                            Soglia Superata
+                        </span>
+                    </template>
                 </div>
             </div>
 
@@ -58,9 +64,68 @@
                     </div>
                 </div>
 
-                <!-- HTML5 Video OR Masked YouTube Player -->
+                <!-- HTML5 Video, Masked YouTube, Embedded Vimeo OR Zoom Live Sync Classroom -->
                 <div class="relative aspect-video bg-black flex items-center justify-center overflow-hidden select-none">
-                    @if($activeModule->is_youtube && $activeModule->youtube_video_id)
+                    @if($activeModule->is_zoom)
+                        <div class="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 flex flex-col items-center justify-center p-6 text-center">
+                            <div class="max-w-lg w-full bg-slate-900/90 border border-sky-500/30 rounded-2xl p-6 shadow-2xl space-y-4">
+                                <div class="flex items-center justify-center gap-2">
+                                    <span class="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30 text-xs font-extrabold uppercase tracking-wide flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full" :class="isPlaying ? 'bg-emerald-400 animate-ping' : 'bg-sky-400'"></span>
+                                        <span>🎥 Aula Virtuale Sincrona Zoom</span>
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <h3 class="text-white font-extrabold text-base sm:text-lg">{{ $activeModule->title }}</h3>
+                                    <p class="text-slate-300 text-xs mt-1">
+                                        Docente: <strong>{{ $activeModule->instructor_name ?: 'Docente Accreditato' }}</strong>
+                                        @if($activeModule->zoom_scheduled_at)
+                                            • Data/Ora: <strong>{{ $activeModule->zoom_scheduled_at->format('d/m/Y H:i') }}</strong>
+                                        @endif
+                                        @if($activeModule->zoom_meeting_id)
+                                            • ID: <span class="font-mono text-sky-300">{{ $activeModule->zoom_meeting_id }}</span>
+                                        @endif
+                                    </p>
+                                </div>
+
+                                <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-left text-[11px] space-y-1">
+                                    <div class="text-slate-400 font-bold uppercase text-[10px]">Dati Certificati Trasmessi al Registro Presenze Zoom:</div>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-slate-200">
+                                        <div>👤 Corsista: <strong>{{ $user->full_name }}</strong></div>
+                                        <div>🆔 CF: <strong class="font-mono">{{ $user->fiscal_code ?: 'N/D' }}</strong></div>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1">
+                                    <button type="button"
+                                            @click="joinZoomClassroom()"
+                                            class="w-full sm:w-auto px-5 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-lg transition cursor-pointer flex items-center justify-center gap-2">
+                                        <span>🎥 Entra nella Lezione Live Zoom</span>
+                                        <span>&rarr;</span>
+                                    </button>
+
+                                    <button type="button"
+                                            x-show="isPlaying"
+                                            @click="pauseZoomTracking()"
+                                            class="w-full sm:w-auto px-4 py-3 rounded-xl bg-amber-600/90 hover:bg-amber-500 text-white font-bold text-xs transition cursor-pointer">
+                                        ⏸ Termina / Metti in Pausa Sessione
+                                    </button>
+                                </div>
+
+                                <div class="text-[11px] text-slate-300 font-mono">
+                                    Tempo Sincrono Maturato in questo modulo:
+                                    <strong class="text-emerald-400" x-text="formatSeconds(currentTime)"></strong>
+                                    su <strong>{{ $activeModule->formatted_duration }}</strong>
+                                    (<span x-text="completionPercent"></span>%)
+                                </div>
+                            </div>
+                        </div>
+                    @elseif($activeModule->is_vimeo && $activeModule->vimeo_video_id)
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div id="vimeo-player-container" class="w-full h-full"></div>
+                        </div>
+                    @elseif($activeModule->is_youtube && $activeModule->youtube_video_id)
                         <div class="absolute inset-0 scale-[1.16] pointer-events-none">
                             <div id="yt-masked-player" class="w-full h-full"></div>
                         </div>
@@ -136,7 +201,7 @@
                     </div>
 
                     <!-- Tab Switch Auto-Pause Banner -->
-                    <div x-cloak x-show="tabPausedBanner"
+                    <div x-cloak x-show="tabPausedBanner && !isZoom"
                          class="absolute inset-0 bg-slate-950/85 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-30">
                         <h3 class="text-white font-bold text-base">Lezione in pausa (Cambio scheda rilevato)</h3>
                         <p class="text-slate-300 text-xs max-w-md mt-1">Clicca qui sotto per riprendere dal punto esatto.</p>
@@ -146,7 +211,7 @@
                     </div>
 
                     <!-- Presence Verification Modal -->
-                    <div x-cloak x-show="presenceModalOpen"
+                    <div x-cloak x-show="presenceModalOpen && !isZoom"
                          class="absolute inset-0 bg-slate-950/90 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center z-40">
                         <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl">
                             <span class="px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 text-xs font-bold">Verifica Presenza</span>
@@ -159,7 +224,7 @@
                     </div>
                 </div>
 
-                <!-- Clean Progress & Demo Bar -->
+                <!-- Clean Progress Bar -->
                 <div class="p-4 bg-slate-900 text-white space-y-2.5">
                     <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
                         <div class="flex items-center gap-2">
@@ -180,20 +245,14 @@
                             <button type="button"
                                     @click="sendHeartbeat('manual_save')"
                                     class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-[11px] transition cursor-pointer">
-                                Salva Ora
-                            </button>
-                            <button type="button"
-                                    x-show="!isCompleted"
-                                    @click="simulateCompleteModule()"
-                                    class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-[11px] transition cursor-pointer">
-                                ⚡ Demo: Completa 100%
+                                Salva Avanzamento
                             </button>
                         </div>
                     </div>
 
                     <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
                         <div class="h-full transition-all duration-300"
-                             :class="isCompleted ? 'bg-emerald-500' : 'bg-indigo-500'"
+                             :class="isCompleted ? 'progress-success-bar' : 'bg-indigo-500'"
                              :style="'width: ' + completionPercent + '%'"></div>
                     </div>
                 </div>
@@ -316,6 +375,9 @@
                                     <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0">{{ $mod->sort_order }}</span>
                                 @endif
                                 <span class="text-xs font-bold {{ $isCurrent ? 'text-indigo-950' : 'text-slate-900' }} line-clamp-1">
+                                    @if($mod->is_zoom)
+                                        <span class="text-sky-600 font-extrabold">[ZOOM]</span>
+                                    @endif
                                     {{ $mod->title }}
                                 </span>
                             </div>
@@ -328,7 +390,7 @@
                             </div>
 
                             <div class="mt-1.5 w-full h-1 bg-slate-200 rounded-full overflow-hidden">
-                                <div class="h-full {{ $done ? 'bg-emerald-500' : 'bg-indigo-600' }}" style="width: {{ $pct }}%"></div>
+                                <div class="h-full {{ $done ? 'progress-success-bar' : 'bg-indigo-600' }}" style="width: {{ $pct }}%"></div>
                             </div>
                         </a>
                     @endforeach
@@ -344,20 +406,26 @@ document.addEventListener('alpine:init', () => {
     Alpine.data('fadVideoPlayer', () => ({
         sessionToken: @json($sessionToken),
         heartbeatUrl: @json(route('student.modules.heartbeat', [$course, $activeModule])),
+        zoomJoinUrl: @json(route('student.modules.zoom-join', [$course, $activeModule])),
+        isZoom: @json((bool) $activeModule->is_zoom),
+        zoomHasOfficialApi: @json(\App\Services\ZoomService::hasApiCredentials()),
         isYoutube: @json((bool) $activeModule->is_youtube),
         youtubeVideoId: @json($activeModule->youtube_video_id),
+        isVimeo: @json((bool) $activeModule->is_vimeo),
+        vimeoVideoId: @json($activeModule->vimeo_video_id),
         durationSeconds: {{ (int) $activeModule->duration_seconds }},
         watchedSeconds: {{ (int) $currentProgress->watched_seconds }},
         maxPositionSeconds: {{ (int) $currentProgress->max_position_seconds }},
         currentTime: {{ (int) $currentProgress->last_position_seconds }},
         completionPercent: {{ (float) $currentProgress->completion_percent }},
         isCompleted: @json((bool) $currentProgress->is_completed),
-        strictTabPause: @json((bool) $course->strict_tab_pause),
-        presenceIntervalMinutes: {{ (int) $course->presence_check_interval_minutes }},
+        strictTabPause: @json((bool) ($activeModule->is_zoom ? false : $course->strict_tab_pause)),
+        presenceIntervalMinutes: {{ (int) ($activeModule->is_zoom ? 0 : $course->presence_check_interval_minutes) }},
 
         totalCourseHours: @json($enrollment->total_hours_completed),
         asyncCourseHours: @json($enrollment->async_hours_completed),
         courseAttendancePercent: @json($enrollment->attendance_percent),
+        minAttendancePercent: {{ (float) $course->min_attendance_percent }},
         certificateUrl: @json($enrollment->is_eligible_for_certificate ? route('student.enrollments.certificate', $enrollment) : null),
 
         isPlaying: false,
@@ -373,13 +441,18 @@ document.addEventListener('alpine:init', () => {
         presenceTimer: null,
         ytPlayer: null,
         ytTickTimer: null,
+        vimeoPlayer: null,
+        vimeoTickTimer: null,
 
         init() {
-            if (this.isYoutube && this.youtubeVideoId) {
+            if (this.isVimeo && this.vimeoVideoId) {
+                this.initVimeoPlayer();
+            } else if (this.isYoutube && this.youtubeVideoId) {
                 this.initYouTubePlayer();
             }
 
             document.addEventListener('visibilitychange', () => {
+                if (this.isZoom) return;
                 if (document.hidden && this.isPlaying) {
                     this.pendingTabSwitches++;
                     if (this.strictTabPause) {
@@ -395,9 +468,9 @@ document.addEventListener('alpine:init', () => {
                 }
             }, 15000);
 
-            if (this.presenceIntervalMinutes > 0) {
+            if (this.presenceIntervalMinutes > 0 && !this.isZoom) {
                 this.presenceTimer = setInterval(() => {
-                    if (this.isPlaying) {
+                    if (this.isPlaying && !this.isZoom) {
                         this.pauseMedia();
                         this.presenceModalOpen = true;
                     }
@@ -409,6 +482,88 @@ document.addEventListener('alpine:init', () => {
                     this.sendHeartbeat('unload');
                 }
             });
+        },
+
+        initVimeoPlayer() {
+            const setupVimeo = () => {
+                const container = document.getElementById('vimeo-player-container');
+                if (!container || !window.Vimeo || !window.Vimeo.Player) return;
+
+                this.vimeoPlayer = new window.Vimeo.Player(container, {
+                    id: parseInt(this.vimeoVideoId, 10) || this.vimeoVideoId,
+                    width: container.clientWidth || 800,
+                    responsive: true,
+                    controls: true,
+                    byline: false,
+                    title: false,
+                    portrait: false,
+                    speed: false,
+                });
+
+                if (this.currentTime > 0) {
+                    this.vimeoPlayer.setCurrentTime(this.currentTime).catch(() => {});
+                }
+
+                this.vimeoPlayer.on('play', () => {
+                    this.onPlay();
+                });
+
+                this.vimeoPlayer.on('pause', () => {
+                    this.onPause();
+                });
+
+                this.vimeoPlayer.on('ended', () => {
+                    this.onEnded();
+                });
+
+                this.vimeoPlayer.on('timeupdate', (data) => {
+                    const currentSec = Math.floor(data.seconds);
+                    const scale = this.durationSeconds / Math.max(1, data.duration || this.durationSeconds);
+                    const scaledCurrent = Math.round(currentSec * scale);
+
+                    // Anti-skip enforcement for Vimeo
+                    if (!this.isCompleted && scaledCurrent > this.maxPositionSeconds + 3) {
+                        const maxAllowed = Math.max(0, this.maxPositionSeconds / scale);
+                        this.vimeoPlayer.setCurrentTime(maxAllowed).catch(() => {});
+                        this.skipWarning = true;
+                        setTimeout(() => { this.skipWarning = false; }, 4000);
+                        return;
+                    }
+
+                    if (this.isPlaying) {
+                        const now = Date.now();
+                        if (this.lastTickTimestamp) {
+                            const delta = Math.min(2, Math.max(0, (now - this.lastTickTimestamp) / 1000));
+                            this.accumulatedDelta += delta;
+                        }
+                        this.lastTickTimestamp = now;
+                    }
+
+                    this.currentTime = scaledCurrent;
+                    if (this.currentTime > this.maxPositionSeconds) {
+                        this.maxPositionSeconds = this.currentTime;
+                    }
+
+                    if (!this.isCompleted) {
+                        this.completionPercent = Math.min(100, Math.round((this.maxPositionSeconds / this.durationSeconds) * 1000) / 10);
+                    }
+                });
+
+                this.vimeoPlayer.on('playbackratechange', (data) => {
+                    if (data.playbackRate > 1.0) {
+                        this.vimeoPlayer.setPlaybackRate(1.0).catch(() => {});
+                    }
+                });
+            };
+
+            if (window.Vimeo && window.Vimeo.Player) {
+                setupVimeo();
+            } else {
+                const script = document.createElement('script');
+                script.src = 'https://player.vimeo.com/api/player.js';
+                script.onload = () => setupVimeo();
+                document.head.appendChild(script);
+            }
         },
 
         initYouTubePlayer() {
@@ -471,7 +626,13 @@ document.addEventListener('alpine:init', () => {
         },
 
         togglePlay() {
-            if (this.isYoutube) {
+            if (this.isVimeo && this.vimeoPlayer) {
+                if (this.isPlaying) {
+                    this.vimeoPlayer.pause().catch(() => {});
+                } else {
+                    this.vimeoPlayer.play().catch(() => {});
+                }
+            } else if (this.isYoutube) {
                 if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
                     if (this.isPlaying) {
                         this.ytPlayer.pauseVideo();
@@ -499,7 +660,9 @@ document.addEventListener('alpine:init', () => {
         },
 
         pauseMedia() {
-            if (this.isYoutube && this.ytPlayer && typeof this.ytPlayer.pauseVideo === 'function') {
+            if (this.isVimeo && this.vimeoPlayer) {
+                this.vimeoPlayer.pause().catch(() => {});
+            } else if (this.isYoutube && this.ytPlayer && typeof this.ytPlayer.pauseVideo === 'function') {
                 this.ytPlayer.pauseVideo();
             } else if (this.$refs.videoPlayer) {
                 this.$refs.videoPlayer.pause();
@@ -508,7 +671,9 @@ document.addEventListener('alpine:init', () => {
         },
 
         playMedia() {
-            if (this.isYoutube && this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
+            if (this.isVimeo && this.vimeoPlayer) {
+                this.vimeoPlayer.play().catch(() => {});
+            } else if (this.isYoutube && this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
                 this.ytPlayer.playVideo();
             } else if (this.$refs.videoPlayer) {
                 this.$refs.videoPlayer.play();
@@ -642,6 +807,45 @@ document.addEventListener('alpine:init', () => {
             this.maxPositionSeconds = this.durationSeconds;
             this.accumulatedDelta = 60;
             await this.sendHeartbeat('ended');
+        },
+
+        async joinZoomClassroom() {
+            try {
+                const res = await fetch(this.zoomJoinUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.join_url && data.join_url !== '#zoom-live-classroom') {
+                        window.open(data.join_url, '_blank', 'noopener,noreferrer');
+                    }
+                }
+            } catch (e) {
+                console.error('Zoom join error:', e);
+            }
+
+            if (!this.zoomHasOfficialApi) {
+                this.onPlay();
+                if (!this.ytTickTimer) {
+                    this.ytTickTimer = setInterval(() => this.onYouTubeTick(), 1000);
+                }
+                this.accumulatedDelta = Math.max(5, this.accumulatedDelta);
+                await this.sendHeartbeat('zoom_join');
+            }
+        },
+
+        pauseZoomTracking() {
+            this.onPause();
+            if (this.ytTickTimer) {
+                clearInterval(this.ytTickTimer);
+                this.ytTickTimer = null;
+            }
         },
 
         async sendHeartbeat(eventType = 'periodic') {

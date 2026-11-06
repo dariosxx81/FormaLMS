@@ -5,12 +5,20 @@
 @section('content')
 <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8">
 
-    <div>
-        <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Documentazione Probante Ministeriale (Art. 3 e Art. 6 Linee Guida B)</span>
-        <h1 class="text-2xl font-extrabold text-slate-900">Registro Telemetrico Sessioni Video & Audit Log</h1>
-        <p class="text-xs text-slate-500 mt-0.5">
-            Ogni sessione di visualizzazione viene registrata con Token univoco, Indirizzo IP, Browser/Dispositivo, secondo iniziale/finale e tempo effettivo certificato.
-        </p>
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Documentazione Probante Ministeriale (Art. 3 e Art. 6 Linee Guida B)</span>
+            <h1 class="text-2xl font-extrabold text-slate-900">Registro Telemetrico Sessioni Video & Audit Log</h1>
+            <p class="text-xs text-slate-500 mt-0.5">
+                Ogni sessione di visualizzazione viene registrata con Token univoco, Indirizzo IP, Browser/Dispositivo, secondo iniziale/finale e tempo effettivo certificato.
+            </p>
+        </div>
+        <div>
+            <a href="{{ route('admin.logs.export-pdf', request()->query()) }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-xs transition">
+                <span>📑 Scarica Report PDF (Dati Filtrati)</span>
+            </a>
+        </div>
     </div>
 
     <!-- Filter Bar -->
@@ -39,6 +47,12 @@
         @if($courseId || $userId)
             <a href="{{ route('admin.logs.index') }}" class="px-3 py-2 text-slate-500 hover:text-slate-800 font-semibold">Mostra Tutti</a>
         @endif
+        <div class="sm:ml-auto">
+            <a href="{{ route('admin.logs.export-pdf', request()->query()) }}"
+               class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 font-bold transition">
+                <span>📑 Esporta PDF Filtrato</span>
+            </a>
+        </div>
     </form>
 
     <!-- Watch Logs Table (Session Telemetry) -->

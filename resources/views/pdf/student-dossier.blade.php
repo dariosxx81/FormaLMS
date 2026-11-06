@@ -54,7 +54,7 @@
         </tr>
     </table>
 
-    <div class="section-title">2. Stato Analitico dei Moduli Video Asincroni</div>
+    <div class="section-title">2. Stato Analitico dei Moduli Didattici (FAD Asincroni & Aula Live Zoom)</div>
     <table>
         <thead>
             <tr>
@@ -68,10 +68,29 @@
         </thead>
         <tbody>
             @foreach($course->modules as $mod)
-                @php $mp = $moduleProgress[$mod->id] ?? null; @endphp
+                @php
+                    $mp = $moduleProgress[$mod->id] ?? null;
+                    $zr = ($zoomRegistrants ?? collect())[$mod->id] ?? null;
+                @endphp
                 <tr>
-                    <td>Modulo {{ $mod->sort_order }}</td>
-                    <td><strong>{{ $mod->title }}</strong><br><span style="color:#64748b">{{ $mod->instructor_name }}</span></td>
+                    <td>
+                        Modulo {{ $mod->sort_order }}
+                        @if($mod->video_source_type === 'zoom')
+                            <br><strong style="color:#0284c7; font-size:7.5pt;">[LIVE ZOOM]</strong>
+                        @endif
+                    </td>
+                    <td>
+                        <strong>{{ $mod->title }}</strong><br>
+                        <span style="color:#64748b">{{ $mod->instructor_name }}</span>
+                        @if($mod->video_source_type === 'zoom')
+                            @if($mod->zoom_meeting_id)
+                                <span style="color:#0284c7; font-size:7.5pt;"> • Meeting ID: {{ $mod->zoom_meeting_id }}</span>
+                            @endif
+                            @if($zr && $zr->zoom_registrant_id)
+                                <br><span style="color:#0369a1; font-size:7.2pt;">Registrant ID Univoco: <strong>{{ $zr->zoom_registrant_id }}</strong></span>
+                            @endif
+                        @endif
+                    </td>
                     <td>{{ $mod->formatted_duration }} ({{ $mod->duration_seconds }}s)</td>
                     <td>{{ $mp ? round($mp->watched_seconds / 60, 1) . ' min (' . $mp->watched_seconds . 's)' : '0 min' }}</td>
                     <td><strong>{{ $mp ? $mp->completion_percent . '%' : '0%' }}</strong></td>
@@ -81,7 +100,46 @@
         </tbody>
     </table>
 
-    <div class="section-title">3. Log Certificato delle Sessioni di Connessione (Indirizzo IP & Timestamp)</div>
+    @php
+        $hasZoomModules = $course->modules->contains(fn($m) => $m->video_source_type === 'zoom');
+        $zoomRegList = isset($zoomRegistrants) ? $zoomRegistrants : collect();
+    @endphp
+    @if($hasZoomModules || $zoomRegList->isNotEmpty())
+        <div class="section-title">2-bis. Registro Certificato Sessioni Sincrone Zoom (API Cloud & Registrant ID)</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Modulo Live</th>
+                    <th>Meeting ID Zoom</th>
+                    <th>Registrant ID Univoco</th>
+                    <th>Primo Ingresso</th>
+                    <th>Ultima Uscita</th>
+                    <th>Tempo Certificato</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($course->modules->where('video_source_type', 'zoom') as $zMod)
+                    @php
+                        $zr = $zoomRegList[$zMod->id] ?? null;
+                        $mp = $moduleProgress[$zMod->id] ?? null;
+                        $certSeconds = $zr ? $zr->attended_seconds : ($mp ? $mp->watched_seconds : 0);
+                    @endphp
+                    <tr>
+                        <td><strong>M{{ $zMod->sort_order }} - {{ $zMod->title }}</strong></td>
+                        <td>{{ $zMod->zoom_meeting_id ?: ($zr->zoom_meeting_id ?? 'Link Diretto') }}</td>
+                        <td style="font-family: DejaVu Sans Mono, monospace; font-size: 7.8pt;">
+                            {{ $zr?->zoom_registrant_id ?: 'TRACCIAMENTO-PORTALE' }}
+                        </td>
+                        <td>{{ $zr?->first_joined_at ? $zr->first_joined_at->format('d/m/Y H:i:s') : '-' }}</td>
+                        <td>{{ $zr?->last_left_at ? $zr->last_left_at->format('d/m/Y H:i:s') : '-' }}</td>
+                        <td><strong>{{ round($certSeconds / 60, 1) }} min ({{ $certSeconds }}s)</strong></td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
+
+    <div class="section-title">3. Log Certificato delle Sessioni di Connessione (Indirizzo IP / Sorgente & Timestamp)</div>
     <table>
         <thead>
             <tr>

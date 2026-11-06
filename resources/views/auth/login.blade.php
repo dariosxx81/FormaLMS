@@ -9,9 +9,9 @@
     $logoBg = $settings['logo_bg'] ?? 'white';
     $logoSize = $settings['logo_size'] ?? 'md';
     $loginLogoSizeClasses = match($logoSize) {
-        'sm' => 'h-10 max-w-[180px]',
+        'sm' => 'h-11 max-w-[190px]',
         'lg' => 'h-16 max-w-[280px]',
-        default => 'h-12 max-w-[230px]',
+        default => 'h-13 max-w-[240px]',
     };
     $loginLogoBgClasses = match($logoBg) {
         'dark' => 'logo-box-dark border p-2 shadow-xs',
@@ -20,29 +20,34 @@
     };
 @endphp
 
-<div class="min-h-screen flex items-center justify-center py-10 px-4 sm:px-6 lg:px-8 bg-slate-50/70">
-    <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 rounded-3xl overflow-hidden shadow-xl border border-slate-200/90 bg-white">
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-slate-100/70">
+    <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-12 rounded-3xl overflow-hidden shadow-2xl border border-slate-200/90 bg-white">
 
-        <!-- Left Column: Brand Identity & 1-Click Demo Access -->
-        <div class="lg:col-span-7 bg-slate-900 p-8 sm:p-10 flex flex-col justify-between relative overflow-hidden">
-            <div class="space-y-6">
-                <div class="flex flex-wrap items-center gap-4">
+        <!-- Left Column: Modern Hero / Brand Identity -->
+        <div class="lg:col-span-6 bg-slate-900 p-8 sm:p-12 flex flex-col justify-between relative overflow-hidden text-white">
+            <!-- Decorative Subtle Ambient Glow -->
+            <div class="absolute -top-24 -left-24 w-72 h-72 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="relative z-10 space-y-8">
+                <!-- Platform Brand & Identity Header -->
+                <div class="flex items-center gap-4">
                     @if($hasLogo)
                         <img src="{{ $settings['logo_url'] }}"
                              alt="Logo {{ $settings['platform_name'] ?? 'Ente' }}"
-                             class="{{ $loginLogoSizeClasses }} {{ $loginLogoBgClasses }} w-auto object-contain rounded-2xl shrink-0 transition">
+                             class="{{ $loginLogoSizeClasses }} {{ $loginLogoBgClasses }} w-auto object-contain rounded-2xl shrink-0 shadow-sm transition">
                     @else
-                        <div class="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center font-extrabold text-lg shadow-xs shrink-0">
+                        <div class="w-13 h-13 rounded-2xl bg-indigo-600 flex items-center justify-center font-black text-xl shadow-lg shadow-indigo-600/30 shrink-0 text-white tracking-wider">
                             FAD
                         </div>
                     @endif
 
                     @if(!$hideBrandText)
                         <div>
-                            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
                                 {{ $settings['platform_name'] ?? 'FormaFAD LMS' }}
                             </h1>
-                            <div class="text-xs text-slate-300 font-medium mt-0.5">
+                            <div class="text-xs text-indigo-200 font-semibold mt-0.5">
                                 {{ $settings['provider_name'] ?? 'Ente di Formazione Accreditato' }}
                             </div>
                         </div>
@@ -51,125 +56,174 @@
                     @endif
                 </div>
 
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs font-bold text-indigo-300">
-                    <span>Piattaforma Telematica Formazione Sincrona & Asincrona</span>
+                <!-- Description & Tagline -->
+                <div class="space-y-3">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700/80 text-xs font-bold text-indigo-300">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>Ambiente Telematico Certificato</span>
+                    </div>
+
+                    <p class="text-slate-300 text-sm leading-relaxed">
+                        {{ $settings['platform_subtitle'] ?? 'Piattaforma digitale per la fruizione dei corsi di formazione continua e l\'emissione degli attestati ufficiali.' }}
+                    </p>
                 </div>
 
-                <p class="text-slate-300 text-sm leading-relaxed">
-                    {{ $settings['platform_subtitle'] ?? 'Ambiente digitale certificato per la fruizione dei corsi e il rilascio degli attestati ufficiali.' }}
-                </p>
+                <!-- Key Platform Features List (Card in stile chiaro) -->
+                <div class="space-y-3 pt-2">
+                    <div class="flex items-start gap-3.5 p-4 rounded-2xl bg-white/95 text-slate-800 shadow-md border border-white/40 backdrop-blur-sm transition hover:bg-white">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 font-bold shadow-2xs border"
+                             style="background-color: var(--brand-accent-soft); border-color: var(--brand-accent-border); color: var(--brand-accent-readable);">
+                            🎬
+                        </div>
+                        <div>
+                            <div class="font-extrabold text-xs" style="color: var(--brand-accent-readable);">
+                                Aula Multimediale & Telemetria
+                            </div>
+                            <p class="text-[11px] text-slate-600 mt-0.5 leading-snug font-medium">
+                                Tracciamento automatico e continuo della presenza con salvataggio dello stato di avanzamento.
+                            </p>
+                        </div>
+                    </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-1">
-                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-3.5">
-                        <div class="font-extrabold text-white">🎬 Aula Video H24</div>
-                        <p class="text-slate-300 text-[11px] mt-1">Ripresa automatica e salvataggio continuo.</p>
+                    <div class="flex items-start gap-3.5 p-4 rounded-2xl bg-white/95 text-slate-800 shadow-md border border-white/40 backdrop-blur-sm transition hover:bg-white">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 font-bold shadow-2xs border"
+                             style="background-color: var(--brand-accent-soft); border-color: var(--brand-accent-border); color: var(--brand-accent-readable);">
+                            🏅
+                        </div>
+                        <div>
+                            <div class="font-extrabold text-xs" style="color: var(--brand-accent-readable);">
+                                Attestati & Registri Conformi
+                            </div>
+                            <p class="text-[11px] text-slate-600 mt-0.5 leading-snug font-medium">
+                                Generazione istantanea del certificato PDF e del dossier di audit al raggiungimento della soglia minima.
+                            </p>
+                        </div>
                     </div>
-                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-3.5">
-                        <div class="font-extrabold text-white">🔑 Accesso Controllato</div>
-                        <p class="text-slate-300 text-[11px] mt-1">Corsi abilitati da Segreteria o Codice Invito.</p>
-                    </div>
-                    <div class="bg-slate-800 border border-slate-700 rounded-xl p-3.5">
-                        <div class="font-extrabold text-white">🏅 Attestati PDF</div>
-                        <p class="text-slate-300 text-[11px] mt-1">Scarico immediato al raggiungimento soglia.</p>
+
+                    <div class="flex items-start gap-3.5 p-4 rounded-2xl bg-white/95 text-slate-800 shadow-md border border-white/40 backdrop-blur-sm transition hover:bg-white">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 font-bold shadow-2xs border"
+                             style="background-color: var(--brand-accent-soft); border-color: var(--brand-accent-border); color: var(--brand-accent-readable);">
+                            🛡️
+                        </div>
+                        <div>
+                            <div class="font-extrabold text-xs" style="color: var(--brand-accent-readable);">
+                                Accesso Riservato & Crittografato
+                            </div>
+                            <p class="text-[11px] text-slate-600 mt-0.5 leading-snug font-medium">
+                                Protocolli conformi alle Linee Guida per la formazione continua asincrona e sincrona.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 1-Click Quick Demo Access Box -->
-            <div class="mt-8 pt-6 border-t border-slate-800">
-                <div class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400 mb-3">
-                    Accesso Rapido Demo (1-Click senza password)
-                </div>
-
-                <div class="space-y-2.5">
-                    @foreach($demoAdmins as $admin)
-                        <form method="POST" action="{{ route('demo.switch', $admin) }}">
-                            @csrf
-                            <button type="submit" class="w-full text-left px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 flex items-center justify-between transition shadow-sm cursor-pointer">
-                                <div>
-                                    <div class="font-extrabold text-xs sm:text-sm">Entra come Amministratore / Segreteria</div>
-                                    <div class="text-[11px] opacity-85">{{ $admin->full_name }} ({{ $admin->email }})</div>
-                                </div>
-                                <span class="px-2.5 py-1 rounded-lg bg-black/15 text-xs font-bold shrink-0">Pannello Admin &rarr;</span>
-                            </button>
-                        </form>
-                    @endforeach
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                        @foreach($demoStudents as $student)
-                            <form method="POST" action="{{ route('demo.switch', $student) }}">
-                                @csrf
-                                <button type="submit" class="w-full text-left px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-between transition cursor-pointer">
-                                    <div class="truncate pr-2">
-                                        <div class="font-bold text-xs text-white truncate">👤 {{ $student->full_name }}</div>
-                                        <div class="text-[10px] text-slate-300 truncate">Corsista • {{ $student->fiscal_code }}</div>
-                                    </div>
-                                    <span class="text-[11px] font-bold text-indigo-300 shrink-0">Aula &rarr;</span>
-                                </button>
-                            </form>
-                        @endforeach
-                    </div>
-                </div>
+            <!-- Left Footer / Legal Notice -->
+            <div class="mt-8 pt-6 border-t border-slate-800/80 text-[11px] text-slate-400 relative z-10 flex items-center justify-between">
+                <span>© {{ date('Y') }} {{ $settings['provider_name'] ?? 'Piattaforma FAD' }}</span>
+                <span class="inline-flex items-center gap-1.5 text-emerald-400 font-semibold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Servizio Attivo
+                </span>
             </div>
         </div>
 
-        <!-- Right Column: Clean Login Form with Brand Logo, Password Recovery & Registration -->
-        <div class="lg:col-span-5 p-8 sm:p-10 flex flex-col justify-center bg-white">
-            <div class="mb-6 pb-5 border-b border-slate-100 flex items-center justify-between gap-3">
-                <div>
-                    <span class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600">Area Riservata</span>
-                    <h2 class="text-xl font-extrabold text-slate-900 mt-0.5">Accedi alla Piattaforma</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Inserisci le tue credenziali personali.</p>
+        <!-- Right Column: Institutional Login Form -->
+        <div class="lg:col-span-6 p-8 sm:p-12 flex flex-col justify-center bg-white">
+            <div class="mb-8">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-extrabold uppercase tracking-wider mb-2">
+                    <span>Portale Utenti & Segreteria</span>
                 </div>
-                @if($hasLogo)
-                    <img src="{{ $settings['logo_url'] }}"
-                         alt="Logo"
-                         class="h-9 w-auto max-w-[120px] object-contain rounded-lg shrink-0 {{ $logoBg === 'dark' ? 'logo-box-dark p-1' : 'bg-white' }}">
-                @endif
+                <h2 class="text-2xl font-black text-slate-900 tracking-tight">Accedi all'Area Riservata</h2>
+                <p class="text-xs text-slate-500 mt-1">
+                    Inserisci l'indirizzo email e la password associati al tuo profilo corsista o docente.
+                </p>
             </div>
 
-            <form method="POST" action="{{ route('login.submit') }}" class="space-y-4">
+            @if(session('success'))
+                <div class="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span>{{ session('success') }}</span>
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold space-y-1">
+                    @foreach($errors->all() as $err)
+                        <div class="flex items-center gap-2">
+                            <span class="text-red-500">•</span>
+                            <span>{{ $err }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('login.submit') }}" class="space-y-5">
                 @csrf
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Indirizzo Email</label>
-                    <input type="email" name="email" value="{{ old('email', 'admin@formalms.it') }}" required
-                           class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-600 outline-none transition">
+                    <label class="block text-xs font-extrabold text-slate-700 mb-1.5">
+                        Indirizzo Email
+                    </label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/></svg>
+                        </div>
+                        <input type="email"
+                               name="email"
+                               value="{{ old('email') }}"
+                               placeholder="nome.cognome@dominio.it"
+                               required
+                               autofocus
+                               class="w-full rounded-2xl border border-slate-300 pl-10 pr-4 py-3 text-sm font-medium focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none transition bg-slate-50/50 hover:bg-white focus:bg-white">
+                    </div>
                 </div>
 
                 <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <label class="block text-xs font-bold text-slate-700">Password</label>
-                        <a href="{{ route('password.request') }}" class="text-[11px] font-bold text-indigo-600 hover:underline">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-extrabold text-slate-700">
+                            Password
+                        </label>
+                        <a href="{{ route('password.request') }}" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 hover:underline">
                             Password dimenticata?
                         </a>
                     </div>
-                    <input type="password" name="password" value="password" required
-                           class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm focus:border-indigo-600 outline-none transition">
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        </div>
+                        <input type="password"
+                               name="password"
+                               placeholder="••••••••••••"
+                               required
+                               class="w-full rounded-2xl border border-slate-300 pl-10 pr-4 py-3 text-sm font-medium focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none transition bg-slate-50/50 hover:bg-white focus:bg-white">
+                    </div>
                 </div>
 
-                <div class="flex items-center justify-between text-xs pt-1">
-                    <label class="inline-flex items-center gap-2 text-slate-600 cursor-pointer">
-                        <input type="checkbox" name="remember" class="rounded border-slate-300 text-indigo-600">
-                        <span>Ricorda accesso</span>
+                <div class="flex items-center justify-between text-xs pt-0.5">
+                    <label class="inline-flex items-center gap-2.5 text-slate-600 cursor-pointer select-none">
+                        <input type="checkbox" name="remember" class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                        <span class="font-medium text-slate-700">Rimani connesso su questo dispositivo</span>
                     </label>
                 </div>
 
-                <button type="submit" class="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-extrabold text-sm transition shadow-sm cursor-pointer">
-                    Accedi alla Piattaforma &rarr;
+                <button type="submit"
+                        class="w-full py-3.5 px-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm tracking-wide transition shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/35 cursor-pointer flex items-center justify-center gap-2">
+                    <span>Accedi alla Piattaforma</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </button>
             </form>
 
             @if(($settings['allow_public_registration'] ?? '1') === '1')
-                <div class="mt-7 pt-6 border-t border-slate-100 text-center space-y-2">
-                    <p class="text-xs text-slate-500">Primo accesso? Crea il tuo profilo anagrafico:</p>
-                    <a href="{{ route('register') }}" class="inline-flex items-center justify-center w-full py-2.5 px-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs transition border border-indigo-200">
-                        Registrazione Nuovo Corsista &rarr;
+                <div class="mt-8 pt-6 border-t border-slate-100 text-center space-y-2.5">
+                    <p class="text-xs text-slate-500">Sei un nuovo corsista e non possiedi ancora un account?</p>
+                    <a href="{{ route('register') }}"
+                       class="inline-flex items-center justify-center w-full py-3 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition border border-slate-200">
+                        <span>Registrazione Nuovo Corsista</span>
+                        <span class="ml-1 text-slate-500">&rarr;</span>
                     </a>
                 </div>
             @endif
 
             <div class="mt-6 text-center text-[11px] text-slate-400">
-                {{ $settings['provider_name'] ?? 'Ente di Formazione Accreditato' }} • Supporto: <a href="mailto:{{ $settings['support_email'] ?? 'segreteria@ente.it' }}" class="text-indigo-600 hover:underline">{{ $settings['support_email'] ?? 'segreteria@ente.it' }}</a>
+                Assistenza tecnica o didattica: <a href="mailto:{{ $settings['support_email'] ?? 'segreteria@ente.it' }}" class="text-indigo-600 hover:underline font-semibold">{{ $settings['support_email'] ?? 'segreteria@ente.it' }}</a>
             </div>
         </div>
 

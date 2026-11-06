@@ -84,51 +84,73 @@
                     @endphp
                     <div class="bg-white rounded-2xl border {{ $course->is_active ? 'border-slate-200/90 hover:border-slate-300' : 'border-amber-200 bg-slate-50/60 opacity-90' }} shadow-2xs p-6 transition">
                         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-                            <div class="space-y-1.5">
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <span class="px-2.5 py-0.5 rounded-md bg-slate-900 text-white text-[11px] font-mono font-bold">{{ $course->code }}</span>
-                                    <span class="px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[11px] font-bold border border-indigo-200 uppercase">
-                                        {{ ucfirst($course->course_type) }}
-                                    </span>
-                                    @if(!$course->is_active)
-                                        <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold">
-                                            ⏸ Corso Sospeso / Disattivato dalla Segreteria
-                                        </span>
-                                    @endif
-                                    @if(!$course->has_sync_hours)
-                                        <span class="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-bold">
-                                            100% Piattaforma FAD
-                                        </span>
-                                    @endif
-                                    @if($enrollment->is_eligible_for_certificate)
-                                        <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
-                                            ✓ Idoneo all'Attestato
-                                        </span>
+                            <div class="flex items-start gap-4">
+                                <div class="w-16 h-16 min-w-[64px] min-h-[64px] max-w-[64px] max-h-[64px] rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200/90 overflow-hidden flex items-center justify-center p-1.5 shadow-xs shrink-0 mt-0.5">
+                                    @if($course->badge_image_url)
+                                        <img src="{{ $course->badge_image_url }}" alt="Badge {{ $course->title }}" class="w-full h-full max-w-full max-h-full object-contain drop-shadow-2xs">
+                                    @else
+                                        <div class="w-full h-full rounded-xl bg-indigo-50/70 border border-indigo-100 flex flex-col items-center justify-center text-indigo-600">
+                                            <span class="text-2xl leading-none">🎓</span>
+                                            <span class="text-[9px] font-black uppercase text-indigo-400 mt-0.5">FAD</span>
+                                        </div>
                                     @endif
                                 </div>
-                                <h2 class="text-xl font-extrabold text-slate-900">{{ $course->title }}</h2>
-                                <p class="text-xs text-slate-500">
-                                    {{ $completedModulesCount }} di {{ $modules->count() }} moduli video completati •
-                                    @if($course->has_sync_hours)
-                                        Totale maturato: <strong>{{ number_format($enrollment->total_hours_completed, 1, ',', '') }}h / {{ number_format($course->total_hours, 0) }}h</strong> (Zoom {{ number_format($enrollment->sync_hours_completed, 1, ',', '') }}h + Piattaforma FAD {{ number_format($enrollment->async_hours_completed, 1, ',', '') }}h)
-                                    @else
-                                        Ore maturate in piattaforma: <strong>{{ number_format($enrollment->async_hours_completed, 1, ',', '') }}h / {{ number_format($course->total_hours, 1, ',', '') }}h</strong>
-                                    @endif
-                                </p>
+                                <div class="space-y-1.5 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="px-2.5 py-0.5 rounded-md bg-slate-900 text-white text-[11px] font-mono font-bold">{{ $course->code }}</span>
+                                        <span class="px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[11px] font-bold border border-indigo-200 uppercase">
+                                            {{ ucfirst($course->course_type) }}
+                                        </span>
+                                        @if(!$course->is_active)
+                                            <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold">
+                                                ⏸ Corso Sospeso / Disattivato dalla Segreteria
+                                            </span>
+                                        @endif
+                                        @if(!$course->has_sync_hours)
+                                            <span class="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-bold">
+                                                100% Piattaforma FAD
+                                            </span>
+                                        @endif
+                                        @if($enrollment->is_eligible_for_certificate)
+                                            <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                                                ✓ Idoneo all'Attestato
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <h2 class="text-xl font-extrabold text-slate-900 leading-snug">{{ $course->title }}</h2>
+                                    <p class="text-xs text-slate-500">
+                                        {{ $completedModulesCount }} di {{ $modules->count() }} moduli video completati •
+                                        @if($course->has_sync_hours)
+                                            Totale maturato: <strong>{{ number_format($enrollment->total_hours_completed, 1, ',', '') }}h / {{ number_format($course->total_hours, 0) }}h</strong> (Zoom {{ number_format($enrollment->sync_hours_completed, 1, ',', '') }}h + Piattaforma FAD {{ number_format($enrollment->async_hours_completed, 1, ',', '') }}h)
+                                        @else
+                                            Ore maturate in piattaforma: <strong>{{ number_format($enrollment->async_hours_completed, 1, ',', '') }}h / {{ number_format($course->total_hours, 1, ',', '') }}h</strong>
+                                        @endif
+                                    </p>
+                                </div>
                             </div>
 
                             <!-- Clean Progress & Primary Action -->
                             <div class="flex flex-col sm:flex-row sm:items-center gap-4 shrink-0">
+                                @php
+                                    $isEligible = $enrollment->is_eligible_for_certificate || ($enrollment->attendance_percent >= $course->min_attendance_percent);
+                                @endphp
                                 <div class="w-full sm:w-44">
                                     <div class="flex items-center justify-between text-xs font-bold mb-1">
                                         <span class="text-slate-500">Avanzamento</span>
-                                        <span class="{{ $enrollment->is_eligible_for_certificate ? 'text-emerald-600' : 'text-indigo-600' }}">{{ $enrollment->attendance_percent }}%</span>
+                                        <span class="{{ $isEligible ? 'text-emerald-600 font-black' : 'text-indigo-600 font-bold' }}">
+                                            {{ $enrollment->attendance_percent }}%
+                                        </span>
                                     </div>
                                     <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                                        <div class="h-full rounded-full transition-all duration-500 {{ $enrollment->is_eligible_for_certificate ? 'bg-emerald-500' : 'bg-indigo-600' }}"
+                                        <div class="h-full rounded-full transition-all duration-500 {{ $isEligible ? 'progress-success-bar shadow-xs' : 'progress-active-bar' }}"
                                              style="width: {{ min(100, $enrollment->attendance_percent) }}%"></div>
                                     </div>
-                                    <div class="text-[10px] text-slate-400 mt-1">Soglia attestato: {{ $course->min_attendance_percent }}%</div>
+                                    <div class="flex items-center justify-between text-[10px] mt-1">
+                                        <span class="text-slate-400">Soglia: {{ $course->min_attendance_percent }}%</span>
+                                        @if($isEligible)
+                                            <span class="text-emerald-600 font-bold">✓ Raggiunta</span>
+                                        @endif
+                                    </div>
                                 </div>
 
                                 <div class="flex flex-wrap items-center gap-2">
@@ -167,7 +189,12 @@
                                            class="group rounded-xl p-3 border transition flex flex-col justify-between {{ $done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-slate-50/70 border-slate-200 hover:border-indigo-400 hover:bg-white' }}">
                                             <div>
                                                 <div class="flex items-center justify-between gap-2 text-[10px] font-bold mb-1">
-                                                    <span class="text-slate-500">MOD. {{ $mod->sort_order }}</span>
+                                                    <span class="text-slate-500">
+                                                        MOD. {{ $mod->sort_order }}
+                                                        @if($mod->is_zoom)
+                                                            <span class="text-sky-600 ml-0.5">[ZOOM]</span>
+                                                        @endif
+                                                    </span>
                                                     @if($done)
                                                         <span class="text-emerald-700">✓ 100%</span>
                                                     @elseif($pct > 0)
@@ -178,8 +205,8 @@
                                                 </div>
                                                 <div class="text-xs font-bold text-slate-900 group-hover:text-indigo-600 line-clamp-1">{{ $mod->title }}</div>
                                             </div>
-                                            <div class="mt-2 w-full h-1 bg-slate-200 rounded-full overflow-hidden">
-                                                <div class="h-full {{ $done ? 'bg-emerald-500' : 'bg-indigo-600' }}" style="width: {{ $pct }}%"></div>
+                                            <div class="mt-2 w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                                <div class="h-full rounded-full transition-all duration-300 {{ $done ? 'progress-success-bar' : 'progress-active-bar' }}" style="width: {{ $pct }}%"></div>
                                             </div>
                                         </a>
                                     @endforeach

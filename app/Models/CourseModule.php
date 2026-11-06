@@ -14,8 +14,12 @@ class CourseModule extends Model
         'title',
         'instructor_name',
         'description',
-        'video_source_type', // 'upload' | 'url' | 'youtube'
+        'video_source_type', // 'upload' | 'url' | 'youtube' | 'vimeo' | 'zoom'
         'video_url',
+        'zoom_meeting_id',
+        'zoom_passcode',
+        'zoom_scheduled_at',
+        'zoom_join_url',
         'duration_seconds',
         'is_published',
     ];
@@ -26,6 +30,7 @@ class CourseModule extends Model
             'sort_order' => 'integer',
             'duration_seconds' => 'integer',
             'is_published' => 'boolean',
+            'zoom_scheduled_at' => 'datetime',
         ];
     }
 
@@ -56,7 +61,7 @@ class CourseModule extends Model
 
     public function getYoutubeVideoIdAttribute(): ?string
     {
-        if (!$this->video_url) {
+        if ($this->video_source_type === 'zoom' || !$this->video_url) {
             return null;
         }
         $url = trim($this->video_url);
@@ -71,6 +76,38 @@ class CourseModule extends Model
 
     public function getIsYoutubeAttribute(): bool
     {
-        return $this->video_source_type === 'youtube' || $this->youtube_video_id !== null;
+        if ($this->video_source_type === 'zoom') {
+            return false;
+        }
+        return $this->video_source_type === 'youtube' || ($this->video_source_type !== 'vimeo' && $this->youtube_video_id !== null);
+    }
+
+    public function getVimeoVideoIdAttribute(): ?string
+    {
+        if ($this->video_source_type === 'zoom' || !$this->video_url) {
+            return null;
+        }
+        $url = trim($this->video_url);
+        if (preg_match('/^[0-9]{6,12}$/', $url)) {
+            return $url;
+        }
+        // Match standard links: vimeo.com/123456789 or player.vimeo.com/video/123456789
+        if (preg_match('/(?:vimeo\.com\/(?:video\/)?|player\.vimeo\.com\/video\/)([0-9]{6,12})/', $url, $matches)) {
+            return $matches[1];
+        }
+        return null;
+    }
+
+    public function getIsVimeoAttribute(): bool
+    {
+        if ($this->video_source_type === 'zoom') {
+            return false;
+        }
+        return $this->video_source_type === 'vimeo' || ($this->video_source_type !== 'youtube' && $this->vimeo_video_id !== null);
+    }
+
+    public function getIsZoomAttribute(): bool
+    {
+        return $this->video_source_type === 'zoom';
     }
 }

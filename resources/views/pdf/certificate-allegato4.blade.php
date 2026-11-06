@@ -2,208 +2,244 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Attestato Ministeriale - {{ $student->full_name }}</title>
-    <style>
-        @page { margin: 38px 46px; }
-        body {
-            font-family: "Times New Roman", DejaVu Serif, serif;
-            color: #111827;
-            line-height: 1.55;
-            font-size: 13pt;
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Attestato di Frequenza - {{ $student->full_name }}</title>
+    @php
+        $primaryColor = $settings['primary_color'] ?? '#a30000';
+        $secondaryColor = $settings['secondary_color'] ?? '#11102e';
+        $providerName = $settings['provider_name'] ?? 'Ente di Formazione Accreditato';
+        $legalRep = $settings['provider_legal_rep'] ?? 'Dott.ssa Daniela De Vita';
+        $platformName = $settings['platform_name'] ?? 'Formacamera';
+
+        $logoBase64 = null;
+        if (!empty($settings['logo_url'])) {
+            $cleaned = ltrim($settings['logo_url'], '/');
+            $fullPath = public_path($cleaned);
+            if (file_exists($fullPath)) {
+                $ext = pathinfo($fullPath, PATHINFO_EXTENSION);
+                $mime = match(strtolower($ext)) {
+                    'png' => 'image/png',
+                    'jpg', 'jpeg' => 'image/jpeg',
+                    'svg' => 'image/svg+xml',
+                    default => 'image/png'
+                };
+                $logoBase64 = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($fullPath));
+            }
         }
-        .border-frame {
-            border: 2px solid #1e293b;
-            padding: 28px 34px;
-            min-height: 920px;
+    @endphp
+    <style>
+        @page {
+            size: a4 landscape;
+            margin: 6mm 8mm;
+        }
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            font-family: "DejaVu Serif", "Times New Roman", serif;
+            color: #1e293b;
+        }
+
+        /* Landscape Outer Prestige Border covering the exact A4 sheet height */
+        .cert-outer-frame {
+            border: 3px double {{ $primaryColor }};
+            border-radius: 4px;
+            padding: 0;
+            background-color: #ffffff;
+            height: 196mm;
             position: relative;
         }
-        .header {
+
+        /* Top Brand Color Stripe */
+        .top-brand-stripe {
+            height: 4px;
+            background-color: {{ $primaryColor }};
+            width: 100%;
+        }
+
+        /* 1. Header Box */
+        .header-box {
+            position: absolute;
+            top: 7mm;
+            left: 18mm;
+            right: 18mm;
+            height: 20mm;
+        }
+
+        /* 2. Titolo Staccato in Alto */
+        .title-box {
+            position: absolute;
+            top: 34mm;
+            left: 18mm;
+            right: 18mm;
             text-align: center;
-            margin-bottom: 18px;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 6px 0;
         }
-        .ministry-title {
-            font-size: 17pt;
-            font-style: italic;
-            font-weight: bold;
-            margin-bottom: 2px;
-        }
-        .ministry-sub {
-            font-size: 9.5pt;
-            font-style: italic;
-            color: #374151;
-        }
-        .allegato-badge {
-            text-align: right;
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 10pt;
-            font-weight: bold;
-            margin-top: 8px;
-        }
-        .doc-title {
+
+        /* 3. Si Attesta Che Staccato */
+        .student-box {
+            position: absolute;
+            top: 59mm;
+            left: 18mm;
+            right: 18mm;
             text-align: center;
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 13pt;
-            font-weight: bold;
-            margin-top: 14px;
-            text-transform: uppercase;
         }
-        .doc-subtitle {
+
+        /* 4. Corso & Descrizione */
+        .course-box {
+            position: absolute;
+            top: 92mm;
+            left: 18mm;
+            right: 18mm;
             text-align: center;
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 10.5pt;
-            margin-top: 8px;
-        }
-        .codes-row {
-            text-align: center;
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 10.5pt;
-            font-weight: bold;
-            margin: 16px 0;
-        }
-        .release-reason {
-            text-align: center;
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 10.5pt;
-            font-weight: bold;
-            margin-bottom: 22px;
-        }
-        .section-label {
-            text-align: center;
-            font-family: DejaVu Sans, sans-serif;
             font-size: 11pt;
-            font-weight: bold;
-            margin: 18px 0 10px 0;
+            line-height: 1.7;
         }
-        .paragraph-box {
-            text-align: justify;
-            font-size: 12pt;
-            line-height: 1.75;
-        }
-        .filled-value {
-            font-weight: bold;
-            border-bottom: 1px solid #374151;
-            padding: 0 4px;
-        }
-        .national-validity {
+
+        /* 5. Nastro Validita Nazionale */
+        .validity-box {
+            position: absolute;
+            top: 128mm;
+            left: 18mm;
+            right: 18mm;
             text-align: center;
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 11pt;
-            font-weight: bold;
-            margin: 34px 0 28px 0;
-            letter-spacing: 0.4px;
         }
-        .footer-area {
-            margin-top: 40px;
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 10.5pt;
+
+        /* 6. Luogo, Data & Firme Spostate in Basso */
+        .signatures-box {
+            position: absolute;
+            top: 148mm;
+            left: 18mm;
+            right: 18mm;
+            height: 28mm;
         }
-        .signature-line {
-            margin-top: 24px;
-            width: 320px;
-            border-bottom: 1px solid #111827;
-            padding-bottom: 4px;
-            font-weight: bold;
-        }
-        .meta-stamp {
-            margin-top: 36px;
-            padding-top: 10px;
-            border-top: 1px dashed #9ca3af;
-            font-family: DejaVu Sans, sans-serif;
-            font-size: 8.5pt;
-            color: #4b5563;
+
+        /* 7. Piè di Pagina Protocollo a filo inferiore */
+        .footer-box {
+            position: absolute;
+            bottom: 5mm;
+            left: 18mm;
+            right: 18mm;
+            border-top: 1px dashed #cbd5e1;
+            padding-top: 3mm;
         }
     </style>
 </head>
 <body>
-<div class="border-frame">
-    <div class="header">
-        <div class="ministry-title">Ministero del Turismo</div>
-        <div class="ministry-sub">Direzione Generale Controllo, Regolamentazione, Acquisti, Formazione e Professioni Turistiche</div>
+<div class="cert-outer-frame">
+    <div class="top-brand-stripe"></div>
+
+    <!-- 1. Header Ministero + Logo Ente -->
+    <div class="header-box">
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="vertical-align: middle;">
+                    <div style="font-size: 14.5pt; font-style: italic; font-weight: bold; color: #0f172a; letter-spacing: 0.5px;">Ministero del Turismo</div>
+                    <div style="font-size: 8pt; font-style: italic; color: #64748b; margin-top: 2px;">Direzione Generale Controllo, Regolamentazione, Acquisti, Formazione e Professioni Turistiche</div>
+                </td>
+                <td style="text-align: right; vertical-align: middle; width: 220px;">
+                    @if($logoBase64)
+                        <img src="{{ $logoBase64 }}" alt="Logo Ente" style="max-height: 48px; max-width: 200px; object-fit: contain;">
+                    @else
+                        <div style="font-family: 'DejaVu Sans'; font-weight: 800; font-size: 12pt; color: {{ $primaryColor }}; text-transform: uppercase;">{{ $providerName }}</div>
+                    @endif
+                    <div style="font-family: 'DejaVu Sans'; font-size: 8pt; font-weight: 800; color: {{ $primaryColor }}; letter-spacing: 0.6px; margin-top: 2px;">
+                        {{ $course->course_type === 'specializzazione' ? 'ALLEGATO 3 • D.M. 26/06/2024 N. 88' : 'ALLEGATO 4 • D.M. 26/06/2024 N. 88' }}
+                    </div>
+                </td>
+            </tr>
+        </table>
     </div>
 
-    <div class="allegato-badge">
-        {{ $course->course_type === 'specializzazione' ? 'Allegato 3' : 'Allegato 4' }}
-    </div>
-
-    @if($course->course_type === 'specializzazione')
-        <div class="doc-title">ATTESTATO DI COMPLETAMENTO DEL CORSO DI SPECIALIZZAZIONE PER GUIDA TURISTICA</div>
-        <div class="doc-subtitle">
-            Ai sensi dell'articolo 22 comma 6 del Decreto Ministeriale 26 giugno 2024, n. 88, recante disposizione<br>
-            applicative della legge 13 dicembre 2023, n. 190
-        </div>
-    @else
-        <div class="doc-title">ATTESTATO DI FREQUENZA DEL CORSO DI AGGIORNAMENTO PER GUIDA TURISTICA</div>
-        <div class="doc-subtitle">
-            Ai sensi dell'articolo 23 comma 3 del Decreto Ministeriale 26 giugno 2024, n. 88, recante disposizione<br>
-            applicative della legge 13 dicembre 2023, n. 190
-        </div>
-    @endif
-
-    <div class="codes-row">
-        Codice ATECO: {{ $settings['ateco_code'] ?? '79.90' }} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CP ISTAT: {{ $settings['cp_istat_code'] ?? '3.4.1.5.2' }}
-    </div>
-
-    <div class="release-reason">
+    <!-- 2. Titolo Principale Ben Distanziato -->
+    <div class="title-box">
         @if($course->course_type === 'specializzazione')
-            Rilasciato in esito al superamento della prova finale
+            <div style="font-family: 'DejaVu Sans'; font-size: 16pt; font-weight: 900; letter-spacing: 2px; color: {{ $primaryColor }}; text-transform: uppercase;">ATTESTATO DI COMPLETAMENTO</div>
+            <div style="font-family: 'DejaVu Sans'; font-size: 8.5pt; color: #64748b; margin-top: 2px;">Corso di Specializzazione Professionale per Guida Turistica</div>
         @else
-            Rilasciato in esito alla partecipazione con accertamento di presenza di almeno l'{{ $course->min_attendance_percent }}% delle ore di corso di aggiornamento
+            <div style="font-family: 'DejaVu Sans'; font-size: 16pt; font-weight: 900; letter-spacing: 2px; color: {{ $primaryColor }}; text-transform: uppercase;">ATTESTATO DI FREQUENZA</div>
+            <div style="font-family: 'DejaVu Sans'; font-size: 8.5pt; color: #64748b; margin-top: 2px;">Corso di Aggiornamento Professionale per Guida Turistica</div>
         @endif
     </div>
 
-    <div class="section-label">DA</div>
-
-    <div class="paragraph-box">
-        <span class="filled-value">{{ $settings['provider_name'] ?? 'Ente di Formazione Accreditato' }}</span>
-        autorizzato all'erogazione del corso dal Ministero del turismo con
-        <span class="filled-value">{{ $course->authorization_details ?: 'Provvedimento Ministeriale D.G. Formazione Turistica' }}</span>
-        istituito presso
-        <span class="filled-value">{{ $course->training_center_name ?: ($settings['provider_name'] ?? 'Polo Formativo Accreditato') }}</span>
-        di <span class="filled-value">{{ $course->training_center_city ?: 'Roma (RM)' }}</span>
-        afferente all'ambito tematico
-        <span class="filled-value">{{ $course->thematic_area ?: $course->title }}</span>
-        (Corso: <em>"{{ $course->title }}"</em> - Cod. {{ $course->code }}).
-    </div>
-
-    <div class="section-label">CONFERITO A</div>
-
-    <div class="paragraph-box">
-        Il Sig./Sig.ra <span class="filled-value">{{ $student->full_name }}</span>
-        (C.F. <span class="filled-value">{{ $student->fiscal_code ?: 'N/D' }}</span>)
-        nato/a il <span class="filled-value">{{ $student->birth_date ? $student->birth_date->format('d/m/Y') : '__/__/____' }}</span>
-        a <span class="filled-value">{{ $student->birth_city ?: '________' }}</span>,
-        Provincia (<span class="filled-value">{{ $student->birth_province ?: '__' }}</span>)
-        in <span class="filled-value">{{ $student->birth_country ?: 'Italia' }}</span>,
-        con una frequenza pari a <span class="filled-value">{{ number_format($enrollment->total_hours_completed, 1, ',', '') }}</span> ore
-        (su {{ number_format($course->total_hours, 0) }} ore complessive previste, di cui {{ number_format($enrollment->sync_hours_completed, 1, ',', '') }}h in modalità sincrona e {{ number_format($enrollment->async_hours_completed, 1, ',', '') }}h in modalità FAD asincrona tracciata).
-    </div>
-
-    <div class="national-validity">
-        IL PRESENTE ATTESTATO È VALIDO SU TUTTO IL TERRITORIO NAZIONALE
-    </div>
-
-    <div class="footer-area">
-        <div>Firma</div>
-        <div class="signature-line">
-            {{ $settings['provider_legal_rep'] ?? 'Il Rappresentante Legale' }}
+    <!-- 3. SI ATTESTA CHE & Nome Corsista Staccati -->
+    <div class="student-box">
+        <div style="font-family: 'DejaVu Sans'; font-size: 9.5pt; font-weight: 900; letter-spacing: 3px; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px;">SI ATTESTA CHE</div>
+        <div style="font-family: 'DejaVu Sans'; font-size: 24pt; font-weight: 900; color: {{ $secondaryColor }}; border-bottom: 2px solid {{ $primaryColor }}; padding-bottom: 4px; display: inline-block;">
+            {{ strtoupper($student->full_name) }}
         </div>
-        <div style="font-style: italic; font-size: 9.5pt; margin-top: 4px;">
-            (Rappresentante legale dell'Ente di formazione competente al rilascio dell'attestato)
-        </div>
-
-        <div style="margin-top: 26px;">
-            <span class="filled-value">{{ $course->training_center_city ?: 'Roma' }}</span>,
-            <span class="filled-value">{{ ($enrollment->certificate_issued_at ?? now())->format('d / m / Y') }}</span>
-        </div>
-        <div style="font-style: italic; font-size: 9.5pt; margin-top: 4px;">
-            (Luogo e Data di rilascio)
+        <div style="font-size: 9.5pt; color: #475569; margin-top: 6px;">
+            Codice Fiscale: <strong style="color: #0f172a;">{{ $student->fiscal_code ?: 'N/D' }}</strong>
+            &nbsp;&bull;&nbsp;
+            Nato/a il <strong>{{ $student->birth_date ? $student->birth_date->format('d/m/Y') : '__/__/____' }}</strong>
+            a <strong>{{ $student->birth_city ?: 'Roma' }} ({{ $student->birth_province ?: 'RM' }})</strong>
         </div>
     </div>
 
-    <div class="meta-stamp">
-        Protocollo Attestato N. <strong>{{ $enrollment->certificate_number ?: 'CERT-' . $enrollment->id }}</strong>
-        • Generato e certificato tramite piattaforma telematica <strong>{{ $settings['platform_name'] ?? 'FormaFAD LMS' }}</strong>
-        • Verifica telemetrica conforme all'Art. 6 del D.M. 26 giugno 2024, n. 88.
+    <!-- 4. Narrazione Corso e Ore Certificate -->
+    <div class="course-box">
+        ha frequentato e superato con esito positivo il percorso formativo accreditato:<br>
+        <strong style="font-size: 13pt; color: #0f172a;">"{{ $course->title }}"</strong>
+        <span style="font-size: 10pt; color: #64748b;">(Cod. <strong>{{ $course->code }}</strong>)</span><br>
+        erogato da <strong>{{ $providerName }}</strong> con un monte ore certificato di
+        <strong style="color: {{ $primaryColor }}; font-size: 12pt;">{{ number_format($enrollment->total_hours_completed, 2, ',', '') }} ORE</strong>
+        in modalit&agrave; telematica FAD interattiva con tracciamento AgID.
+    </div>
+
+    <!-- 5. Nastro Validità Nazionale -->
+    <div class="validity-box">
+        <div style="display: inline-block; font-family: 'DejaVu Sans'; font-size: 9pt; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; color: {{ $primaryColor }}; background-color: #fff7ed; border: 1px solid #fed7aa; padding: 6px 26px; border-radius: 9999px;">
+            &bull; IL PRESENTE ATTESTATO HA VALIDIT&Agrave; SU TUTTO IL TERRITORIO NAZIONALE &bull;
+        </div>
+    </div>
+
+    <!-- 6. Luogo, Data & Firma Posizionati in Basso -->
+    <div class="signatures-box">
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="vertical-align: bottom; width: 50%; font-family: 'DejaVu Sans'; font-size: 9pt; color: #475569; line-height: 1.5;">
+                    Luogo e Data di Rilascio:<br>
+                    <strong style="color: #0f172a; font-size: 10.5pt;">{{ $course->training_center_city ?: 'Roma' }}, {{ ($enrollment->certificate_issued_at ?? now())->format('d/m/Y') }}</strong><br>
+                    <span style="font-size: 8pt;">Ente Erogatore: {{ $providerName }}</span>
+                </td>
+                <td style="vertical-align: bottom; width: 50%; text-align: right;">
+                    <div style="display: inline-block; text-align: center; min-width: 270px; font-family: 'DejaVu Sans';">
+                        <div style="font-size: 8.5pt; color: #475569;">Firma del Legale Rappresentante</div>
+                        <div style="border-bottom: 1px solid #0f172a; padding-bottom: 4px; font-weight: bold; font-size: 11pt; color: #0f172a; margin-top: 8px;">
+                            {{ $legalRep }}
+                        </div>
+                        <div style="font-size: 7.5pt; color: #64748b; font-style: italic; margin-top: 3px;">
+                            (Rappresentante legale dell'Ente di formazione autorizzato)
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 7. Piè di Pagina Protocollo a Bordo Inferiore -->
+    <div class="footer-box">
+        <table style="width: 100%; border-collapse: collapse; font-family: 'DejaVu Sans'; font-size: 7.2pt; color: #64748b;">
+            <tr>
+                <td style="vertical-align: middle;">
+                    Protocollo Univoco: <strong style="font-family: 'Courier New'; font-size: 8.5pt; color: #0f172a;">{{ $enrollment->certificate_number ?: 'ATT-' . $enrollment->id . '-' . date('Y') }}</strong>
+                    &bull; ATECO: <strong>{{ $settings['ateco_code'] ?? '79.90' }}</strong> &bull; CP ISTAT: <strong>{{ $settings['cp_istat_code'] ?? '3.4.1.5.2' }}</strong><br>
+                    Rilasciato tramite piattaforma <strong>{{ $platformName }}</strong> in conformit&agrave; alla Legge 13 dicembre 2023 n. 190 e al D.M. 26 giugno 2024 n. 88.
+                </td>
+                <td style="text-align: right; vertical-align: middle; width: 140px;">
+                    <span style="border: 1px solid #cbd5e1; padding: 3px 6px; border-radius: 4px; font-weight: bold; background: #f8fafc; color: {{ $primaryColor }}; font-size: 7pt;">
+                        DOCUMENTO UFFICIALE
+                    </span>
+                </td>
+            </tr>
+        </table>
     </div>
 </div>
 </body>

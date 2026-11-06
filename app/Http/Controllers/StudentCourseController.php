@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CourseRedeemedMail;
+use App\Mail\ModuleCompletedMail;
 use App\Models\ActivityLog;
 use App\Models\Course;
 use App\Models\CourseModule;
@@ -10,8 +12,10 @@ use App\Models\ModuleAttachment;
 use App\Models\ModuleProgress;
 use App\Models\PlatformSetting;
 use App\Models\WatchLog;
+use App\Models\ZoomRegistrant;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -110,6 +114,21 @@ class StudentCourseController extends Controller
             $user->id,
             $course->id
         );
+
+        if (PlatformSetting::isMailActive('redeemed')) {
+            $settings = PlatformSetting::getAllSettings();
+            try {
+                Mail::to($user->email)->send(new CourseRedeemedMail($user, $course, $settings, $rawCode));
+                ActivityLog::record(
+                    'course_redeemed_mail_sent',
+                    "Inviata email di conferma riscatto corso \"{$course->title}\" a {$user->email}",
+                    $user->id,
+                    $course->id
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Impossibile inviare email di riscatto corso a {$user->email}: " . $e->getMessage());
+            }
+        }
 
         return redirect()->route('student.dashboard')
             ->with('success', "Corso \"{$course->title}\" sbloccato con successo e aggiunto ai tuoi percorsi!");
@@ -285,6 +304,12 @@ class StudentCourseController extends Controller
         $deltaSeconds = (int) round($data['delta_watched_seconds']);
         $duration = max(1, (int) $module->duration_seconds);
 
+        // If this is a Zoom module and Official Zoom Cloud API credentials are active,
+        // attendance seconds are strictly certified by Zoom Webhooks & Report API (even if browser is closed).
+        if ($module->is_zoom && \App\Services\ZoomService::hasApiCredentials()) {
+            $deltaSeconds = 0;
+        }
+
         $progress = ModuleProgress::firstOrCreate(
             [
                 'user_id' => $user->id,
@@ -322,6 +347,26 @@ class StudentCourseController extends Controller
             'completed_at' => ($isCompleted && !$progress->completed_at) ? now() : $progress->completed_at,
             'last_watched_at' => now(),
         ]);
+
+        if ($module->is_zoom) {
+            $cleanMeetingId = preg_replace('/[^0-9]/', '', (string) $module->zoom_meeting_id) ?: 'LIVE-' . $module->id;
+            $registrant = \App\Models\ZoomRegistrant::firstOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'course_module_id' => $module->id,
+                ],
+                [
+                    'course_id' => $course->id,
+                    'zoom_meeting_id' => $cleanMeetingId,
+                    'first_joined_at' => now(),
+                ]
+            );
+            $registrant->update([
+                'attended_seconds' => $newWatched,
+                'first_joined_at' => $registrant->first_joined_at ?: now(),
+                'last_left_at' => now(),
+            ]);
+        }
 
         $watchLog = WatchLog::firstOrCreate(
             [
@@ -365,6 +410,22 @@ class StudentCourseController extends Controller
         );
         $enrollment->recalculateProgress();
 
+        if (!$wasCompleted && $isCompleted && PlatformSetting::isMailActive('module_completed')) {
+            try {
+                $settings = PlatformSetting::getAllSettings();
+                Mail::to($user->email)->send(new ModuleCompletedMail($user, $course, $module, $enrollment, $settings));
+                ActivityLog::record(
+                    'module_completed_mail_sent',
+                    "Inviata email di completamento Modulo #{$module->sort_order} ({$module->title}) a {$user->email}",
+                    $user->id,
+                    $course->id,
+                    $module->id
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Impossibile inviare email completamento modulo a {$user->email}: " . $e->getMessage());
+            }
+        }
+
         return response()->json([
             'ok' => true,
             'module_progress' => [
@@ -385,6 +446,40 @@ class StudentCourseController extends Controller
                     : null,
             ],
             'timestamp' => now()->format('H:i:s'),
+        ]);
+    }
+
+    public function joinZoomModule(Request $request, Course $course, CourseModule $module)
+    {
+        $user = auth()->user();
+        abort_unless($module->course_id === $course->id && $module->is_zoom, 404);
+
+        if ($user->status === 'suspended' || ((!$course->is_active || !$module->is_published) && !$user->isAdmin())) {
+            return response()->json([
+                'ok' => false,
+                'error' => 'Corso o modulo non attivo.',
+            ], 403);
+        }
+
+        $result = \App\Services\ZoomService::getOrRegisterParticipant($module, $user);
+
+        ActivityLog::record(
+            'zoom_live_join',
+            "Ingresso Aula Live Zoom certificato per Modulo #{$module->sort_order}: {$module->title} ({$user->full_name} - CF: {$user->fiscal_code})",
+            $user->id,
+            $course->id,
+            $module->id,
+            [
+                'zoom_meeting_id' => $module->zoom_meeting_id,
+                'mode' => $result['mode'],
+            ],
+            $request
+        );
+
+        return response()->json([
+            'ok' => true,
+            'join_url' => $result['join_url'],
+            'mode' => $result['mode'],
         ]);
     }
 
@@ -457,7 +552,7 @@ class StudentCourseController extends Controller
             'enrollment' => $enrollment,
             'course' => $enrollment->course,
             'student' => $enrollment->user,
-        ])->setPaper('a4', 'portrait');
+        ])->setPaper('a4', 'landscape');
 
         $filename = sprintf(
             'Attestato_%s_%s.pdf',
@@ -466,6 +561,38 @@ class StudentCourseController extends Controller
         );
 
         return $pdf->download($filename);
+    }
+
+    public function previewCertificate(Request $request, Enrollment $enrollment)
+    {
+        $user = auth()->user();
+        if ($enrollment->user_id !== $user->id && !$user->isAdmin()) {
+            abort(403);
+        }
+
+        $enrollment->load(['user', 'course']);
+        $enrollment->recalculateProgress();
+
+        $settings = PlatformSetting::getAllSettings();
+
+        if ($request->query('format') === 'html') {
+            return view('pdf.certificate-allegato4', [
+                'settings' => $settings,
+                'enrollment' => $enrollment,
+                'course' => $enrollment->course,
+                'student' => $enrollment->user,
+                'isPreview' => true,
+            ]);
+        }
+
+        $pdf = Pdf::loadView('pdf.certificate-allegato4', [
+            'settings' => $settings,
+            'enrollment' => $enrollment,
+            'course' => $enrollment->course,
+            'student' => $enrollment->user,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->stream('Anteprima_Attestato.pdf');
     }
 
     public function downloadPersonalAuditPdf(Request $request, Enrollment $enrollment)
@@ -490,6 +617,12 @@ class StudentCourseController extends Controller
             ->orderBy('started_at')
             ->get();
 
+        $zoomRegistrants = ZoomRegistrant::with('module')
+            ->where('user_id', $enrollment->user_id)
+            ->where('course_id', $enrollment->course_id)
+            ->get()
+            ->keyBy('course_module_id');
+
         ActivityLog::record(
             'student_audit_pdf',
             "Scaricato Registro Audit Personale PDF per {$enrollment->user->full_name}",
@@ -507,6 +640,7 @@ class StudentCourseController extends Controller
             'course' => $enrollment->course,
             'moduleProgress' => $moduleProgress,
             'watchLogs' => $watchLogs,
+            'zoomRegistrants' => $zoomRegistrants,
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download('Audit_Personale_' . Str::slug($enrollment->user->full_name) . '.pdf');

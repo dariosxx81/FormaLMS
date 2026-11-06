@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use App\Mail\CertificateEarnedMail;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class Enrollment extends Model
 {
@@ -57,28 +60,72 @@ class Enrollment extends Model
             return $this;
         }
 
+        // Separate Async modules from Zoom Sync modules
+        // (Includes both live Zoom modules and Zoom modules converted to post-live video recording for recovery)
+        $zoomModuleIds = CourseModule::query()
+            ->where('course_id', $this->course_id)
+            ->where(function ($q) {
+                $q->where('video_source_type', 'zoom')
+                  ->orWhere(function ($sq) {
+                      $sq->whereNotNull('zoom_meeting_id')
+                         ->where('zoom_meeting_id', '!=', '');
+                  });
+            })
+            ->pluck('id')
+            ->toArray();
+
         $asyncSeconds = (int) ModuleProgress::query()
             ->where('user_id', $this->user_id)
             ->where('course_id', $this->course_id)
+            ->when(!empty($zoomModuleIds), fn($q) => $q->whereNotIn('course_module_id', $zoomModuleIds))
             ->sum('watched_seconds');
 
-        $asyncHours = round($asyncSeconds / 3600, 2);
-        // Cap async hours to course async_required_hours if greater, or count full watched hours
-        $effectiveAsyncHours = min($asyncHours, max($course->async_required_hours, $asyncHours));
+        // If the course has Zoom modules (or Zoom module addon is enabled with Zoom modules),
+        // sync_hours_completed is strictly calculated from certified Zoom module logs (no manual override)
+        if (!empty($zoomModuleIds)) {
+            $zoomWatchedSeconds = (int) ModuleProgress::query()
+                ->where('user_id', $this->user_id)
+                ->where('course_id', $this->course_id)
+                ->whereIn('course_module_id', $zoomModuleIds)
+                ->sum('watched_seconds');
+
+            $syncRequiredSeconds = (float) $course->sync_required_hours * 3600;
+            $effectiveZoomSeconds = $syncRequiredSeconds > 0
+                ? min($zoomWatchedSeconds, $syncRequiredSeconds)
+                : $zoomWatchedSeconds;
+
+            $this->sync_hours_completed = round($effectiveZoomSeconds / 3600, 2);
+        }
+
+        // Course requirements in seconds
+        $asyncRequiredSeconds = (float) $course->async_required_hours * 3600;
+        $effectiveAsyncSeconds = $asyncRequiredSeconds > 0 
+            ? min($asyncSeconds, $asyncRequiredSeconds)
+            : $asyncSeconds;
 
         // If sync hours (Zoom) are disabled on the course (sync_required_hours == 0), count ONLY platform FAD hours
-        $syncHours = $course->has_sync_hours ? (float) $this->sync_hours_completed : 0.0;
+        $syncSeconds = $course->has_sync_hours 
+            ? ((float) $this->sync_hours_completed * 3600) 
+            : 0.0;
 
-        $totalHours = round($syncHours + $effectiveAsyncHours, 2);
-        $targetHours = max(0.1, (float) $course->total_hours);
-        $percent = min(100, round(($totalHours / $targetHours) * 100, 1));
-        $eligible = $percent >= $course->min_attendance_percent;
+        $totalCompletedSeconds = $syncSeconds + $effectiveAsyncSeconds;
+        $targetTotalSeconds = (float) $course->total_hours * 3600;
+
+        if ($targetTotalSeconds > 0) {
+            $percent = min(100.0, round(($totalCompletedSeconds / $targetTotalSeconds) * 100, 1));
+        } else {
+            $percent = 100.0;
+        }
+
+        $totalHours = round($totalCompletedSeconds / 3600, 2);
+        $eligible = $percent >= (float) $course->min_attendance_percent;
 
         $this->async_seconds_completed = $asyncSeconds;
         $this->total_hours_completed = $totalHours;
         $this->attendance_percent = $percent;
         $this->is_eligible_for_certificate = $eligible;
 
+        $justEarnedCertificate = false;
         if ($eligible) {
             if ($this->status === 'active') {
                 $this->status = 'completed';
@@ -91,10 +138,29 @@ class Enrollment extends Model
                     $this->id ?: rand(100, 999)
                 );
                 $this->certificate_issued_at = now();
+                $justEarnedCertificate = true;
             }
         }
 
         $this->save();
+
+        if ($justEarnedCertificate && PlatformSetting::isMailActive('certificate')) {
+            try {
+                $user = $this->user ?: User::find($this->user_id);
+                if ($user) {
+                    $settings = PlatformSetting::getAllSettings();
+                    Mail::to($user->email)->send(new CertificateEarnedMail($user, $course, $this, $settings));
+                    ActivityLog::record(
+                        'certificate_earned_mail_sent',
+                        "Inviata email di rilascio attestato ({$this->certificate_number}) per \"{$course->title}\" a {$user->email}",
+                        $user->id,
+                        $course->id
+                    );
+                }
+            } catch (\Throwable $e) {
+                Log::warning("Impossibile inviare email attestato: " . $e->getMessage());
+            }
+        }
 
         return $this;
     }

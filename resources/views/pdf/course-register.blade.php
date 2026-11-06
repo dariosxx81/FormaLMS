@@ -57,7 +57,7 @@
                     <td>
                         @foreach($course->modules as $m)
                             @php $mp = $mods[$m->id] ?? null; @endphp
-                            M{{ $m->sort_order }}: {{ $mp ? $mp->completion_percent . '%' : '0%' }}@if(!$loop->last) | @endif
+                            M{{ $m->sort_order }}{{ $m->video_source_type === 'zoom' ? ' (Zoom)' : '' }}: {{ $mp ? $mp->completion_percent . '%' : '0%' }}@if(!$loop->last) | @endif
                         @endforeach
                     </td>
                     <td><strong>{{ number_format($enr->async_hours_completed, 2, ',', '') }}h</strong> / {{ $course->async_required_hours }}h</td>

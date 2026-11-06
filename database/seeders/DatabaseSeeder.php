@@ -27,7 +27,7 @@ class DatabaseSeeder extends Seeder
             'provider_address' => 'Via dell\'Umiltà 48, 00187 Roma (RM)',
             'ateco_code' => '79.90',
             'cp_istat_code' => '3.4.1.5.2',
-            'support_email' => 'segreteria@formalms.it',
+            'support_email' => 'segreteria@formacamera.it',
             'allow_public_registration' => '1',
             'auto_approve_registration' => '1',
         ]);

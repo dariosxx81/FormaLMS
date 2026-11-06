@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'White-Label & Ente — Pannello Admin')
+@section('title', 'Impostazioni Piattaforma — Pannello Admin')
 
 @section('content')
 <div class="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-6"
@@ -14,6 +14,9 @@
         logoSize: @js($settings['logo_size'] ?? 'md'),
         hideBrandText: @js(($settings['hide_brand_text_with_logo'] ?? '0') === '1'),
         removeLogo: false,
+        faviconPreview: @js($settings['favicon_url'] ?? ''),
+        faviconUrlInput: @js($settings['favicon_url'] ?? ''),
+        removeFavicon: false,
         autoHarmonize: true,
         primaryColor: @js($settings['primary_color'] ?? '#4f46e5'),
         secondaryColor: @js($settings['secondary_color'] ?? '#1e1b4b'),
@@ -136,6 +139,15 @@
             reader.onload = (e) => { this.logoPreview = e.target.result; };
             reader.readAsDataURL(file);
         },
+        onFaviconSelected(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            this.removeFavicon = false;
+            this.faviconUrlInput = '';
+            const reader = new FileReader();
+            reader.onload = (e) => { this.faviconPreview = e.target.result; };
+            reader.readAsDataURL(file);
+        },
         setDemoLogo(mode) {
             this.removeLogo = false;
             if (mode === 'white') {
@@ -157,9 +169,9 @@
     <!-- Clean Header -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">White-Label & Configurazione Ente</h1>
+            <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Impostazioni Piattaforma & Ente</h1>
             <p class="text-xs text-slate-500 mt-0.5">
-                Personalizza logo, colori coordinati, intestazione degli attestati PDF e regole di registrazione.
+                Personalizza logo, colori coordinati, intestazione degli attestati PDF, regole di registrazione e integrazione Zoom Live.
             </p>
         </div>
     </div>
@@ -243,6 +255,21 @@
                         class="px-4 py-2.5 border-b-2 text-xs font-extrabold transition cursor-pointer">
                     3. Regole Iscrizione
                 </button>
+                <button type="button" @click="settingsTab = 'zoom'"
+                        :class="settingsTab === 'zoom' ? 'border-indigo-600 text-indigo-600 bg-white rounded-t-xl' : 'border-transparent text-slate-500 hover:text-slate-800'"
+                        class="px-4 py-2.5 border-b-2 text-xs font-extrabold transition cursor-pointer flex items-center gap-1.5">
+                    <span>4. Modulo Zoom Live</span>
+                    @if(($settings['zoom_module_enabled'] ?? '0') === '1')
+                        <span class="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[9px] font-black uppercase">Attivo</span>
+                    @else
+                        <span class="px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600 text-[9px] font-bold uppercase">Off</span>
+                    @endif
+                </button>
+                <a href="{{ route('admin.emails.index') }}"
+                   class="px-4 py-2.5 border-b-2 border-transparent text-slate-500 hover:text-indigo-600 text-xs font-extrabold transition flex items-center gap-1.5">
+                    <span>5. Template & Notifiche Email</span>
+                    <span class="px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 text-[9px] font-black uppercase">Configura</span>
+                </a>
             </div>
 
             <div class="pb-2">
@@ -292,10 +319,10 @@
                                 <input type="file" name="logo_file" accept="image/png,image/jpeg,image/svg+xml,image/webp" @change="onLogoSelected($event)" class="hidden">
                             </label>
                             <button type="button" @click="setDemoLogo('dark')" class="px-2.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-[11px] cursor-pointer">
-                                Demo Scuro
+                                Esempio Scuro
                             </button>
                             <button type="button" @click="setDemoLogo('white')" class="px-2.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 font-bold text-[11px] cursor-pointer">
-                                Demo Bianco
+                                Esempio Bianco
                             </button>
                         </div>
                     </div>
@@ -330,6 +357,53 @@
                     <div>
                         <label class="block font-bold text-slate-600 mb-1 text-[11px]">URL esterno del Logo (opzionale)</label>
                         <input type="text" name="logo_url" x-model="logoUrlInput" @input="logoPreview = logoUrlInput" placeholder="https://.../logo-ente.png" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs">
+                    </div>
+
+                    <!-- Gestione Favicon Personalizzata -->
+                    <div class="pt-4 border-t border-slate-200 space-y-3">
+                        <div>
+                            <h3 class="text-xs font-extrabold text-slate-900">Icona Browser / Favicon</h3>
+                            <p class="text-[11px] text-slate-500 mt-0.5">Personalizza l'icona visualizzata nelle schede e preferiti del browser.</p>
+                        </div>
+
+                        <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center p-1.5 shadow-2xs">
+                                    <template x-if="faviconPreview && !removeFavicon">
+                                        <img :src="faviconPreview" alt="Favicon" class="w-6 h-6 object-contain">
+                                    </template>
+                                    <template x-if="!faviconPreview || removeFavicon">
+                                        <img src="{{ asset('favicon.svg') }}" alt="Favicon Default" class="w-6 h-6 object-contain">
+                                    </template>
+                                </div>
+                                <div class="text-[11px]">
+                                    <template x-if="faviconPreview && !removeFavicon">
+                                        <span class="font-bold text-emerald-700">Favicon personalizzata attiva</span>
+                                    </template>
+                                    <template x-if="!faviconPreview || removeFavicon">
+                                        <span class="text-slate-500">Favicon predefinita della piattaforma</span>
+                                    </template>
+                                    <div class="text-[10px] text-slate-400">Formati consigliati: .svg, .ico, .png (quadrata)</div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-[11px] cursor-pointer transition">
+                                    <span>📁 Carica</span>
+                                    <input type="file" name="favicon_file" accept="image/x-icon,image/vnd.microsoft.icon,image/png,image/svg+xml,image/webp" @change="onFaviconSelected($event)" class="hidden">
+                                </label>
+                                <template x-if="faviconPreview && !removeFavicon">
+                                    <label class="inline-flex items-center gap-1 text-[11px] text-red-600 font-bold cursor-pointer">
+                                        <input type="checkbox" name="remove_favicon" value="1" x-model="removeFavicon" class="rounded text-red-600">
+                                        <span>Ripristina default</span>
+                                    </label>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div>
+                            <input type="text" name="favicon_url" x-model="faviconUrlInput" @input="faviconPreview = faviconUrlInput" placeholder="URL esterno favicon: https://.../favicon.png (opzionale)" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs">
+                        </div>
                     </div>
                 </div>
 
@@ -473,13 +547,74 @@
                 </div>
             </div>
 
+            <!-- TAB 4: MODULO ZOOM LIVE (OPZIONALE) -->
+            <div x-show="settingsTab === 'zoom'" class="space-y-6" x-data="{ zoomEnabled: @js(($settings['zoom_module_enabled'] ?? '0') === '1') }">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl border"
+                     :class="zoomEnabled ? 'bg-emerald-50/70 border-emerald-200' : 'bg-slate-50 border-slate-200'">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-extrabold text-slate-900">Modulo Add-on: Integrazione Zoom Live Sincrona</span>
+                            <span x-show="zoomEnabled" class="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-extrabold uppercase">Modulo Attivo</span>
+                            <span x-show="!zoomEnabled" class="px-2 py-0.5 rounded-full bg-slate-300 text-slate-700 text-[10px] font-bold uppercase">Disattivato</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600 max-w-2xl">
+                            Quando attivo, permette di inserire moduli di tipo <strong>Lezione Live Zoom</strong> nei corsi, autenticare i corsisti con Nome, Cognome e Codice Fiscale bloccati e sincronizzare automaticamente i minuti effettivi di permanenza nel registro ministeriale.
+                        </p>
+                    </div>
+
+                    <label class="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white border border-slate-300 shadow-2xs cursor-pointer shrink-0">
+                        <input type="checkbox" name="zoom_module_enabled" value="1" x-model="zoomEnabled" class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500">
+                        <span class="font-extrabold text-xs text-slate-900" x-text="zoomEnabled ? 'Modulo Zoom Attivo' : 'Attiva Modulo Zoom'"></span>
+                    </label>
+                </div>
+
+                <div x-show="zoomEnabled" class="space-y-5">
+                    <div class="p-4 rounded-xl bg-indigo-50/60 border border-indigo-200 text-[11px] space-y-1.5">
+                        <div class="font-extrabold text-slate-900">💡 Modalità Doppia (Simulazione Locale + Zoom Cloud API S2S OAuth)</div>
+                        <p class="text-slate-600">
+                            Se lasci vuote le chiavi API qui sotto, il modulo funziona automaticamente in <strong>Modalità Simulazione / Link Diretto</strong>: i corsisti entrano tramite il link Zoom configurato nel modulo e il tempo viene tracciato direttamente dal portale FormaLMS. Inserendo le chiavi <strong>Server-to-Server OAuth</strong> di Zoom, si attiva anche la registrazione nominativa API e il recupero automatico dei report ufficiali Zoom.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Zoom Account ID (S2S OAuth)</label>
+                            <input type="text" name="zoom_account_id" value="{{ $settings['zoom_account_id'] ?? '' }}" placeholder="Es. aBcDeFgHiJkLmNoPqRsTuV" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 font-mono text-xs">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Zoom Client ID</label>
+                            <input type="text" name="zoom_client_id" value="{{ $settings['zoom_client_id'] ?? '' }}" placeholder="Es. 1a2b3c4d5e6f7g8h9i0j" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 font-mono text-xs">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Zoom Client Secret</label>
+                            <input type="password" name="zoom_client_secret" value="{{ $settings['zoom_client_secret'] ?? '' }}" placeholder="••••••••••••••••••••••••" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 font-mono text-xs">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Zoom Webhook Secret Token (Event Notification)</label>
+                            <input type="password" name="zoom_webhook_secret_token" value="{{ $settings['zoom_webhook_secret_token'] ?? '' }}" placeholder="••••••••••••••••••••••••" class="w-full rounded-xl border border-slate-300 px-3.5 py-2 font-mono text-xs">
+                        </div>
+                    </div>
+
+                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                        <div>
+                            <span class="font-bold text-slate-700">Endpoint Webhook per Zoom Marketplace:</span>
+                            <code class="ml-1.5 px-2 py-0.5 rounded bg-white border border-slate-200 font-mono text-slate-800">{{ url('/webhooks/zoom') }}</code>
+                        </div>
+                        <span class="text-slate-500">Eventi supportati: <code>meeting.participant_joined</code>, <code>meeting.participant_left</code>, <code>meeting.ended</code></span>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- Bottom Action Bar -->
         <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-            <span class="text-[11px] text-slate-500">Tutte le modifiche delle 3 schede vengono salvate contemporaneamente.</span>
+            <span class="text-[11px] text-slate-500">Tutte le modifiche delle schede vengono salvate contemporaneamente.</span>
             <button type="submit" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold cursor-pointer shadow-xs transition">
-                Salva Configurazione White-Label
+                Salva Impostazioni
             </button>
         </div>
     </form>

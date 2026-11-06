@@ -136,16 +136,16 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Indirizzo Email *</label>
                     <input type="email" name="email" value="{{ old('email') }}" required placeholder="nome.cognome@email.it"
-                           class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm">
+                           class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Telefono Cellulare</label>
-                    <input type="text" name="phone" value="{{ old('phone') }}" placeholder="+39 333 1234567"
-                           class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Telefono Cellulare *</label>
+                    <input type="text" name="phone" value="{{ old('phone') }}" required placeholder="+39 333 1234567"
+                           class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">N. Elenco Nazionale</label>
-                    <input type="text" name="national_list_number" value="{{ old('national_list_number') }}" placeholder="Es. GT-RM-00482"
+                    <label class="block text-xs font-bold text-slate-700 mb-1">N. Elenco Nazionale <span class="text-slate-400 font-normal">(Opzionale)</span></label>
+                    <input type="text" name="national_list_number" value="{{ old('national_list_number') }}" placeholder="Opzionale (es. GT-RM-00482)"
                            class="w-full rounded-xl border border-slate-300 px-3.5 py-2 text-sm">
                 </div>
             </div>

@@ -6,9 +6,7 @@
 </head>
 <body style="font-family: Arial, sans-serif; background-color: #f8fafc; color: #0f172a; padding: 24px; margin: 0;">
     <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px;">
-        <h2 style="margin-top: 0; color: #0f172a; font-size: 20px;">
-            {{ $settings['platform_name'] ?? 'FormaFAD LMS' }}
-        </h2>
+        @include('emails.partials.header')
 
         <p style="font-size: 14px; line-height: 1.6; color: #334155;">
             Gentile <strong>{{ $user->full_name }}</strong>,

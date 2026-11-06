@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\PasswordResetMail;
+use App\Mail\WelcomeRegistrationMail;
 use App\Models\ActivityLog;
 use App\Models\Course;
 use App\Models\Enrollment;
@@ -26,10 +27,7 @@ class AuthController extends Controller
         }
 
         $settings = PlatformSetting::getAllSettings();
-        $demoAdmins = User::where('role', 'admin')->limit(2)->get();
-        $demoStudents = User::where('role', 'student')->limit(4)->get();
-
-        return view('auth.login', compact('settings', 'demoAdmins', 'demoStudents'));
+        return view('auth.login', compact('settings'));
     }
 
     public function login(Request $request)
@@ -94,7 +92,7 @@ class AuthController extends Controller
             'birth_city' => ['required', 'string', 'max:120'],
             'birth_province' => ['required', 'string', 'max:10'],
             'birth_country' => ['required', 'string', 'max:100'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'phone' => ['required', 'string', 'max:30'],
             'national_list_number' => ['nullable', 'string', 'max:50'],
             'email' => ['required', 'email', 'max:190', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
@@ -102,6 +100,7 @@ class AuthController extends Controller
             'invite_code' => ['nullable', 'string', 'max:50'],
         ], [
             'email.unique' => 'Questa email risulta già registrata in piattaforma. Accedi o usa il recupero password.',
+            'phone.required' => 'Il numero di telefono cellulare è obbligatorio per le comunicazioni didattiche del corso.',
         ]);
 
         // Resolve course either from invite_code (secret code given by Admin) or course_id
@@ -177,6 +176,30 @@ class AuthController extends Controller
             );
         }
 
+        if (PlatformSetting::isMailActive('welcome')) {
+            try {
+                Mail::to($user->email)->send(new WelcomeRegistrationMail($user, $targetCourse, $settings));
+                ActivityLog::record(
+                    'welcome_mail_sent',
+                    "Inviata email di benvenuto e conferma registrazione a {$user->email}",
+                    $user->id,
+                    $targetCourse?->id,
+                    null,
+                    [],
+                    $request
+                );
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Impossibile inviare email di registrazione a {$user->email}: " . $e->getMessage());
+            }
+        } else {
+            ActivityLog::record(
+                'welcome_mail_skipped',
+                "Invio email di benvenuto a {$user->email} saltato (notifica disattivata da pannello admin)",
+                $user->id,
+                $targetCourse?->id
+            );
+        }
+
         Auth::login($user);
 
         return redirect()->route('student.dashboard')
@@ -241,8 +264,7 @@ class AuthController extends Controller
         );
 
         return back()
-            ->with('success', "Email di recupero password inviata a {$user->email}!")
-            ->with('reset_link_preview', $resetUrl);
+            ->with('success', "Abbiamo inviato un'email con il link di recupero password all'indirizzo {$user->email}. Controlla la tua casella di posta!");
     }
 
     public function showResetPasswordForm(Request $request, string $token)
@@ -370,6 +392,89 @@ class AuthController extends Controller
         return $user->isAdmin()
             ? redirect()->route('admin.dashboard')->with('success', "Accesso rapido eseguito come Admin: {$user->full_name}")
             : redirect()->route('student.dashboard')->with('success', "Accesso rapido eseguito come Corsista: {$user->full_name}");
+    }
+
+    public function showProfile()
+    {
+        $user = Auth::user();
+        $settings = PlatformSetting::getAllSettings();
+        return view('auth.profile', compact('user', 'settings'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $data = $request->validate([
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['required', 'string', 'max:100'],
+            'fiscal_code' => ['required', 'string', 'max:20'],
+            'birth_date' => ['nullable', 'date'],
+            'birth_city' => ['nullable', 'string', 'max:120'],
+            'birth_province' => ['nullable', 'string', 'max:10'],
+            'birth_country' => ['nullable', 'string', 'max:100'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'national_list_number' => ['nullable', 'string', 'max:50'],
+            'email' => ['required', 'email', 'max:190', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user->id)],
+        ]);
+
+        $user->update([
+            'name' => trim($data['first_name'] . ' ' . $data['last_name']),
+            'first_name' => $data['first_name'],
+            'last_name' => $data['last_name'],
+            'fiscal_code' => strtoupper(trim($data['fiscal_code'])),
+            'birth_date' => $data['birth_date'] ?: $user->birth_date,
+            'birth_city' => $data['birth_city'] ?? $user->birth_city,
+            'birth_province' => strtoupper($data['birth_province'] ?? ($user->birth_province ?: 'RM')),
+            'birth_country' => $data['birth_country'] ?? ($user->birth_country ?: 'Italia'),
+            'phone' => $data['phone'] ?? null,
+            'national_list_number' => $data['national_list_number'] ?? null,
+            'email' => strtolower(trim($data['email'])),
+        ]);
+
+        ActivityLog::record(
+            'profile_update',
+            "Dati anagrafici e email aggiornati da {$user->full_name} ({$user->email})",
+            $user->id,
+            null,
+            null,
+            [],
+            $request
+        );
+
+        return back()->with('success', 'Dati del profilo aggiornati con successo.');
+    }
+
+    public function updatePassword(Request $request)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'string', 'min:6', 'confirmed'],
+        ], [
+            'current_password.current_password' => 'La password attuale inserita non è corretta.',
+            'password.confirmed' => 'La conferma della nuova password non coincide.',
+            'password.min' => 'La nuova password deve contenere almeno :min caratteri.',
+        ]);
+
+        $user->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        ActivityLog::record(
+            'password_update',
+            "Password account aggiornata con successo per {$user->full_name}",
+            $user->id,
+            null,
+            null,
+            [],
+            $request
+        );
+
+        return back()->with('success', 'Password modificata con successo.');
     }
 
     public function logout(Request $request)
