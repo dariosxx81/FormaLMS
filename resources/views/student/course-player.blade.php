@@ -67,56 +67,86 @@
                 </div>
 
                 <!-- HTML5 Video, Masked YouTube, Embedded Vimeo OR Zoom Live Sync Classroom -->
-                <div class="relative aspect-video bg-black flex items-center justify-center overflow-hidden select-none">
+                <div class="relative {{ $activeModule->is_zoom ? 'min-h-[620px] py-6' : 'aspect-video' }} bg-black flex items-center justify-center overflow-hidden select-none">
                     @if($activeModule->is_zoom)
-                        <div class="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 flex flex-col items-center justify-center p-6 text-center">
-                            <div class="max-w-lg w-full bg-slate-900/90 border border-sky-500/30 rounded-2xl p-6 shadow-2xl space-y-4">
-                                <div class="flex items-center justify-center gap-2">
+                        <div class="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-sky-950 flex flex-col items-center justify-center p-4 sm:p-6 text-center overflow-y-auto">
+                            <div class="max-w-xl w-full bg-slate-900/95 border border-sky-500/30 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 my-auto">
+                                <div class="flex items-center justify-between gap-2 flex-wrap">
                                     <span class="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30 text-xs font-extrabold uppercase tracking-wide flex items-center gap-1.5">
                                         <span class="w-2 h-2 rounded-full" :class="isPlaying ? 'bg-emerald-400 animate-ping' : 'bg-sky-400'"></span>
                                         <span>🎥 Aula Virtuale Sincrona Zoom</span>
                                     </span>
+                                    @if($activeModule->zoom_meeting_id)
+                                        <span class="text-[11px] font-mono text-sky-300 bg-sky-950/70 border border-sky-800/80 px-2.5 py-1 rounded-lg">
+                                            Meeting ID: <strong>{{ $activeModule->zoom_meeting_id }}</strong>
+                                        </span>
+                                    @endif
                                 </div>
 
-                                <div>
-                                    <h3 class="text-white font-extrabold text-base sm:text-lg">{{ $activeModule->title }}</h3>
-                                    <p class="text-slate-300 text-xs mt-1">
-                                        Docente: <strong>{{ $activeModule->instructor_name ?: 'Docente Accreditato' }}</strong>
-                                        @if($activeModule->zoom_scheduled_at)
-                                            • Data/Ora: <strong>{{ $activeModule->zoom_scheduled_at->format('d/m/Y H:i') }}</strong>
-                                        @endif
-                                        @if($activeModule->zoom_meeting_id)
-                                            • ID: <span class="font-mono text-sky-300">{{ $activeModule->zoom_meeting_id }}</span>
-                                        @endif
+                                <div class="text-left">
+                                    <h3 class="text-white font-extrabold text-base sm:text-lg leading-snug">{{ $activeModule->title }}</h3>
+                                    <p class="text-slate-400 text-xs mt-1">
+                                        Docente: <strong class="text-slate-200">{{ $activeModule->instructor_name ?: 'Docente Accreditato' }}</strong>
+                                        • Durata Totale: <strong class="text-sky-300">{{ $activeModule->formatted_duration }}</strong>
                                     </p>
                                 </div>
 
-                                <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-left text-[11px] space-y-1">
-                                    <div class="text-slate-400 font-bold uppercase text-[10px]">Dati Certificati Trasmessi al Registro Presenze Zoom:</div>
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-slate-200">
-                                        <div>👤 Corsista: <strong>{{ $user->full_name }}</strong></div>
-                                        <div>🆔 CF: <strong class="font-mono">{{ $user->fiscal_code ?: 'N/D' }}</strong></div>
-                                    </div>
-                                </div>
+                                @php
+                                    $schedStatus = $activeModule->schedule_status;
+                                    $isLocked = $activeModule->is_locked_by_schedule && !auth()->user()->isAdmin();
+                                    $nextOcc = $activeModule->next_upcoming_occurrence;
+                                    $occList = $activeModule->occurrences_list;
+                                @endphp
 
-                                @if($activeModule->is_locked_by_schedule && !auth()->user()->isAdmin())
-                                    <div class="p-3.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs space-y-1 text-center">
-                                        <div class="font-extrabold flex items-center justify-center gap-1.5 text-amber-300">
-                                            <span>⏳ Sessione Live Programmata</span>
+                                @if($schedStatus === 'live')
+                                    <div class="p-4 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-200 text-xs flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+                                        <div class="space-y-0.5">
+                                            <div class="font-black text-emerald-400 flex items-center gap-1.5">
+                                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                                                <span>LEZIONE LIVE IN CORSO ORA</span>
+                                            </div>
+                                            <p class="text-[11px] text-emerald-300/80">
+                                                L'aula virtuale è aperta. Clicca per partecipare alla sessione Zoom.
+                                            </p>
                                         </div>
-                                        <p>
-                                            La lezione si svolgerà il <strong>{{ $activeModule->zoom_scheduled_at ? $activeModule->zoom_scheduled_at->format('d/m/Y') : '' }}</strong> alle ore <strong>{{ $activeModule->zoom_scheduled_at ? $activeModule->zoom_scheduled_at->format('H:i') : '' }}</strong>.
-                                        </p>
-                                        <p class="text-[11px] text-amber-300/80">
-                                            L'ingresso all'aula Zoom sarà abilitato automaticamente <strong>15 minuti prima</strong> dell'inizio.
-                                        </p>
+                                        <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                                            <button type="button"
+                                                    @click="joinZoomClassroom()"
+                                                    class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-lg transition cursor-pointer flex items-center justify-center gap-2">
+                                                <span>Entra Ora &rarr;</span>
+                                            </button>
+                                            <button type="button"
+                                                    x-show="isPlaying"
+                                                    @click="pauseZoomTracking()"
+                                                    class="px-3 py-2.5 rounded-xl bg-amber-600/90 hover:bg-amber-500 text-white font-bold text-xs transition cursor-pointer">
+                                                ⏸ Pausa
+                                            </button>
+                                        </div>
                                     </div>
-
-                                    <div class="flex items-center justify-center pt-1">
-                                        <button type="button" disabled
-                                                class="px-5 py-3 rounded-xl bg-slate-800 text-slate-500 font-bold text-xs cursor-not-allowed border border-slate-700 flex items-center gap-2">
-                                            <span>🔒 Ingresso Non Ancora Disponibile</span>
-                                        </button>
+                                @elseif($isLocked)
+                                    <div class="p-3.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs space-y-1 text-center">
+                                        <div class="font-extrabold flex items-center justify-center gap-1.5 text-amber-300">
+                                            <span>⏳ Prossima Lezione Programmata</span>
+                                        </div>
+                                        @if($nextOcc)
+                                            <p class="text-slate-200">
+                                                <strong>{{ $nextOcc['day_name'] }} {{ $nextOcc['formatted_date'] }}</strong> ore <strong>{{ $nextOcc['formatted_time'] }}</strong>
+                                                <span class="text-sky-300 font-mono">(Sessione #{{ $nextOcc['index'] }})</span>
+                                            </p>
+                                        @elseif($activeModule->zoom_scheduled_at)
+                                            <p class="text-slate-200">
+                                                <strong>{{ $activeModule->zoom_scheduled_at->format('d/m/Y') }}</strong> ore <strong>{{ $activeModule->zoom_scheduled_at->format('H:i') }}</strong>
+                                            </p>
+                                        @endif
+                                        <p class="text-[11px] text-amber-300/80">
+                                            L'ingresso all'aula Zoom si sbloccherà automaticamente <strong>15 minuti prima</strong> dell'inizio.
+                                        </p>
+                                        <div class="pt-1">
+                                            <button type="button" disabled
+                                                    class="px-5 py-2 rounded-xl bg-slate-800 text-slate-500 font-bold text-xs cursor-not-allowed border border-slate-700">
+                                                🔒 Ingresso Non Ancora Disponibile
+                                            </button>
+                                        </div>
                                     </div>
                                 @else
                                     <div class="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1">
@@ -126,13 +156,58 @@
                                             <span>🎥 Entra nella Lezione Live Zoom</span>
                                             <span>&rarr;</span>
                                         </button>
-
                                         <button type="button"
                                                 x-show="isPlaying"
                                                 @click="pauseZoomTracking()"
                                                 class="w-full sm:w-auto px-4 py-3 rounded-xl bg-amber-600/90 hover:bg-amber-500 text-white font-bold text-xs transition cursor-pointer">
                                             ⏸ Termina / Metti in Pausa Sessione
                                         </button>
+                                    </div>
+                                @endif
+
+                                <!-- Repetitions Calendar / Occurrences List (Opzione 1) -->
+                                @if(!empty($occList))
+                                    <div class="text-left bg-slate-950/70 border border-slate-800 rounded-xl p-3.5 space-y-2">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="font-extrabold text-slate-200 flex items-center gap-1.5">
+                                                <span>📅 Calendario Lezioni Live / Ripetizioni</span>
+                                                <span class="text-[10px] font-bold text-sky-400 bg-sky-950/80 border border-sky-800/80 px-2 py-0.5 rounded-full">
+                                                    {{ count($occList) }} sessioni
+                                                </span>
+                                            </span>
+                                            <span class="text-[10px] text-slate-400">ID e Link unici</span>
+                                        </div>
+
+                                        <div class="max-h-44 overflow-y-auto pr-1 space-y-1.5 divide-y divide-slate-800/60">
+                                            @foreach($occList as $occ)
+                                                <div class="pt-1.5 first:pt-0 flex items-center justify-between text-[11px] gap-2">
+                                                    <div class="flex items-center gap-2 min-w-0">
+                                                        <span class="w-5 h-5 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-mono text-[10px] font-bold shrink-0">
+                                                            {{ $occ['index'] }}
+                                                        </span>
+                                                        <div class="truncate">
+                                                            <strong class="text-slate-200">{{ $occ['day_name'] }} {{ $occ['formatted_date'] }}</strong>
+                                                            <span class="text-slate-400 ml-1">ore {{ $occ['formatted_time'] }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="shrink-0 font-bold text-[10px]">
+                                                        @if($occ['status'] === 'live')
+                                                            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-pulse">
+                                                                ● In Corso Oggi
+                                                            </span>
+                                                        @elseif($occ['status'] === 'ended')
+                                                            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                                                                ✓ Conclusa
+                                                            </span>
+                                                        @else
+                                                            <span class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20">
+                                                                ⏳ Programmata
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
                                     </div>
                                 @endif
 
@@ -146,11 +221,17 @@
                                     </p>
                                 </div>
 
-                                <div class="text-[11px] text-slate-300 font-mono">
-                                    Tempo Sincrono Maturato in questo modulo:
-                                    <strong class="text-emerald-400" x-text="formatSeconds(currentTime)"></strong>
-                                    su <strong>{{ $activeModule->formatted_duration }}</strong>
-                                    (<span x-text="completionPercent"></span>%)
+                                <div class="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-left text-[11px] flex flex-wrap items-center justify-between gap-2 text-slate-300">
+                                    <div class="text-[10px] text-slate-400">
+                                        Corsista: <strong class="text-white">{{ $user->full_name }}</strong>
+                                        • CF: <strong class="font-mono text-white">{{ $user->fiscal_code ?: 'N/D' }}</strong>
+                                    </div>
+                                    <div class="text-slate-300 font-mono text-[10px]">
+                                        Presenza Totale:
+                                        <strong class="text-emerald-400" x-text="formatSeconds(currentTime)"></strong>
+                                        / <strong>{{ $activeModule->formatted_duration }}</strong>
+                                        (<span x-text="completionPercent"></span>%)
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -406,17 +487,19 @@
                                 $pct = $mp ? $mp->completion_percent : 0;
                                 $schedStatus = $mod->schedule_status;
                                 $isLocked = $mod->is_locked_by_schedule && !auth()->user()->isAdmin();
+                                $occCount = count($mod->occurrences_list);
+                                $nextOcc = $mod->next_upcoming_occurrence;
                             @endphp
                             <a href="{{ route('student.courses.module', [$course, $mod]) }}"
                                class="block p-3 rounded-xl border transition {{ $isCurrent ? 'bg-sky-50/90 border-sky-500 ring-2 ring-sky-500/20' : ($done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-slate-50/70 border-slate-200 hover:border-sky-300') }}">
                                 <div class="flex items-center justify-between gap-1 text-[10px] font-bold mb-1">
                                     <span class="px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 font-mono">
-                                        MOD. {{ $mod->sort_order }} [ZOOM]
+                                        AULA VIRTUALE ZOOM
                                     </span>
                                     @if($schedStatus === 'live')
                                         <span class="text-emerald-600 font-bold animate-pulse">● APERTA ORA</span>
                                     @elseif($isLocked)
-                                        <span class="text-amber-700">⏳ {{ $mod->zoom_scheduled_at ? $mod->zoom_scheduled_at->format('d/m H:i') : 'Data definita' }}</span>
+                                        <span class="text-amber-700">⏳ {{ $nextOcc ? ($nextOcc['formatted_date'] . ' ' . explode(' - ', $nextOcc['formatted_time'])[0]) : ($mod->zoom_scheduled_at ? $mod->zoom_scheduled_at->format('d/m H:i') : 'Data definita') }}</span>
                                     @elseif($done)
                                         <span class="text-emerald-700">✓ Completata</span>
                                     @else
@@ -426,7 +509,17 @@
                                 <div class="text-xs font-bold {{ $isCurrent ? 'text-sky-950 font-black' : 'text-slate-900' }} line-clamp-1">
                                     {{ $mod->title }}
                                 </div>
-                                @if($mod->zoom_scheduled_at)
+                                @if($occCount > 0)
+                                    <div class="text-[10px] text-sky-800 font-semibold mt-1 flex items-center justify-between">
+                                        <span>📅 {{ $occCount }} sessioni programmate</span>
+                                        <span class="font-mono">{{ $mod->formatted_duration }}</span>
+                                    </div>
+                                    @if($nextOcc)
+                                        <div class="text-[10px] text-slate-500 mt-0.5">
+                                            Prossima: {{ $nextOcc['day_name'] }} {{ $nextOcc['formatted_date'] }} ore {{ $nextOcc['formatted_time'] }}
+                                        </div>
+                                    @endif
+                                @elseif($mod->zoom_scheduled_at)
                                     <div class="text-[10px] text-slate-500 mt-1">
                                         📅 {{ $mod->zoom_scheduled_at->format('d/m/Y') }} ore {{ $mod->zoom_scheduled_at->format('H:i') }}
                                     </div>

@@ -18,6 +18,7 @@ class CourseModule extends Model
         'video_url',
         'zoom_meeting_id',
         'zoom_occurrence_id',
+        'zoom_occurrences_json',
         'zoom_passcode',
         'zoom_scheduled_at',
         'zoom_scheduled_end_at',
@@ -35,6 +36,7 @@ class CourseModule extends Model
             'is_published' => 'boolean',
             'zoom_scheduled_at' => 'datetime',
             'zoom_scheduled_end_at' => 'datetime',
+            'zoom_occurrences_json' => 'array',
         ];
     }
 
@@ -127,9 +129,80 @@ class CourseModule extends Model
         return null;
     }
 
+    public function getOccurrencesListAttribute(): array
+    {
+        $raw = $this->zoom_occurrences_json;
+        if (empty($raw) || !is_array($raw)) {
+            return [];
+        }
+
+        $now = now();
+        $list = [];
+        foreach ($raw as $idx => $occ) {
+            $start = !empty($occ['start_time']) ? \Carbon\Carbon::parse($occ['start_time']) : null;
+            $durationMin = (int) ($occ['duration_minutes'] ?? $occ['duration'] ?? 120);
+            $end = $start ? $start->copy()->addMinutes($durationMin) : null;
+
+            $status = 'upcoming';
+            if ($start && $end) {
+                $early = $start->copy()->subMinutes(15);
+                $late = $end->copy()->addMinutes(30);
+                if ($now->between($early, $late)) {
+                    $status = 'live';
+                } elseif ($now->gt($late)) {
+                    $status = 'ended';
+                }
+            }
+
+            $list[] = [
+                'index' => $idx + 1,
+                'occurrence_id' => $occ['occurrence_id'] ?? null,
+                'start_time' => $start,
+                'end_time' => $end,
+                'duration_minutes' => $durationMin,
+                'status' => $status,
+                'formatted_date' => $start ? $start->format('d/m/Y') : 'Data da definire',
+                'formatted_time' => ($start && $end) ? ($start->format('H:i') . ' - ' . $end->format('H:i')) : '',
+                'day_name' => $start ? ucfirst($start->translatedFormat('l')) : '',
+            ];
+        }
+
+        return $list;
+    }
+
+    public function getNextUpcomingOccurrenceAttribute(): ?array
+    {
+        $list = $this->occurrences_list;
+        foreach ($list as $occ) {
+            if ($occ['status'] === 'live' || $occ['status'] === 'upcoming') {
+                return $occ;
+            }
+        }
+        return !empty($list) ? end($list) : null;
+    }
+
     public function getScheduleStatusAttribute(): string
     {
-        if (!$this->is_zoom || !$this->zoom_scheduled_at) {
+        if (!$this->is_zoom) {
+            return 'anytime';
+        }
+
+        $occurrences = $this->occurrences_list;
+        if (!empty($occurrences)) {
+            foreach ($occurrences as $occ) {
+                if ($occ['status'] === 'live') {
+                    return 'live';
+                }
+            }
+            foreach ($occurrences as $occ) {
+                if ($occ['status'] === 'upcoming') {
+                    return 'upcoming';
+                }
+            }
+            return 'ended';
+        }
+
+        if (!$this->zoom_scheduled_at) {
             return 'anytime';
         }
 

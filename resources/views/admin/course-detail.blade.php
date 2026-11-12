@@ -379,10 +379,27 @@
                                     @if($mod->zoom_passcode)
                                         <span>• <strong>Passcode:</strong> {{ $mod->zoom_passcode }}</span>
                                     @endif
-                                    @if($mod->zoom_scheduled_at)
+                                    @if(!empty($mod->occurrences_list))
+                                        <span class="text-sky-900 font-bold">• 📅 {{ count($mod->occurrences_list) }} Ripetizioni Sincronizzate (Totale {{ $mod->formatted_duration }})</span>
+                                    @elseif($mod->zoom_scheduled_at)
                                         <span>• <strong>Data/Ora:</strong> {{ $mod->zoom_scheduled_at->format('d/m/Y H:i') }}</span>
                                     @endif
                                 </div>
+                                @if(!empty($mod->occurrences_list))
+                                    <details class="text-[11px] text-slate-600 bg-slate-50 border border-slate-200 rounded-lg p-2 mt-1">
+                                        <summary class="cursor-pointer font-bold text-sky-700 hover:text-sky-900 select-none">
+                                            Visualizza Calendario Ripetizioni ({{ count($mod->occurrences_list) }} sessioni programmate) ▼
+                                        </summary>
+                                        <div class="mt-2 space-y-1 max-h-36 overflow-y-auto pl-2 border-l-2 border-sky-400">
+                                            @foreach($mod->occurrences_list as $occ)
+                                                <div class="flex items-center justify-between text-[10px] pr-2">
+                                                    <span><strong>#{{ $occ['index'] }}</strong>: {{ $occ['day_name'] }} {{ $occ['formatted_date'] }} ({{ $occ['formatted_time'] }})</span>
+                                                    <span class="font-mono text-slate-400">{{ $occ['status'] }}</span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </details>
+                                @endif
                             @else
                                 <div class="text-[11px] text-slate-400 font-mono truncate max-w-2xl">
                                     Sorgente ({{ strtoupper($mod->video_source_type) }}): {{ $mod->video_url }}

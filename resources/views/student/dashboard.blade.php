@@ -210,6 +210,8 @@
                                                 $done = $mp ? $mp->is_completed : false;
                                                 $schedStatus = $mod->schedule_status;
                                                 $isLocked = $mod->is_locked_by_schedule && !auth()->user()->isAdmin();
+                                                $occCount = count($mod->occurrences_list);
+                                                $nextOcc = $mod->next_upcoming_occurrence;
                                             @endphp
                                             <div class="rounded-xl p-3.5 border transition flex flex-col justify-between {{ $isLocked ? 'bg-slate-50/70 border-slate-200 opacity-90' : ($schedStatus === 'live' ? 'bg-sky-50/70 border-sky-300 ring-2 ring-sky-400/40' : 'bg-white border-slate-200 hover:border-sky-300 shadow-2xs') }}">
                                                 <div>
@@ -224,7 +226,7 @@
                                                             </span>
                                                         @elseif($isLocked)
                                                             <span class="text-amber-700 font-semibold">
-                                                                ⏳ Inizio: {{ $mod->zoom_scheduled_at ? $mod->zoom_scheduled_at->format('d/m H:i') : 'Data definita' }}
+                                                                ⏳ Inizio: {{ $nextOcc ? ($nextOcc['formatted_date'] . ' ' . explode(' - ', $nextOcc['formatted_time'])[0]) : ($mod->zoom_scheduled_at ? $mod->zoom_scheduled_at->format('d/m H:i') : 'Data definita') }}
                                                             </span>
                                                         @elseif($done)
                                                             <span class="text-emerald-700 font-bold">✓ Presenza Registrata</span>
@@ -238,7 +240,16 @@
                                                     </h4>
 
                                                     <div class="text-[11px] text-slate-500 mt-1 space-y-0.5">
-                                                        @if($mod->zoom_scheduled_at)
+                                                        @if($occCount > 0)
+                                                            <div class="text-sky-800 font-semibold">
+                                                                📅 <strong>{{ $occCount }} sessioni programmate</strong> ({{ $mod->formatted_duration }})
+                                                            </div>
+                                                            @if($nextOcc)
+                                                                <div class="text-slate-700">
+                                                                    Prossima: <strong>{{ $nextOcc['day_name'] }} {{ $nextOcc['formatted_date'] }}</strong> ore <strong>{{ $nextOcc['formatted_time'] }}</strong>
+                                                                </div>
+                                                            @endif
+                                                        @elseif($mod->zoom_scheduled_at)
                                                             <div class="text-slate-700">
                                                                 📅 <strong>{{ $mod->zoom_scheduled_at->format('d/m/Y') }}</strong> ore <strong>{{ $mod->zoom_scheduled_at->format('H:i') }}</strong>
                                                                 @if($mod->zoom_scheduled_end_at)
@@ -259,7 +270,7 @@
                                                         </span>
                                                         <a href="{{ route('student.courses.module', [$course, $mod]) }}"
                                                            class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold transition">
-                                                            Dettagli
+                                                            Calendario & Dettagli
                                                         </a>
                                                     @else
                                                         <div class="text-[10px] text-slate-500 font-mono">

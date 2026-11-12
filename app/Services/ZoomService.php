@@ -474,6 +474,10 @@ class ZoomService
     /**
      * Automatically imports or synchronizes a Zoom meeting (and its recurring occurrences)
      * into the course modules without manual intervention.
+     *
+     * Opzione 1: Per riunioni ricorrenti (stesso link Zoom ripetuto su più date),
+     * viene creato/mantenuto UN SOLO Modulo Aula Virtuale Zoom con il totale delle ore
+     * e l'elenco/calendario interattivo delle singole ripetizioni memorizzato in zoom_occurrences_json.
      */
     public static function syncCourseFromZoomMeeting(Course $course, string $meetingId): array
     {
@@ -493,77 +497,122 @@ class ZoomService
             ];
         }
 
-        $topic = $details['topic'] ?? "Lezione Live Zoom {$cleanMeetingId}";
+        $topic = trim((string) ($details['topic'] ?? "Lezione Live Zoom {$cleanMeetingId}"));
         $passcode = $details['password'] ?? null;
         $joinUrl = $details['join_url'] ?? "https://zoom.us/j/{$cleanMeetingId}";
         $occurrences = $details['occurrences'] ?? [];
 
-        $syncedCount = 0;
+        $moduleTitle = "Aula Virtuale Zoom — " . $topic;
 
         if (!empty($occurrences) && is_array($occurrences)) {
-            // Recurring Meeting: multiple dates sharing the same meeting ID
-            $maxOrder = (int) $course->modules()->max('sort_order') ?: 0;
+            // Sort occurrences chronologically
+            usort($occurrences, function ($a, $b) {
+                return strcmp($a['start_time'] ?? '', $b['start_time'] ?? '');
+            });
 
-            foreach ($occurrences as $idx => $occ) {
-                $occId = (string) ($occ['occurrence_id'] ?? '');
-                $start = !empty($occ['start_time']) ? \Carbon\Carbon::parse($occ['start_time']) : null;
-                $durationSec = max(1800, ((int) ($occ['duration'] ?? 60)) * 60);
-                $end = $start ? $start->copy()->addSeconds($durationSec) : null;
+            $totalDurationSec = 0;
+            $occurrencesData = [];
+            $firstStart = null;
+            $lastEnd = null;
+            $nextUpcomingStart = null;
 
-                // Match existing module by occurrence_id or matching meeting_id + start date
-                $module = null;
-                if (!empty($occId)) {
-                    $module = $course->modules()
-                        ->where('video_source_type', 'zoom')
-                        ->where('zoom_occurrence_id', $occId)
-                        ->first();
+            foreach ($occurrences as $occ) {
+                $occStart = !empty($occ['start_time']) ? \Carbon\Carbon::parse($occ['start_time']) : null;
+                $durationMin = max(30, (int) ($occ['duration'] ?? 60));
+                $durSec = $durationMin * 60;
+                $occEnd = $occStart ? $occStart->copy()->addMinutes($durationMin) : null;
+                $totalDurationSec += $durSec;
+
+                if ($occStart) {
+                    if (!$firstStart || $occStart->lt($firstStart)) {
+                        $firstStart = $occStart;
+                    }
+                    if ($occEnd && (!$lastEnd || $occEnd->gt($lastEnd))) {
+                        $lastEnd = $occEnd;
+                    }
+                    if ($occEnd->isFuture() && (!$nextUpcomingStart || $occStart->lt($nextUpcomingStart))) {
+                        $nextUpcomingStart = $occStart;
+                    }
                 }
 
-                if (!$module && $start) {
-                    $module = $course->modules()
-                        ->where('video_source_type', 'zoom')
-                        ->where('zoom_meeting_id', $cleanMeetingId)
-                        ->whereDate('zoom_scheduled_at', $start->toDateString())
-                        ->first();
-                }
-
-                $title = sprintf(
-                    '%s — Lezione %d (%s)',
-                    $topic,
-                    $idx + 1,
-                    $start ? $start->format('d/m/Y H:i') : 'Data da definire'
-                );
-
-                if ($module) {
-                    $module->update([
-                        'title' => $module->title ?: $title,
-                        'zoom_occurrence_id' => $occId ?: $module->zoom_occurrence_id,
-                        'zoom_passcode' => $passcode ?: $module->zoom_passcode,
-                        'zoom_scheduled_at' => $start ?: $module->zoom_scheduled_at,
-                        'zoom_scheduled_end_at' => $end ?: $module->zoom_scheduled_end_at,
-                        'zoom_join_url' => $joinUrl ?: $module->zoom_join_url,
-                        'duration_seconds' => $durationSec,
-                        'is_published' => true,
-                    ]);
-                } else {
-                    $maxOrder++;
-                    $course->modules()->create([
-                        'course_id' => $course->id,
-                        'sort_order' => $maxOrder,
-                        'title' => $title,
-                        'video_source_type' => 'zoom',
-                        'zoom_meeting_id' => $cleanMeetingId,
-                        'zoom_occurrence_id' => $occId,
-                        'zoom_passcode' => $passcode,
-                        'zoom_scheduled_at' => $start,
-                        'zoom_scheduled_end_at' => $end,
-                        'zoom_join_url' => $joinUrl,
-                        'duration_seconds' => $durationSec,
-                        'is_published' => true,
-                    ]);
-                }
-                $syncedCount++;
+                $occurrencesData[] = [
+                    'occurrence_id' => (string) ($occ['occurrence_id'] ?? ''),
+                    'start_time' => $occ['start_time'] ?? null,
+                    'duration_minutes' => $durationMin,
+                    'status' => $occ['status'] ?? null,
+                ];
             }
+
+            if ($totalDurationSec <= 0) {
+                $totalDurationSec = max(1800, ((int) ($details['duration'] ?? 60)) * 60);
+            }
+
+            // Opzione 1: EXACTLY 1 unified Zoom classroom module per course meeting!
+            $existingModules = $course->modules()
+                ->where('video_source_type', 'zoom')
+                ->where('zoom_meeting_id', $cleanMeetingId)
+                ->orderBy('id')
+                ->get();
+
+            $module = $existingModules->first();
+
+            // Safely consolidate duplicates if any were previously created
+            if ($existingModules->count() > 1) {
+                $duplicates = $existingModules->slice(1);
+                foreach ($duplicates as $dup) {
+                    \App\Models\WatchLog::where('course_module_id', $dup->id)->update(['course_module_id' => $module->id]);
+                    \App\Models\ZoomRegistrant::where('course_module_id', $dup->id)->update(['course_module_id' => $module->id]);
+                    $dupProgresses = \App\Models\ModuleProgress::where('course_module_id', $dup->id)->get();
+                    foreach ($dupProgresses as $dp) {
+                        $mainProg = \App\Models\ModuleProgress::where('course_module_id', $module->id)->where('user_id', $dp->user_id)->first();
+                        if ($mainProg) {
+                            $mainProg->watched_seconds = min($totalDurationSec, $mainProg->watched_seconds + $dp->watched_seconds);
+                            $mainProg->save();
+                            $dp->delete();
+                        } else {
+                            $dp->update(['course_module_id' => $module->id]);
+                        }
+                    }
+                    $dup->delete();
+                }
+            }
+
+            $schedStart = $nextUpcomingStart ?: ($firstStart ?: null);
+            $schedEnd = $lastEnd ?: ($schedStart ? $schedStart->copy()->addSeconds($totalDurationSec) : null);
+
+            if ($module) {
+                $module->update([
+                    'title' => $moduleTitle,
+                    'zoom_passcode' => $passcode ?: $module->zoom_passcode,
+                    'zoom_scheduled_at' => $schedStart ?: $module->zoom_scheduled_at,
+                    'zoom_scheduled_end_at' => $schedEnd ?: $module->zoom_scheduled_end_at,
+                    'zoom_join_url' => $joinUrl ?: $module->zoom_join_url,
+                    'zoom_occurrences_json' => $occurrencesData,
+                    'duration_seconds' => $totalDurationSec,
+                    'is_published' => true,
+                ]);
+            } else {
+                $maxOrder = ((int) $course->modules()->max('sort_order') ?: 0) + 1;
+                $module = $course->modules()->create([
+                    'course_id' => $course->id,
+                    'sort_order' => $maxOrder,
+                    'title' => $moduleTitle,
+                    'video_source_type' => 'zoom',
+                    'zoom_meeting_id' => $cleanMeetingId,
+                    'zoom_passcode' => $passcode,
+                    'zoom_scheduled_at' => $schedStart,
+                    'zoom_scheduled_end_at' => $schedEnd,
+                    'zoom_join_url' => $joinUrl,
+                    'zoom_occurrences_json' => $occurrencesData,
+                    'duration_seconds' => $totalDurationSec,
+                    'is_published' => true,
+                ]);
+            }
+
+            $countOcc = count($occurrencesData);
+            $totalHours = round($totalDurationSec / 3600, 1);
+            $syncedMsg = "Configurata con successo l'Aula Virtuale Zoom unificata per \"{$topic}\" con {$countOcc} ripetizioni programmate (Totale {$totalHours} ore).";
+            $syncedCount = 1;
         } else {
             // Single Meeting
             $start = !empty($details['start_time']) ? \Carbon\Carbon::parse($details['start_time']) : null;
@@ -577,29 +626,35 @@ class ZoomService
 
             if ($module) {
                 $module->update([
+                    'title' => $moduleTitle,
                     'zoom_passcode' => $passcode ?: $module->zoom_passcode,
                     'zoom_scheduled_at' => $start ?: $module->zoom_scheduled_at,
                     'zoom_scheduled_end_at' => $end ?: $module->zoom_scheduled_end_at,
                     'zoom_join_url' => $joinUrl ?: $module->zoom_join_url,
+                    'zoom_occurrences_json' => null,
                     'duration_seconds' => $durationSec,
                     'is_published' => true,
                 ]);
             } else {
                 $maxOrder = ((int) $course->modules()->max('sort_order') ?: 0) + 1;
-                $course->modules()->create([
+                $module = $course->modules()->create([
                     'course_id' => $course->id,
                     'sort_order' => $maxOrder,
-                    'title' => $topic,
+                    'title' => $moduleTitle,
                     'video_source_type' => 'zoom',
                     'zoom_meeting_id' => $cleanMeetingId,
                     'zoom_passcode' => $passcode,
                     'zoom_scheduled_at' => $start,
                     'zoom_scheduled_end_at' => $end,
                     'zoom_join_url' => $joinUrl,
+                    'zoom_occurrences_json' => null,
                     'duration_seconds' => $durationSec,
                     'is_published' => true,
                 ]);
             }
+
+            $durationHours = round($durationSec / 3600, 1);
+            $syncedMsg = "Sincronizzata con successo la sessione Zoom per \"{$topic}\" ({$durationHours} ore).";
             $syncedCount = 1;
         }
 
@@ -607,7 +662,7 @@ class ZoomService
 
         return [
             'success' => true,
-            'message' => "Importate / aggiornate con successo {$syncedCount} sessioni Zoom per \"{$topic}\" (ID {$cleanMeetingId}).",
+            'message' => $syncedMsg,
             'synced_count' => $syncedCount,
         ];
     }
