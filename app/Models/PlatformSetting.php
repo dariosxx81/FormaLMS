@@ -229,7 +229,31 @@ class PlatformSetting extends Model
 
     public static function renderMailText(string $template, array $replacements): string
     {
-        foreach ($replacements as $k => $v) {
+        // Aliasing: supporta sia i segnaposto inglesi ({course_title}, {full_name}) sia italiani ({corso}, {nome_completo})
+        $aliases = [
+            'course_title' => $replacements['course_title'] ?? $replacements['corso'] ?? null,
+            'corso' => $replacements['course_title'] ?? $replacements['corso'] ?? null,
+            'course_code' => $replacements['course_code'] ?? $replacements['codice_corso'] ?? null,
+            'codice_corso' => $replacements['course_code'] ?? $replacements['codice_corso'] ?? null,
+            'full_name' => $replacements['full_name'] ?? $replacements['nome_completo'] ?? null,
+            'nome_completo' => $replacements['full_name'] ?? $replacements['nome_completo'] ?? null,
+            'first_name' => $replacements['first_name'] ?? $replacements['nome'] ?? null,
+            'nome' => $replacements['first_name'] ?? $replacements['nome'] ?? null,
+            'last_name' => $replacements['last_name'] ?? $replacements['cognome'] ?? null,
+            'cognome' => $replacements['last_name'] ?? $replacements['cognome'] ?? null,
+            'platform_name' => $replacements['platform_name'] ?? $replacements['piattaforma'] ?? null,
+            'piattaforma' => $replacements['platform_name'] ?? $replacements['piattaforma'] ?? null,
+            'provider_name' => $replacements['provider_name'] ?? $replacements['ente'] ?? null,
+            'ente' => $replacements['provider_name'] ?? $replacements['ente'] ?? null,
+            'module_title' => $replacements['module_title'] ?? $replacements['modulo'] ?? null,
+            'modulo' => $replacements['module_title'] ?? $replacements['modulo'] ?? null,
+            'certificate_number' => $replacements['certificate_number'] ?? $replacements['certificato_numero'] ?? null,
+            'certificato_numero' => $replacements['certificate_number'] ?? $replacements['certificato_numero'] ?? null,
+        ];
+
+        $merged = array_merge($replacements, array_filter($aliases, fn($v) => $v !== null));
+
+        foreach ($merged as $k => $v) {
             $template = str_ireplace('{' . $k . '}', (string) $v, $template);
         }
         return $template;

@@ -45,9 +45,14 @@ class AccountApprovedMail extends Mailable
             'nome' => $this->user->first_name,
             'cognome' => $this->user->last_name,
             'nome_completo' => $this->user->full_name,
+            'first_name' => $this->user->first_name,
+            'last_name' => $this->user->last_name,
+            'full_name' => $this->user->full_name,
             'email' => $this->user->email,
             'piattaforma' => $platformName,
+            'platform_name' => $platformName,
             'ente' => $this->settings['provider_name'] ?? 'Formacamera',
+            'provider_name' => $this->settings['provider_name'] ?? 'Formacamera',
         ]) : null;
 
         return new Content(

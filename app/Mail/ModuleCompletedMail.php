@@ -55,11 +55,22 @@ class ModuleCompletedMail extends Mailable
             'nome' => $this->user->first_name,
             'cognome' => $this->user->last_name,
             'nome_completo' => $this->user->full_name,
+            'first_name' => $this->user->first_name,
+            'last_name' => $this->user->last_name,
+            'full_name' => $this->user->full_name,
             'email' => $this->user->email,
             'piattaforma' => $platformName,
+            'platform_name' => $platformName,
             'ente' => $this->settings['provider_name'] ?? 'Formacamera',
+            'provider_name' => $this->settings['provider_name'] ?? 'Formacamera',
             'corso' => $this->course->title,
+            'course_title' => $this->course->title,
+            'codice_corso' => $this->course->code,
+            'course_code' => $this->course->code,
             'modulo' => $this->module->title,
+            'module_title' => $this->module->title,
+            'ordine_modulo' => $this->module->sort_order,
+            'module_order' => $this->module->sort_order,
         ]) : null;
 
         return new Content(

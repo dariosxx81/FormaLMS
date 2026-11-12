@@ -49,12 +49,20 @@ class WelcomeRegistrationMail extends Mailable
             'nome' => $this->user->first_name,
             'cognome' => $this->user->last_name,
             'nome_completo' => $this->user->full_name,
+            'first_name' => $this->user->first_name,
+            'last_name' => $this->user->last_name,
+            'full_name' => $this->user->full_name,
             'email' => $this->user->email,
             'telefono' => $this->user->phone ?? '',
+            'phone' => $this->user->phone ?? '',
             'cf' => $this->user->fiscal_code,
+            'fiscal_code' => $this->user->fiscal_code,
             'piattaforma' => $platformName,
+            'platform_name' => $platformName,
             'ente' => $this->settings['provider_name'] ?? 'Formacamera',
+            'provider_name' => $this->settings['provider_name'] ?? 'Formacamera',
             'corso' => $this->course?->title ?? '',
+            'course_title' => $this->course?->title ?? '',
         ]) : null;
 
         return new Content(
