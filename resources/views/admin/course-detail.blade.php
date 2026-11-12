@@ -948,23 +948,32 @@
                     </div>
                 </div>
 
-                <div x-show="sourceType !== 'zoom'" class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="font-extrabold text-amber-950 text-xs flex items-center gap-1.5">
-                            <span>📅 Periodo di Accesso & Disponibilità Programmata</span>
+                <div x-show="sourceType !== 'zoom'" class="p-4 rounded-xl bg-slate-50 border border-slate-200/90 space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-1.5 text-xs font-extrabold text-slate-800">
+                            <span>📅 Disponibilità Programmata Modulo</span>
+                        </div>
+                        <span class="text-[10px] text-slate-500 font-semibold bg-white border border-slate-200 px-2 py-0.5 rounded-md">
+                            Opzionale (vuoto = 24/7)
                         </span>
-                        <span class="text-[10px] text-amber-700 font-medium">Opzionale (se vuoto = accessibile 24/7)</span>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         <div>
-                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Accessibile A Partire Dal (Data & Ora inizio)</label>
-                            <input type="datetime-local" name="available_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs">
-                            <p class="text-[10px] text-slate-500 mt-0.5">Prima di questo momento il modulo sarà bloccato.</p>
+                            <label class="block font-bold text-slate-700 text-xs mb-1">
+                                Data e Ora Inizio Sblocco
+                            </label>
+                            <input type="datetime-local" name="available_at"
+                                   class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                            <span class="block text-[10px] text-slate-400 mt-1 leading-tight">Accesso bloccato prima di questo orario.</span>
                         </div>
                         <div>
-                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Disponibile Fino Al (Data & Ora fine - opzionale)</label>
-                            <input type="datetime-local" name="available_until_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs">
-                            <p class="text-[10px] text-slate-500 mt-0.5">Scadenza oltre la quale non sarà più accessibile.</p>
+                            <label class="block font-bold text-slate-700 text-xs mb-1">
+                                Data e Ora Fine Scadenza (opz.)
+                            </label>
+                            <input type="datetime-local" name="available_until_at"
+                                   class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                            <span class="block text-[10px] text-slate-400 mt-1 leading-tight">Termine ultimo oltre cui non è più avviabile.</span>
                         </div>
                     </div>
                 </div>
@@ -1069,23 +1078,32 @@
                     </div>
                 </div>
 
-                <div x-show="editMod.video_source_type !== 'zoom'" class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="font-extrabold text-amber-950 text-xs flex items-center gap-1.5">
-                            <span>📅 Periodo di Accesso & Disponibilità Programmata</span>
+                <div x-show="editMod.video_source_type !== 'zoom'" class="p-4 rounded-xl bg-slate-50 border border-slate-200/90 space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-1.5 text-xs font-extrabold text-slate-800">
+                            <span>📅 Disponibilità Programmata Modulo</span>
+                        </div>
+                        <span class="text-[10px] text-slate-500 font-semibold bg-white border border-slate-200 px-2 py-0.5 rounded-md">
+                            Opzionale (vuoto = 24/7)
                         </span>
-                        <span class="text-[10px] text-amber-700 font-medium">Opzionale (se vuoto = accessibile 24/7)</span>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         <div>
-                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Accessibile A Partire Dal (Data & Ora inizio)</label>
-                            <input type="datetime-local" name="available_at" x-model="editMod.available_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs">
-                            <p class="text-[10px] text-slate-500 mt-0.5">Prima di questo momento il modulo sarà bloccato.</p>
+                            <label class="block font-bold text-slate-700 text-xs mb-1">
+                                Data e Ora Inizio Sblocco
+                            </label>
+                            <input type="datetime-local" name="available_at" x-model="editMod.available_at"
+                                   class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                            <span class="block text-[10px] text-slate-400 mt-1 leading-tight">Accesso bloccato prima di questo orario.</span>
                         </div>
                         <div>
-                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Disponibile Fino Al (Data & Ora fine - opzionale)</label>
-                            <input type="datetime-local" name="available_until_at" x-model="editMod.available_until_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs">
-                            <p class="text-[10px] text-slate-500 mt-0.5">Scadenza oltre la quale non sarà più accessibile.</p>
+                            <label class="block font-bold text-slate-700 text-xs mb-1">
+                                Data e Ora Fine Scadenza (opz.)
+                            </label>
+                            <input type="datetime-local" name="available_until_at" x-model="editMod.available_until_at"
+                                   class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+                            <span class="block text-[10px] text-slate-400 mt-1 leading-tight">Termine ultimo oltre cui non è più avviabile.</span>
                         </div>
                     </div>
                 </div>
