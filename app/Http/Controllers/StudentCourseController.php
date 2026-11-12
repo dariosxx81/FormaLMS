@@ -210,15 +210,24 @@ class StudentCourseController extends Controller
                 ->withErrors(['course' => 'Questo corso non ha ancora moduli pubblicati.']);
         }
 
+        $asyncModules = $modules->where('video_source_type', '!=', 'zoom')->values();
+        $zoomModules = $modules->where('video_source_type', 'zoom')->sortBy('zoom_scheduled_at')->values();
+
         $progressMap = ModuleProgress::where('user_id', $user->id)
             ->where('course_id', $course->id)
             ->get()
             ->keyBy('course_module_id');
 
         if (!$module) {
-            $activeModule = $modules->first(function ($m) use ($progressMap) {
-                return !($progressMap[$m->id]->is_completed ?? false);
-            }) ?? $modules->first();
+            // First check if there's an ongoing live Zoom session right now
+            $liveZoom = $zoomModules->first(fn($zm) => $zm->is_live_now);
+            if ($liveZoom) {
+                $activeModule = $liveZoom;
+            } else {
+                $activeModule = $asyncModules->first(function ($m) use ($progressMap) {
+                    return !($progressMap[$m->id]->is_completed ?? false);
+                }) ?? $modules->first();
+            }
         } else {
             abort_unless($module->course_id === $course->id, 404);
             if (!$module->is_published && !$user->isAdmin()) {
@@ -271,6 +280,8 @@ class StudentCourseController extends Controller
             'course',
             'enrollment',
             'modules',
+            'asyncModules',
+            'zoomModules',
             'activeModule',
             'currentProgress',
             'progressMap',
@@ -289,6 +300,13 @@ class StudentCourseController extends Controller
                 'ok' => false,
                 'error' => 'Corso, modulo o account disattivato dalla segreteria.',
             ], 403);
+        }
+
+        if ($module->is_zoom && $module->is_locked_by_schedule && !$user->isAdmin()) {
+            return response()->json([
+                'ok' => false,
+                'error' => 'La sessione live Zoom non è ancora iniziata.',
+            ], 422);
         }
 
         $data = $request->validate([
@@ -461,6 +479,14 @@ class StudentCourseController extends Controller
             ], 403);
         }
 
+        if ($module->is_locked_by_schedule && !$user->isAdmin()) {
+            $availableAt = $module->zoom_scheduled_at ? $module->zoom_scheduled_at->copy()->subMinutes(15)->format('d/m/Y H:i') : '';
+            return response()->json([
+                'ok' => false,
+                'error' => "La sessione Zoom non è ancora accessibile. L'ingresso sarà abilitato il {$availableAt} (15 minuti prima dell'inizio programmato).",
+            ], 422);
+        }
+
         $result = \App\Services\ZoomService::getOrRegisterParticipant($module, $user);
 
         ActivityLog::record(
@@ -529,9 +555,19 @@ class StudentCourseController extends Controller
         $enrollment->load(['user', 'course']);
         $enrollment->recalculateProgress();
 
+        if (!$enrollment->course->allow_student_certificate_download && !$user->isAdmin()) {
+            abort(403, 'Il rilascio dell\'attestato è gestito direttamente dalla Segreteria Didattica.');
+        }
+
         if (!$enrollment->is_eligible_for_certificate && !$user->isAdmin()) {
             return back()->withErrors([
                 'certificate' => 'L\'attestato è scaricabile solo al raggiungimento di almeno l\'80% delle ore previste dal corso.',
+            ]);
+        }
+
+        if (!$enrollment->course->allow_student_certificate_download && !$user->isAdmin()) {
+            return back()->withErrors([
+                'certificate' => 'Il rilascio dell\'attestato ufficiale per questo corso è gestito direttamente dalla Segreteria Didattica.',
             ]);
         }
 
@@ -572,6 +608,10 @@ class StudentCourseController extends Controller
 
         $enrollment->load(['user', 'course']);
         $enrollment->recalculateProgress();
+
+        if (!$enrollment->course->allow_student_certificate_download && !$user->isAdmin()) {
+            abort(403, 'Il rilascio dell\'attestato è gestito direttamente dalla Segreteria Didattica.');
+        }
 
         $settings = PlatformSetting::getAllSettings();
 

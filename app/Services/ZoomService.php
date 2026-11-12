@@ -410,4 +410,205 @@ class ZoomService
             ];
         }
     }
+
+    /**
+     * Lists upcoming and recurring meetings from Zoom Cloud API for the configured account.
+     */
+    public static function listUpcomingMeetings(): array
+    {
+        $token = self::getAccessToken();
+        if (!$token) {
+            return [];
+        }
+
+        try {
+            $response = Http::withToken($token)
+                ->get('https://api.zoom.us/v2/users/me/meetings', [
+                    'type' => 'upcoming',
+                    'page_size' => 100,
+                ]);
+
+            if ($response->successful()) {
+                return $response->json('meetings') ?: [];
+            }
+
+            Log::warning('Zoom list meetings failed: ' . $response->body());
+        } catch (\Throwable $e) {
+            Log::error('Zoom list meetings exception: ' . $e->getMessage());
+        }
+
+        return [];
+    }
+
+    /**
+     * Retrieves full meeting details from Zoom API (including occurrences for recurring meetings).
+     */
+    public static function getMeetingDetails(string $meetingId): ?array
+    {
+        $token = self::getAccessToken();
+        if (!$token) {
+            return null;
+        }
+
+        $cleanMeetingId = preg_replace('/[^0-9]/', '', $meetingId);
+        if (empty($cleanMeetingId)) {
+            return null;
+        }
+
+        try {
+            $response = Http::withToken($token)
+                ->get("https://api.zoom.us/v2/meetings/{$cleanMeetingId}");
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+
+            Log::warning("Zoom get meeting {$cleanMeetingId} failed: " . $response->body());
+        } catch (\Throwable $e) {
+            Log::error("Zoom get meeting {$cleanMeetingId} exception: " . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Automatically imports or synchronizes a Zoom meeting (and its recurring occurrences)
+     * into the course modules without manual intervention.
+     */
+    public static function syncCourseFromZoomMeeting(Course $course, string $meetingId): array
+    {
+        $cleanMeetingId = preg_replace('/[^0-9]/', '', $meetingId);
+        if (empty($cleanMeetingId)) {
+            return [
+                'success' => false,
+                'message' => 'ID Meeting Zoom non valido.',
+            ];
+        }
+
+        $details = self::getMeetingDetails($cleanMeetingId);
+        if (!$details) {
+            return [
+                'success' => false,
+                'message' => "Impossibile recuperare i dettagli per il Meeting ID {$cleanMeetingId} da Zoom Cloud API. Verifica le credenziali Server-to-Server nelle impostazioni.",
+            ];
+        }
+
+        $topic = $details['topic'] ?? "Lezione Live Zoom {$cleanMeetingId}";
+        $passcode = $details['password'] ?? null;
+        $joinUrl = $details['join_url'] ?? "https://zoom.us/j/{$cleanMeetingId}";
+        $occurrences = $details['occurrences'] ?? [];
+
+        $syncedCount = 0;
+
+        if (!empty($occurrences) && is_array($occurrences)) {
+            // Recurring Meeting: multiple dates sharing the same meeting ID
+            $maxOrder = (int) $course->modules()->max('sort_order') ?: 0;
+
+            foreach ($occurrences as $idx => $occ) {
+                $occId = (string) ($occ['occurrence_id'] ?? '');
+                $start = !empty($occ['start_time']) ? \Carbon\Carbon::parse($occ['start_time']) : null;
+                $durationSec = max(1800, ((int) ($occ['duration'] ?? 60)) * 60);
+                $end = $start ? $start->copy()->addSeconds($durationSec) : null;
+
+                // Match existing module by occurrence_id or matching meeting_id + start date
+                $module = null;
+                if (!empty($occId)) {
+                    $module = $course->modules()
+                        ->where('video_source_type', 'zoom')
+                        ->where('zoom_occurrence_id', $occId)
+                        ->first();
+                }
+
+                if (!$module && $start) {
+                    $module = $course->modules()
+                        ->where('video_source_type', 'zoom')
+                        ->where('zoom_meeting_id', $cleanMeetingId)
+                        ->whereDate('zoom_scheduled_at', $start->toDateString())
+                        ->first();
+                }
+
+                $title = sprintf(
+                    '%s — Lezione %d (%s)',
+                    $topic,
+                    $idx + 1,
+                    $start ? $start->format('d/m/Y H:i') : 'Data da definire'
+                );
+
+                if ($module) {
+                    $module->update([
+                        'title' => $module->title ?: $title,
+                        'zoom_occurrence_id' => $occId ?: $module->zoom_occurrence_id,
+                        'zoom_passcode' => $passcode ?: $module->zoom_passcode,
+                        'zoom_scheduled_at' => $start ?: $module->zoom_scheduled_at,
+                        'zoom_scheduled_end_at' => $end ?: $module->zoom_scheduled_end_at,
+                        'zoom_join_url' => $joinUrl ?: $module->zoom_join_url,
+                        'duration_seconds' => $durationSec,
+                        'is_published' => true,
+                    ]);
+                } else {
+                    $maxOrder++;
+                    $course->modules()->create([
+                        'course_id' => $course->id,
+                        'sort_order' => $maxOrder,
+                        'title' => $title,
+                        'video_source_type' => 'zoom',
+                        'zoom_meeting_id' => $cleanMeetingId,
+                        'zoom_occurrence_id' => $occId,
+                        'zoom_passcode' => $passcode,
+                        'zoom_scheduled_at' => $start,
+                        'zoom_scheduled_end_at' => $end,
+                        'zoom_join_url' => $joinUrl,
+                        'duration_seconds' => $durationSec,
+                        'is_published' => true,
+                    ]);
+                }
+                $syncedCount++;
+            }
+        } else {
+            // Single Meeting
+            $start = !empty($details['start_time']) ? \Carbon\Carbon::parse($details['start_time']) : null;
+            $durationSec = max(1800, ((int) ($details['duration'] ?? 60)) * 60);
+            $end = $start ? $start->copy()->addSeconds($durationSec) : null;
+
+            $module = $course->modules()
+                ->where('video_source_type', 'zoom')
+                ->where('zoom_meeting_id', $cleanMeetingId)
+                ->first();
+
+            if ($module) {
+                $module->update([
+                    'zoom_passcode' => $passcode ?: $module->zoom_passcode,
+                    'zoom_scheduled_at' => $start ?: $module->zoom_scheduled_at,
+                    'zoom_scheduled_end_at' => $end ?: $module->zoom_scheduled_end_at,
+                    'zoom_join_url' => $joinUrl ?: $module->zoom_join_url,
+                    'duration_seconds' => $durationSec,
+                    'is_published' => true,
+                ]);
+            } else {
+                $maxOrder = ((int) $course->modules()->max('sort_order') ?: 0) + 1;
+                $course->modules()->create([
+                    'course_id' => $course->id,
+                    'sort_order' => $maxOrder,
+                    'title' => $topic,
+                    'video_source_type' => 'zoom',
+                    'zoom_meeting_id' => $cleanMeetingId,
+                    'zoom_passcode' => $passcode,
+                    'zoom_scheduled_at' => $start,
+                    'zoom_scheduled_end_at' => $end,
+                    'zoom_join_url' => $joinUrl,
+                    'duration_seconds' => $durationSec,
+                    'is_published' => true,
+                ]);
+            }
+            $syncedCount = 1;
+        }
+
+        $course->autoSyncDurationsFromModules();
+
+        return [
+            'success' => true,
+            'message' => "Importate / aggiornate con successo {$syncedCount} sessioni Zoom per \"{$topic}\" (ID {$cleanMeetingId}).",
+            'synced_count' => $syncedCount,
+        ];
+    }
 }

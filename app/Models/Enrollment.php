@@ -144,7 +144,7 @@ class Enrollment extends Model
 
         $this->save();
 
-        if ($justEarnedCertificate && PlatformSetting::isMailActive('certificate')) {
+        if ($justEarnedCertificate && $course->allow_student_certificate_download && PlatformSetting::isMailActive('certificate')) {
             try {
                 $user = $this->user ?: User::find($this->user_id);
                 if ($user) {

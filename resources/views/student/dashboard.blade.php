@@ -154,17 +154,21 @@
                                 </div>
 
                                 <div class="flex flex-wrap items-center gap-2">
-                                    @if($enrollment->is_eligible_for_certificate)
+                                    @if($enrollment->is_eligible_for_certificate && $course->allow_student_certificate_download)
                                         <a href="{{ route('student.enrollments.certificate', $enrollment) }}"
                                            class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-2xs transition">
                                             <span>🏅 Scarica Attestato</span>
                                         </a>
+                                    @elseif($enrollment->is_eligible_for_certificate)
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-bold" title="Attestato in emissione dalla segreteria">
+                                            <span>✓ Idoneo (In emissione)</span>
+                                        </span>
                                     @endif
 
                                     @if($course->is_active)
                                         <a href="{{ route('student.courses.show', $course) }}"
                                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition">
-                                            <span>▶ Riprendi Lezione</span>
+                                            <span>▶ Entra nel Corso</span>
                                         </a>
                                     @else
                                         <span class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold">
@@ -175,43 +179,151 @@
                             </div>
                         </div>
 
-                        <!-- Compact Modules Strip -->
+                        <!-- Structured Modules Display: Zoom Synchronous vs Asynchronous FAD -->
                         @if($course->is_active)
-                            <div class="mt-5 pt-4 border-t border-slate-100">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
-                                    @foreach($modules as $mod)
-                                        @php
-                                            $mp = $progressByModule[$mod->id] ?? null;
-                                            $pct = $mp ? $mp->completion_percent : 0;
-                                            $done = $mp ? $mp->is_completed : false;
-                                        @endphp
-                                        <a href="{{ route('student.courses.module', [$course, $mod]) }}"
-                                           class="group rounded-xl p-3 border transition flex flex-col justify-between {{ $done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-slate-50/70 border-slate-200 hover:border-indigo-400 hover:bg-white' }}">
-                                            <div>
-                                                <div class="flex items-center justify-between gap-2 text-[10px] font-bold mb-1">
-                                                    <span class="text-slate-500">
-                                                        MOD. {{ $mod->sort_order }}
-                                                        @if($mod->is_zoom)
-                                                            <span class="text-sky-600 ml-0.5">[ZOOM]</span>
+                            @php
+                                $publishedModules = $course->modules->where('is_published', true);
+                                $zoomMods = $publishedModules->where('video_source_type', 'zoom')->sortBy('zoom_scheduled_at');
+                                $asyncMods = $publishedModules->where('video_source_type', '!=', 'zoom')->sortBy('sort_order');
+                            @endphp
+
+                            <!-- SECTION 1: Aule Virtuali Sincrone Zoom (Non Sequenziali) -->
+                            @if($zoomMods->isNotEmpty())
+                                <div class="mt-5 pt-4 border-t border-slate-100 space-y-2.5">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                                            <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wide">
+                                                🎥 Sessioni Live Sincrone Zoom (Fruizione Libera Non Sequenziale)
+                                            </h3>
+                                        </div>
+                                        <span class="text-[11px] text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-0.5 rounded-full font-bold">
+                                            Accesso Diretto Senza Propedeuticità
+                                        </span>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        @foreach($zoomMods as $mod)
+                                            @php
+                                                $mp = $progressByModule[$mod->id] ?? null;
+                                                $pct = $mp ? $mp->completion_percent : 0;
+                                                $done = $mp ? $mp->is_completed : false;
+                                                $schedStatus = $mod->schedule_status;
+                                                $isLocked = $mod->is_locked_by_schedule && !auth()->user()->isAdmin();
+                                            @endphp
+                                            <div class="rounded-xl p-3.5 border transition flex flex-col justify-between {{ $isLocked ? 'bg-slate-50/70 border-slate-200 opacity-90' : ($schedStatus === 'live' ? 'bg-sky-50/70 border-sky-300 ring-2 ring-sky-400/40' : 'bg-white border-slate-200 hover:border-sky-300 shadow-2xs') }}">
+                                                <div>
+                                                    <div class="flex items-center justify-between gap-2 text-[10px] font-bold mb-1.5">
+                                                        <span class="px-2 py-0.5 rounded bg-sky-100 text-sky-800 font-mono font-bold">
+                                                            AULA LIVE
+                                                        </span>
+                                                        @if($schedStatus === 'live')
+                                                            <span class="flex items-center gap-1 text-emerald-600 font-extrabold animate-pulse">
+                                                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                                                APERTA ORA
+                                                            </span>
+                                                        @elseif($isLocked)
+                                                            <span class="text-amber-700 font-semibold">
+                                                                ⏳ Inizio: {{ $mod->zoom_scheduled_at ? $mod->zoom_scheduled_at->format('d/m H:i') : 'Data definita' }}
+                                                            </span>
+                                                        @elseif($done)
+                                                            <span class="text-emerald-700 font-bold">✓ Presenza Registrata</span>
+                                                        @else
+                                                            <span class="text-slate-500">{{ $mod->formatted_duration }}</span>
                                                         @endif
-                                                    </span>
-                                                    @if($done)
-                                                        <span class="text-emerald-700">✓ 100%</span>
-                                                    @elseif($pct > 0)
-                                                        <span class="text-indigo-600">{{ $pct }}%</span>
+                                                    </div>
+
+                                                    <h4 class="text-xs font-extrabold text-slate-900 line-clamp-2 leading-snug">
+                                                        {{ $mod->title }}
+                                                    </h4>
+
+                                                    <div class="text-[11px] text-slate-500 mt-1 space-y-0.5">
+                                                        @if($mod->zoom_scheduled_at)
+                                                            <div class="text-slate-700">
+                                                                📅 <strong>{{ $mod->zoom_scheduled_at->format('d/m/Y') }}</strong> ore <strong>{{ $mod->zoom_scheduled_at->format('H:i') }}</strong>
+                                                                @if($mod->zoom_scheduled_end_at)
+                                                                    - {{ $mod->zoom_scheduled_end_at->format('H:i') }}
+                                                                @endif
+                                                            </div>
+                                                        @endif
+                                                        @if($mod->instructor_name)
+                                                            <div>Docente: <em>{{ $mod->instructor_name }}</em></div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+
+                                                <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                                                    @if($isLocked)
+                                                        <span class="text-[11px] text-slate-400 font-semibold italic">
+                                                            Ingresso attivo 15 min prima
+                                                        </span>
+                                                        <a href="{{ route('student.courses.module', [$course, $mod]) }}"
+                                                           class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-[11px] font-bold transition">
+                                                            Dettagli
+                                                        </a>
                                                     @else
-                                                        <span class="text-slate-400">{{ $mod->formatted_duration }}</span>
+                                                        <div class="text-[10px] text-slate-500 font-mono">
+                                                            Maturato: <strong>{{ round(($mp?->watched_seconds ?? 0) / 60) }}m / {{ round($mod->duration_seconds / 60) }}m</strong>
+                                                        </div>
+                                                        <a href="{{ route('student.courses.module', [$course, $mod]) }}"
+                                                           class="px-3 py-1.5 rounded-lg {{ $schedStatus === 'live' ? 'bg-sky-600 hover:bg-sky-500 text-white animate-pulse' : 'bg-slate-900 hover:bg-slate-800 text-white' }} text-[11px] font-bold transition shadow-2xs">
+                                                            Entra in Aula &rarr;
+                                                        </a>
                                                     @endif
                                                 </div>
-                                                <div class="text-xs font-bold text-slate-900 group-hover:text-indigo-600 line-clamp-1">{{ $mod->title }}</div>
                                             </div>
-                                            <div class="mt-2 w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                                                <div class="h-full rounded-full transition-all duration-300 {{ $done ? 'progress-success-bar' : 'progress-active-bar' }}" style="width: {{ $pct }}%"></div>
-                                            </div>
-                                        </a>
-                                    @endforeach
+                                        @endforeach
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
+
+                            <!-- SECTION 2: Moduli Formativi Asincroni FAD (Video & Dispense) -->
+                            @if($asyncMods->isNotEmpty())
+                                <div class="mt-5 pt-4 border-t border-slate-100 space-y-2.5">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                                            <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wide">
+                                                📚 Moduli Formativi On-Demand (FAD Video & Dispense)
+                                            </h3>
+                                        </div>
+                                        <span class="text-[11px] text-slate-500 font-medium">
+                                            Fruizione continua 24/7 con ripresa automatica
+                                        </span>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                                        @foreach($asyncMods as $mod)
+                                            @php
+                                                $mp = $progressByModule[$mod->id] ?? null;
+                                                $pct = $mp ? $mp->completion_percent : 0;
+                                                $done = $mp ? $mp->is_completed : false;
+                                            @endphp
+                                            <a href="{{ route('student.courses.module', [$course, $mod]) }}"
+                                               class="group rounded-xl p-3 border transition flex flex-col justify-between {{ $done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-slate-50/70 border-slate-200 hover:border-indigo-400 hover:bg-white' }}">
+                                                <div>
+                                                    <div class="flex items-center justify-between gap-2 text-[10px] font-bold mb-1">
+                                                        <span class="text-slate-500">
+                                                            MODULO {{ $mod->sort_order }}
+                                                        </span>
+                                                        @if($done)
+                                                            <span class="text-emerald-700">✓ 100%</span>
+                                                        @elseif($pct > 0)
+                                                            <span class="text-indigo-600">{{ $pct }}%</span>
+                                                        @else
+                                                            <span class="text-slate-400">{{ $mod->formatted_duration }}</span>
+                                                        @endif
+                                                    </div>
+                                                    <div class="text-xs font-bold text-slate-900 group-hover:text-indigo-600 line-clamp-1">{{ $mod->title }}</div>
+                                                </div>
+                                                <div class="mt-2 w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                                    <div class="h-full rounded-full transition-all duration-300 {{ $done ? 'progress-success-bar' : 'progress-active-bar' }}" style="width: {{ $pct }}%"></div>
+                                                </div>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                         @endif
                     </div>
                 @endforeach
@@ -257,11 +369,15 @@
                                         Scarica il Tuo Fascicolo Audit (PDF)
                                     </a>
 
-                                    @if($enrollment->is_eligible_for_certificate)
+                                    @if($enrollment->is_eligible_for_certificate && $course->allow_student_certificate_download)
                                         <a href="{{ route('student.enrollments.certificate', $enrollment) }}"
                                            class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-2xs">
                                             🏅 Scarica Attestato (Allegato 4)
                                         </a>
+                                    @elseif($enrollment->is_eligible_for_certificate)
+                                        <span class="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold" title="L'attestato ufficiale è gestito ed emesso dalla segreteria didattica">
+                                            ✓ Requisito Raggiunto (In emissione)
+                                        </span>
                                     @endif
                                 </div>
                             </div>

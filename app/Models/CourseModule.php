@@ -17,9 +17,12 @@ class CourseModule extends Model
         'video_source_type', // 'upload' | 'url' | 'youtube' | 'vimeo' | 'zoom'
         'video_url',
         'zoom_meeting_id',
+        'zoom_occurrence_id',
         'zoom_passcode',
         'zoom_scheduled_at',
+        'zoom_scheduled_end_at',
         'zoom_join_url',
+        'subtitles_url',
         'duration_seconds',
         'is_published',
     ];
@@ -31,6 +34,7 @@ class CourseModule extends Model
             'duration_seconds' => 'integer',
             'is_published' => 'boolean',
             'zoom_scheduled_at' => 'datetime',
+            'zoom_scheduled_end_at' => 'datetime',
         ];
     }
 
@@ -109,5 +113,51 @@ class CourseModule extends Model
     public function getIsZoomAttribute(): bool
     {
         return $this->video_source_type === 'zoom';
+    }
+
+    public function getEffectiveEndAtAttribute(): ?\Carbon\Carbon
+    {
+        if ($this->zoom_scheduled_end_at) {
+            return $this->zoom_scheduled_end_at;
+        }
+        if ($this->zoom_scheduled_at) {
+            $duration = max(1800, (int) $this->duration_seconds);
+            return $this->zoom_scheduled_at->copy()->addSeconds($duration);
+        }
+        return null;
+    }
+
+    public function getScheduleStatusAttribute(): string
+    {
+        if (!$this->is_zoom || !$this->zoom_scheduled_at) {
+            return 'anytime';
+        }
+
+        $now = now();
+        $earlyAccessTime = $this->zoom_scheduled_at->copy()->subMinutes(15);
+        $closingTime = $this->effective_end_at ? $this->effective_end_at->copy()->addMinutes(30) : $this->zoom_scheduled_at->copy()->addHours(3);
+
+        if ($now->lt($earlyAccessTime)) {
+            return 'upcoming';
+        }
+        if ($now->between($earlyAccessTime, $closingTime)) {
+            return 'live';
+        }
+        return 'ended';
+    }
+
+    public function getIsLockedByScheduleAttribute(): bool
+    {
+        return $this->schedule_status === 'upcoming';
+    }
+
+    public function getIsLiveNowAttribute(): bool
+    {
+        return $this->schedule_status === 'live';
+    }
+
+    public function getHasSubtitlesAttribute(): bool
+    {
+        return !empty($this->subtitles_url) || $this->is_youtube || $this->is_vimeo;
     }
 }

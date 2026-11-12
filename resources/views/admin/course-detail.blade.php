@@ -7,7 +7,8 @@
         tab: @js(session('active_tab', request('tab', 'enrollments'))),
         addModuleModal: false,
         editModuleModal: false,
-        editMod: { id: null, sort_order: 1, title: '', instructor_name: '', video_source_type: 'url', video_url: '', zoom_meeting_id: '', zoom_passcode: '', zoom_scheduled_at: '', zoom_join_url: '', duration_minutes: 60, description: '', is_published: true },
+        syncZoomModal: false,
+        editMod: { id: null, sort_order: 1, title: '', instructor_name: '', video_source_type: 'url', video_url: '', zoom_meeting_id: '', zoom_occurrence_id: '', zoom_passcode: '', zoom_scheduled_at: '', zoom_scheduled_end_at: '', zoom_join_url: '', subtitles_url: '', duration_minutes: 60, description: '', is_published: true },
         enrollStudentModal: false,
         zoomCsvModal: false,
         attachModalModuleId: null,
@@ -16,6 +17,10 @@
             let sched = '';
             if (mod.zoom_scheduled_at) {
                 sched = String(mod.zoom_scheduled_at).substring(0, 16).replace(' ', 'T');
+            }
+            let schedEnd = '';
+            if (mod.zoom_scheduled_end_at) {
+                schedEnd = String(mod.zoom_scheduled_end_at).substring(0, 16).replace(' ', 'T');
             }
             const isZoom = (mod.video_source_type === 'zoom');
             this.editMod = {
@@ -26,9 +31,12 @@
                 video_source_type: mod.video_source_type || 'url',
                 video_url: isZoom ? '' : (mod.video_url || ''),
                 zoom_meeting_id: isZoom ? (mod.zoom_meeting_id || '') : '',
+                zoom_occurrence_id: isZoom ? (mod.zoom_occurrence_id || '') : '',
                 zoom_passcode: isZoom ? (mod.zoom_passcode || '') : '',
                 zoom_scheduled_at: sched,
+                zoom_scheduled_end_at: schedEnd,
                 zoom_join_url: isZoom ? (mod.zoom_join_url || '') : '',
+                subtitles_url: mod.subtitles_url || '',
                 duration_minutes: Math.max(1, Math.round((mod.duration_seconds || 3600) / 60)),
                 description: mod.description || '',
                 is_published: !!mod.is_published
@@ -173,6 +181,9 @@
             </button>
             <button x-show="tab === 'modules'" @click="addModuleModal = true" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold transition cursor-pointer">
                 + Nuovo Modulo Video
+            </button>
+            <button x-show="tab === 'modules'" @click="syncZoomModal = true" class="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-2xs">
+                <span>🎥 Sincronizza Date da Zoom</span>
             </button>
         </div>
     </div>
@@ -783,18 +794,25 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
                 <label class="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer">
                     <input type="checkbox" name="strict_tab_pause" value="1" {{ $course->strict_tab_pause ? 'checked' : '' }} class="rounded text-indigo-600">
-                    <span><strong>Auto-Pausa Cambio Scheda</strong> (ferma il video se il corsista cambia tab)</span>
+                    <span class="text-xs"><strong>Auto-Pausa Scheda</strong> (ferma se cambia tab)</span>
                 </label>
                 <label class="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer">
                     <input type="checkbox" name="allow_self_enrollment" value="1" {{ $course->allow_self_enrollment ? 'checked' : '' }} class="rounded text-indigo-600">
-                    <span><strong>Consenti Sblocco con Codice Corso</strong></span>
+                    <span class="text-xs"><strong>Sblocco con Codice</strong></span>
+                </label>
+                <label class="flex items-center gap-2.5 p-3.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer">
+                    <input type="checkbox" name="allow_student_certificate_download" value="1" {{ $course->allow_student_certificate_download ? 'checked' : '' }} class="rounded text-indigo-600">
+                    <div class="text-xs">
+                        <strong>Download Attestato Corsista</strong>
+                        <div class="text-[10px] text-slate-500">Se spento, no download corsista e no invio email</div>
+                    </div>
                 </label>
                 <div>
-                    <label class="block font-bold text-slate-700 mb-1">Popup Presenza ogni N min. (0 = OFF)</label>
-                    <input type="number" name="presence_check_interval_minutes" value="{{ $course->presence_check_interval_minutes }}" min="0" max="120" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                    <label class="block font-bold text-slate-700 mb-1 text-xs">Popup Presenza (min, 0=OFF)</label>
+                    <input type="number" name="presence_check_interval_minutes" value="{{ $course->presence_check_interval_minutes }}" min="0" max="120" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
                 </div>
             </div>
 
@@ -863,7 +881,7 @@
 
                 <div x-show="sourceType === 'zoom'" class="p-4 rounded-xl bg-sky-50/70 border border-sky-200 space-y-3">
                     <div class="font-extrabold text-sky-900">🎥 Configurazione Aula Virtuale Sincrona Zoom</div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div>
                             <label class="block font-bold text-slate-700 mb-1">Meeting ID Zoom *</label>
                             <input type="text" name="zoom_meeting_id" placeholder="Es. 812 3456 7890" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono">
@@ -873,14 +891,23 @@
                             <input type="text" name="zoom_passcode" placeholder="Es. 123456" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono">
                         </div>
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Data e Ora Lezione</label>
+                            <label class="block font-bold text-slate-700 mb-1">Inizio Lezione</label>
                             <input type="datetime-local" name="zoom_scheduled_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Fine Lezione (opz.)</label>
+                            <input type="datetime-local" name="zoom_scheduled_end_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2">
                         </div>
                     </div>
                     <div>
                         <label class="block font-bold text-slate-700 mb-1">Link Stanza Zoom (opzionale se usi API S2S)</label>
                         <input type="text" name="zoom_join_url" placeholder="https://zoom.us/j/81234567890?pwd=..." class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono">
                     </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Sottotitoli / Accessibilità (URL .vtt o note per non udenti)</label>
+                    <input type="text" name="subtitles_url" placeholder="https://.../subtitles.vtt (opzionale, per corsisti non udenti)" class="w-full rounded-xl border border-slate-300 px-3 py-2">
                 </div>
 
                 <div>
@@ -954,7 +981,7 @@
 
                 <div x-show="editMod.video_source_type === 'zoom'" class="p-4 rounded-xl bg-sky-50/70 border border-sky-200 space-y-3">
                     <div class="font-extrabold text-sky-900">🎥 Configurazione Aula Virtuale Sincrona Zoom</div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div>
                             <label class="block font-bold text-slate-700 mb-1">Meeting ID Zoom *</label>
                             <input type="text" name="zoom_meeting_id" x-model="editMod.zoom_meeting_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono">
@@ -964,14 +991,23 @@
                             <input type="text" name="zoom_passcode" x-model="editMod.zoom_passcode" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono">
                         </div>
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Data e Ora Lezione</label>
+                            <label class="block font-bold text-slate-700 mb-1">Inizio Lezione</label>
                             <input type="datetime-local" name="zoom_scheduled_at" x-model="editMod.zoom_scheduled_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Fine Lezione (opz.)</label>
+                            <input type="datetime-local" name="zoom_scheduled_end_at" x-model="editMod.zoom_scheduled_end_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2">
                         </div>
                     </div>
                     <div>
                         <label class="block font-bold text-slate-700 mb-1">Link Stanza Zoom (opzionale se usi API S2S)</label>
                         <input type="text" name="zoom_join_url" x-model="editMod.zoom_join_url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono">
                     </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Sottotitoli / Accessibilità (URL .vtt o note per non udenti)</label>
+                    <input type="text" name="subtitles_url" x-model="editMod.subtitles_url" placeholder="https://.../subtitles.vtt (opzionale, per corsisti non udenti)" class="w-full rounded-xl border border-slate-300 px-3 py-2">
                 </div>
 
                 <div>
@@ -1065,6 +1101,50 @@
             </div>
         </div>
     @endif
+
+    <!-- MODAL: Synchronize / Import Meeting & Occurrences from Zoom API -->
+    <div x-cloak x-show="syncZoomModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+        <div @click.away="syncZoomModal = false" class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">🎥</span>
+                    <h3 class="text-base font-extrabold text-slate-900">Sincronizzazione Automatica da Zoom</h3>
+                </div>
+                <button @click="syncZoomModal = false" class="text-slate-400 hover:text-slate-700 text-xl font-bold cursor-pointer">&times;</button>
+            </div>
+
+            <p class="text-xs text-slate-500 mb-4">
+                Inserisci l'<strong>ID Meeting</strong> creato su Zoom (anche con più date/occorrenze ricorrenti).
+                La piattaforma importerà automaticamente date, orari, passcode e link aula senza interventi manuali.
+            </p>
+
+            <form method="POST" action="{{ route('admin.courses.sync-zoom-meeting', $course) }}" class="space-y-4 text-xs">
+                @csrf
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1">Meeting ID Zoom (es. 849 1234 5678) *</label>
+                    <input type="text" name="zoom_meeting_id" required placeholder="Inserisci l'ID Meeting Zoom..."
+                           class="w-full rounded-xl border border-slate-300 p-3 font-mono text-xs font-bold uppercase">
+                </div>
+
+                <div class="p-3 rounded-xl bg-sky-50 border border-sky-200 text-sky-950 text-[11px] space-y-1">
+                    <div class="font-bold flex items-center gap-1.5">
+                        <span>ℹ️ Come funziona per le riunioni ricorrenti:</span>
+                    </div>
+                    <ul class="list-disc pl-4 space-y-0.5 text-sky-800">
+                        <li>Se la riunione Zoom ha più date programmate (Occurrences), verranno sincronizzate tutte con il rispettivo calendario.</li>
+                        <li>Il monte ore complessivo del corso verrà aggiornato automaticamente.</li>
+                    </ul>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" @click="syncZoomModal = false" class="px-4 py-2 rounded-xl border border-slate-300 font-semibold cursor-pointer">Annulla</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold cursor-pointer flex items-center gap-1.5 shadow-2xs">
+                        <span>🚀 Avvia Importazione Automatica</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 </div>
 

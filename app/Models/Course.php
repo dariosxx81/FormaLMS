@@ -23,6 +23,7 @@ class Course extends Model
         'min_attendance_percent',
         'strict_tab_pause',
         'presence_check_interval_minutes',
+        'allow_student_certificate_download',
         'allow_self_enrollment',
         'invite_code',
         'is_active',
@@ -39,6 +40,7 @@ class Course extends Model
             'min_attendance_percent' => 'integer',
             'strict_tab_pause' => 'boolean',
             'presence_check_interval_minutes' => 'integer',
+            'allow_student_certificate_download' => 'boolean',
             'allow_self_enrollment' => 'boolean',
             'is_active' => 'boolean',
             'starts_at' => 'date',
@@ -49,6 +51,21 @@ class Course extends Model
     public function modules(): HasMany
     {
         return $this->hasMany(CourseModule::class)->orderBy('sort_order');
+    }
+
+    public function asyncModules(): HasMany
+    {
+        return $this->hasMany(CourseModule::class)
+            ->where('video_source_type', '!=', 'zoom')
+            ->orderBy('sort_order');
+    }
+
+    public function zoomModules(): HasMany
+    {
+        return $this->hasMany(CourseModule::class)
+            ->where('video_source_type', 'zoom')
+            ->orderBy('zoom_scheduled_at')
+            ->orderBy('sort_order');
     }
 
     public function enrollments(): HasMany

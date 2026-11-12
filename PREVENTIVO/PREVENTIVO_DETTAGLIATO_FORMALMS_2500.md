@@ -7,7 +7,7 @@
 **Data di Emissione:** 19 Ottobre 2026  
 **Validità Offerta:** 30 giorni  
 **Committente:** Spett.le **FormaCamera — Azienda Speciale della Camera di Commercio di Roma**  
-**Cortese Attenzione:** **Dott.ssa Paola Scamardi**  
+**Cortese Attenzione:** **Dott.ssa Daniela De Vita**  
 **Fornitore / Sviluppatore:** Dario — Consulente Sviluppo Web & Software Freelance  
 **Oggetto:** Sviluppo, configurazione architetturale, personalizzazione grafica, collaudo e fornitura chiavi in mano della Piattaforma Web E-Learning FAD proprietaria per l'erogazione dei Corsi di Aggiornamento per Guide Turistiche ai sensi della Legge 13 dicembre 2023, n. 190 e del D.M. 26 giugno 2024, n. 88 (Linee Guida B — Allegati 3 e 4).
 
@@ -155,7 +155,7 @@ flowchart TD
 Per accettazione e conferma d'ordine:
 
 **Per FormaCamera (Il Committente)**  
-*Dott.ssa Paola Scamardi*  
+*Dott.ssa Daniela De Vita*  
 _____________________________________  
 *(Data, Timbro e Firma del Legale Rappresentante)*  
 

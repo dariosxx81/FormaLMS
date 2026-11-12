@@ -65,6 +65,7 @@ Route::middleware(['auth', EnsureUserIsAdmin::class])->prefix('admin')->name('ad
     Route::post('/courses/{course}/modules/reorder', [AdminDashboardController::class, 'reorderModules'])->name('courses.modules.reorder');
     Route::put('/modules/{module}', [AdminDashboardController::class, 'updateModule'])->name('modules.update');
     Route::post('/modules/{module}/sync-zoom', [AdminDashboardController::class, 'syncModuleZoomAttendance'])->name('modules.sync-zoom');
+    Route::post('/courses/{course}/sync-zoom-meeting', [AdminDashboardController::class, 'syncCourseZoomMeeting'])->name('courses.sync-zoom-meeting');
     Route::post('/modules/{module}/duplicate', [AdminDashboardController::class, 'duplicateModule'])->name('modules.duplicate');
     Route::patch('/modules/{module}/toggle-status', [AdminDashboardController::class, 'toggleModuleStatus'])->name('modules.toggle-status');
     Route::delete('/modules/{module}', [AdminDashboardController::class, 'destroyModule'])->name('modules.destroy');

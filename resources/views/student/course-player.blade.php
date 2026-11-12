@@ -33,12 +33,14 @@
                 </div>
             </div>
 
-            <template x-if="certificateUrl">
-                <a :href="certificateUrl"
-                   class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition">
-                    <span>🏅 Scarica Attestato</span>
-                </a>
-            </template>
+            @if($course->allow_student_certificate_download)
+                <template x-if="certificateUrl">
+                    <a :href="certificateUrl"
+                       class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition">
+                        <span>🏅 Scarica Attestato</span>
+                    </a>
+                </template>
+            @endif
         </div>
     </div>
 
@@ -97,20 +99,51 @@
                                     </div>
                                 </div>
 
-                                <div class="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1">
-                                    <button type="button"
-                                            @click="joinZoomClassroom()"
-                                            class="w-full sm:w-auto px-5 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-lg transition cursor-pointer flex items-center justify-center gap-2">
-                                        <span>🎥 Entra nella Lezione Live Zoom</span>
-                                        <span>&rarr;</span>
-                                    </button>
+                                @if($activeModule->is_locked_by_schedule && !auth()->user()->isAdmin())
+                                    <div class="p-3.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs space-y-1 text-center">
+                                        <div class="font-extrabold flex items-center justify-center gap-1.5 text-amber-300">
+                                            <span>⏳ Sessione Live Programmata</span>
+                                        </div>
+                                        <p>
+                                            La lezione si svolgerà il <strong>{{ $activeModule->zoom_scheduled_at ? $activeModule->zoom_scheduled_at->format('d/m/Y') : '' }}</strong> alle ore <strong>{{ $activeModule->zoom_scheduled_at ? $activeModule->zoom_scheduled_at->format('H:i') : '' }}</strong>.
+                                        </p>
+                                        <p class="text-[11px] text-amber-300/80">
+                                            L'ingresso all'aula Zoom sarà abilitato automaticamente <strong>15 minuti prima</strong> dell'inizio.
+                                        </p>
+                                    </div>
 
-                                    <button type="button"
-                                            x-show="isPlaying"
-                                            @click="pauseZoomTracking()"
-                                            class="w-full sm:w-auto px-4 py-3 rounded-xl bg-amber-600/90 hover:bg-amber-500 text-white font-bold text-xs transition cursor-pointer">
-                                        ⏸ Termina / Metti in Pausa Sessione
-                                    </button>
+                                    <div class="flex items-center justify-center pt-1">
+                                        <button type="button" disabled
+                                                class="px-5 py-3 rounded-xl bg-slate-800 text-slate-500 font-bold text-xs cursor-not-allowed border border-slate-700 flex items-center gap-2">
+                                            <span>🔒 Ingresso Non Ancora Disponibile</span>
+                                        </button>
+                                    </div>
+                                @else
+                                    <div class="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-1">
+                                        <button type="button"
+                                                @click="joinZoomClassroom()"
+                                                class="w-full sm:w-auto px-5 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-lg transition cursor-pointer flex items-center justify-center gap-2">
+                                            <span>🎥 Entra nella Lezione Live Zoom</span>
+                                            <span>&rarr;</span>
+                                        </button>
+
+                                        <button type="button"
+                                                x-show="isPlaying"
+                                                @click="pauseZoomTracking()"
+                                                class="w-full sm:w-auto px-4 py-3 rounded-xl bg-amber-600/90 hover:bg-amber-500 text-white font-bold text-xs transition cursor-pointer">
+                                            ⏸ Termina / Metti in Pausa Sessione
+                                        </button>
+                                    </div>
+                                @endif
+
+                                <!-- Accessibility & Live Subtitles for Deaf Tourist Guides -->
+                                <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800 text-left text-[11px] space-y-1">
+                                    <div class="font-bold text-sky-300 flex items-center gap-1.5">
+                                        <span>🦻 Accessibilità & Sottotitoli Live (Guide Turistiche Non Udenti):</span>
+                                    </div>
+                                    <p class="text-slate-300 text-[11px] leading-relaxed">
+                                        Durante la lezione sono attivi i <strong>sottotitoli automatici Zoom (AI Live Automated Captions)</strong>. Una volta effettuato l'accesso all'aula Zoom, cliccare sull'icona <strong>"CC / Sottotitoli"</strong> nella barra di Zoom per visualizzare la trascrizione in tempo reale.
+                                    </p>
                                 </div>
 
                                 <div class="text-[11px] text-slate-300 font-mono">
@@ -189,6 +222,9 @@
                                controls
                                controlsList="nodownload noplaybackrate">
                             <source src="{{ $activeModule->video_url }}" type="video/mp4">
+                            @if($activeModule->subtitles_url)
+                                <track kind="subtitles" src="{{ $activeModule->subtitles_url }}" srclang="it" label="Italiano" default>
+                            @endif
                             Il tuo browser non supporta il player video HTML5.
                         </video>
                     @endif
@@ -343,59 +379,118 @@
             </div>
         </div>
 
-        <!-- Right Column (4 cols): Clean Course Playlist -->
-        <div class="lg:col-span-4 space-y-5">
-            <div class="bg-white rounded-2xl border border-slate-200/90 p-5 shadow-2xs">
-                <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
-                    <div>
-                        <h3 class="text-sm font-extrabold text-slate-900">Moduli del Corso</h3>
-                        <p class="text-[11px] text-slate-500">{{ $modules->count() }} lezioni video • Ripresa automatica</p>
+        <!-- Right Column (4 cols): Separated Playlist (Zoom Sync vs Async FAD) -->
+        <div class="lg:col-span-4 space-y-4">
+            <!-- Section 1: Zoom Synchronous Classroom (Non-Sequential) -->
+            @if($zoomModules->isNotEmpty())
+                <div class="bg-white rounded-2xl border border-sky-200/90 p-4 shadow-2xs space-y-3">
+                    <div class="flex items-center justify-between pb-2 border-b border-sky-100">
+                        <div>
+                            <div class="flex items-center gap-1.5 text-xs font-extrabold text-sky-950 uppercase tracking-wide">
+                                <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                                <span>Aule Sincrone Zoom</span>
+                            </div>
+                            <p class="text-[10px] text-sky-700 mt-0.5">Accesso non sequenziale</p>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10px] font-bold">
+                            {{ $course->sync_required_hours }}h Sincrone
+                        </span>
                     </div>
-                    <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 text-xs font-bold">
-                        {{ $course->async_required_hours }}h FAD
-                    </span>
-                </div>
 
-                <div class="space-y-2">
-                    @foreach($modules as $mod)
-                        @php
-                            $mp = $progressMap[$mod->id] ?? null;
-                            $isCurrent = $mod->id === $activeModule->id;
-                            $done = $mp ? $mp->is_completed : false;
-                            $pct = $mp ? $mp->completion_percent : 0;
-                        @endphp
-                        <a href="{{ route('student.courses.module', [$course, $mod]) }}"
-                           class="block p-3 rounded-xl border transition {{ $isCurrent ? 'bg-indigo-50/80 border-indigo-500 ring-2 ring-indigo-500/20' : ($done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-white border-slate-200 hover:border-slate-300') }}">
-                            <div class="flex items-center gap-2.5">
-                                @if($done)
-                                    <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0">&check;</span>
-                                @elseif($isCurrent)
-                                    <span class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">&#9654;</span>
-                                @else
-                                    <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0">{{ $mod->sort_order }}</span>
-                                @endif
-                                <span class="text-xs font-bold {{ $isCurrent ? 'text-indigo-950' : 'text-slate-900' }} line-clamp-1">
-                                    @if($mod->is_zoom)
-                                        <span class="text-sky-600 font-extrabold">[ZOOM]</span>
+                    <div class="space-y-2">
+                        @foreach($zoomModules as $mod)
+                            @php
+                                $mp = $progressMap[$mod->id] ?? null;
+                                $isCurrent = $mod->id === $activeModule->id;
+                                $done = $mp ? $mp->is_completed : false;
+                                $pct = $mp ? $mp->completion_percent : 0;
+                                $schedStatus = $mod->schedule_status;
+                                $isLocked = $mod->is_locked_by_schedule && !auth()->user()->isAdmin();
+                            @endphp
+                            <a href="{{ route('student.courses.module', [$course, $mod]) }}"
+                               class="block p-3 rounded-xl border transition {{ $isCurrent ? 'bg-sky-50/90 border-sky-500 ring-2 ring-sky-500/20' : ($done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-slate-50/70 border-slate-200 hover:border-sky-300') }}">
+                                <div class="flex items-center justify-between gap-1 text-[10px] font-bold mb-1">
+                                    <span class="px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 font-mono">
+                                        MOD. {{ $mod->sort_order }} [ZOOM]
+                                    </span>
+                                    @if($schedStatus === 'live')
+                                        <span class="text-emerald-600 font-bold animate-pulse">● APERTA ORA</span>
+                                    @elseif($isLocked)
+                                        <span class="text-amber-700">⏳ {{ $mod->zoom_scheduled_at ? $mod->zoom_scheduled_at->format('d/m H:i') : 'Data definita' }}</span>
+                                    @elseif($done)
+                                        <span class="text-emerald-700">✓ Completata</span>
+                                    @else
+                                        <span class="text-slate-500">{{ $mod->formatted_duration }}</span>
                                     @endif
+                                </div>
+                                <div class="text-xs font-bold {{ $isCurrent ? 'text-sky-950 font-black' : 'text-slate-900' }} line-clamp-1">
                                     {{ $mod->title }}
-                                </span>
-                            </div>
-
-                            <div class="mt-2 flex items-center justify-between text-[10px] text-slate-500">
-                                <span>{{ $mod->formatted_duration }}</span>
-                                <span class="font-bold {{ $done ? 'text-emerald-600' : 'text-indigo-600' }}">
-                                    {{ $done ? '100% Completato' : $pct . '%' }}
-                                </span>
-                            </div>
-
-                            <div class="mt-1.5 w-full h-1 bg-slate-200 rounded-full overflow-hidden">
-                                <div class="h-full {{ $done ? 'progress-success-bar' : 'bg-indigo-600' }}" style="width: {{ $pct }}%"></div>
-                            </div>
-                        </a>
-                    @endforeach
+                                </div>
+                                @if($mod->zoom_scheduled_at)
+                                    <div class="text-[10px] text-slate-500 mt-1">
+                                        📅 {{ $mod->zoom_scheduled_at->format('d/m/Y') }} ore {{ $mod->zoom_scheduled_at->format('H:i') }}
+                                    </div>
+                                @endif
+                            </a>
+                        @endforeach
+                    </div>
                 </div>
-            </div>
+            @endif
+
+            <!-- Section 2: Asynchronous FAD Modules -->
+            @if($asyncModules->isNotEmpty())
+                <div class="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
+                    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                        <div>
+                            <div class="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 uppercase tracking-wide">
+                                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                                <span>Moduli On-Demand FAD</span>
+                            </div>
+                            <p class="text-[10px] text-slate-500 mt-0.5">{{ $asyncModules->count() }} lezioni video • Ripresa auto</p>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-[10px] font-bold">
+                            {{ $course->async_required_hours }}h FAD
+                        </span>
+                    </div>
+
+                    <div class="space-y-2">
+                        @foreach($asyncModules as $mod)
+                            @php
+                                $mp = $progressMap[$mod->id] ?? null;
+                                $isCurrent = $mod->id === $activeModule->id;
+                                $done = $mp ? $mp->is_completed : false;
+                                $pct = $mp ? $mp->completion_percent : 0;
+                            @endphp
+                            <a href="{{ route('student.courses.module', [$course, $mod]) }}"
+                               class="block p-3 rounded-xl border transition {{ $isCurrent ? 'bg-indigo-50/80 border-indigo-500 ring-2 ring-indigo-500/20' : ($done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-white border-slate-200 hover:border-slate-300') }}">
+                                <div class="flex items-center gap-2.5">
+                                    @if($done)
+                                        <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0">&check;</span>
+                                    @elseif($isCurrent)
+                                        <span class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">&#9654;</span>
+                                    @else
+                                        <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0">{{ $mod->sort_order }}</span>
+                                    @endif
+                                    <span class="text-xs font-bold {{ $isCurrent ? 'text-indigo-950 font-black' : 'text-slate-900' }} line-clamp-1">
+                                        {{ $mod->title }}
+                                    </span>
+                                </div>
+
+                                <div class="mt-2 flex items-center justify-between text-[10px] text-slate-500">
+                                    <span>{{ $mod->formatted_duration }}</span>
+                                    <span class="font-bold {{ $done ? 'text-emerald-600' : 'text-indigo-600' }}">
+                                        {{ $done ? '100% Completato' : $pct . '%' }}
+                                    </span>
+                                </div>
+
+                                <div class="mt-1.5 w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                                    <div class="h-full {{ $done ? 'progress-success-bar' : 'bg-indigo-600' }}" style="width: {{ $pct }}%"></div>
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
 
     </div>
@@ -825,6 +920,10 @@ document.addEventListener('alpine:init', () => {
                     if (data.join_url && data.join_url !== '#zoom-live-classroom') {
                         window.open(data.join_url, '_blank', 'noopener,noreferrer');
                     }
+                } else {
+                    const err = await res.json();
+                    alert(err.error || 'Accesso all\'aula Zoom non ancora consentito.');
+                    return;
                 }
             } catch (e) {
                 console.error('Zoom join error:', e);

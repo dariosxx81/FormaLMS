@@ -182,6 +182,7 @@ class AdminDashboardController extends Controller
         $data['async_required_hours'] = $asyncHours;
         $data['total_hours'] = max(0.05, $totalHours);
         $data['strict_tab_pause'] = $request->boolean('strict_tab_pause');
+        $data['allow_student_certificate_download'] = $request->boolean('allow_student_certificate_download');
         $data['allow_self_enrollment'] = $request->boolean('allow_self_enrollment', true);
         $data['is_active'] = true;
         $data['presence_check_interval_minutes'] = (int) ($data['presence_check_interval_minutes'] ?? 0);
@@ -262,6 +263,7 @@ class AdminDashboardController extends Controller
         $data['async_required_hours'] = $asyncHours;
         $data['total_hours'] = max(0.05, $totalHours);
         $data['strict_tab_pause'] = $request->boolean('strict_tab_pause');
+        $data['allow_student_certificate_download'] = $request->boolean('allow_student_certificate_download');
         $data['allow_self_enrollment'] = $request->boolean('allow_self_enrollment');
         $data['is_active'] = $request->has('is_active') ? $request->boolean('is_active') : $course->is_active;
         $data['presence_check_interval_minutes'] = (int) ($data['presence_check_interval_minutes'] ?? 0);
@@ -435,9 +437,12 @@ class AdminDashboardController extends Controller
             'video_url' => ['nullable', 'string', 'max:500'],
             'video_file' => ['nullable', 'file', 'mimes:mp4,webm,ogg', 'max:512000'],
             'zoom_meeting_id' => ['nullable', 'string', 'max:60'],
+            'zoom_occurrence_id' => ['nullable', 'string', 'max:60'],
             'zoom_passcode' => ['nullable', 'string', 'max:60'],
             'zoom_scheduled_at' => ['nullable', 'date'],
+            'zoom_scheduled_end_at' => ['nullable', 'date'],
             'zoom_join_url' => ['nullable', 'string', 'max:500'],
+            'subtitles_url' => ['nullable', 'string', 'max:500'],
             'duration_minutes' => ['required', 'numeric', 'min:1'],
         ]);
 
@@ -463,9 +468,12 @@ class AdminDashboardController extends Controller
             'video_source_type' => $data['video_source_type'],
             'video_url' => $videoUrl,
             'zoom_meeting_id' => $cleanMeetingId,
+            'zoom_occurrence_id' => $data['video_source_type'] === 'zoom' ? ($data['zoom_occurrence_id'] ?? null) : null,
             'zoom_passcode' => $data['video_source_type'] === 'zoom' ? ($data['zoom_passcode'] ?? null) : null,
             'zoom_scheduled_at' => ($data['video_source_type'] === 'zoom' && !empty($data['zoom_scheduled_at'])) ? $data['zoom_scheduled_at'] : null,
+            'zoom_scheduled_end_at' => ($data['video_source_type'] === 'zoom' && !empty($data['zoom_scheduled_end_at'])) ? $data['zoom_scheduled_end_at'] : null,
             'zoom_join_url' => $data['video_source_type'] === 'zoom' ? ($data['zoom_join_url'] ?? null) : null,
+            'subtitles_url' => $data['subtitles_url'] ?? null,
             'duration_seconds' => (int) round($data['duration_minutes'] * 60),
             'is_published' => true,
         ]);
@@ -496,9 +504,12 @@ class AdminDashboardController extends Controller
             'video_url' => ['nullable', 'string', 'max:500'],
             'video_file' => ['nullable', 'file', 'mimes:mp4,webm,ogg', 'max:512000'],
             'zoom_meeting_id' => ['nullable', 'string', 'max:60'],
+            'zoom_occurrence_id' => ['nullable', 'string', 'max:60'],
             'zoom_passcode' => ['nullable', 'string', 'max:60'],
             'zoom_scheduled_at' => ['nullable', 'date'],
+            'zoom_scheduled_end_at' => ['nullable', 'date'],
             'zoom_join_url' => ['nullable', 'string', 'max:500'],
+            'subtitles_url' => ['nullable', 'string', 'max:500'],
             'duration_minutes' => ['required', 'numeric', 'min:1'],
         ]);
 
@@ -523,9 +534,12 @@ class AdminDashboardController extends Controller
             'video_source_type' => $data['video_source_type'],
             'video_url' => $videoUrl,
             'zoom_meeting_id' => $cleanMeetingId,
+            'zoom_occurrence_id' => $data['video_source_type'] === 'zoom' ? ($data['zoom_occurrence_id'] ?? $module->zoom_occurrence_id) : null,
             'zoom_passcode' => $data['video_source_type'] === 'zoom' ? ($data['zoom_passcode'] ?: $module->zoom_passcode) : null,
             'zoom_scheduled_at' => ($data['video_source_type'] === 'zoom') ? (!empty($data['zoom_scheduled_at']) ? $data['zoom_scheduled_at'] : $module->zoom_scheduled_at) : null,
+            'zoom_scheduled_end_at' => ($data['video_source_type'] === 'zoom') ? (!empty($data['zoom_scheduled_end_at']) ? $data['zoom_scheduled_end_at'] : $module->zoom_scheduled_end_at) : null,
             'zoom_join_url' => $data['video_source_type'] === 'zoom' ? ($data['zoom_join_url'] ?: $module->zoom_join_url) : null,
+            'subtitles_url' => !empty($data['subtitles_url']) ? trim($data['subtitles_url']) : $module->subtitles_url,
             'duration_seconds' => (int) round($data['duration_minutes'] * 60),
             'is_published' => $request->has('is_published') ? $request->boolean('is_published') : $module->is_published,
         ]);
@@ -585,6 +599,32 @@ class AdminDashboardController extends Controller
             auth()->id(),
             $module->course_id,
             $module->id
+        );
+
+        if ($result['success']) {
+            return back()
+                ->with('active_tab', 'modules')
+                ->with('success', $result['message']);
+        }
+
+        return back()
+            ->with('active_tab', 'modules')
+            ->withErrors(['zoom_sync' => $result['message']]);
+    }
+
+    public function syncCourseZoomMeeting(Request $request, Course $course)
+    {
+        $data = $request->validate([
+            'zoom_meeting_id' => ['required', 'string', 'max:60'],
+        ]);
+
+        $result = \App\Services\ZoomService::syncCourseFromZoomMeeting($course, $data['zoom_meeting_id']);
+
+        ActivityLog::record(
+            'zoom_course_sync',
+            "Sincronizzazione date e lezioni da Zoom per il corso {$course->code}: {$result['message']}",
+            auth()->id(),
+            $course->id
         );
 
         if ($result['success']) {
