@@ -142,7 +142,12 @@ class CourseModule extends Model
 
         $now = now();
         $list = [];
-        foreach ($raw as $idx => $occ) {
+        $seq = 1;
+        foreach ($raw as $occ) {
+            if (!empty($occ['status']) && in_array(strtolower((string) $occ['status']), ['deleted', 'cancelled', 'canceled'])) {
+                continue;
+            }
+
             $start = !empty($occ['start_time']) ? \Carbon\Carbon::parse($occ['start_time']) : null;
             $durationMin = (int) ($occ['duration_minutes'] ?? $occ['duration'] ?? 120);
             $end = $start ? $start->copy()->addMinutes($durationMin) : null;
@@ -171,7 +176,7 @@ class CourseModule extends Model
             $dayName = $dayMap[$englishDay] ?? $englishDay;
 
             $list[] = [
-                'index' => $idx + 1,
+                'index' => $seq++,
                 'occurrence_id' => $occ['occurrence_id'] ?? null,
                 'start_time' => $start,
                 'end_time' => $end,

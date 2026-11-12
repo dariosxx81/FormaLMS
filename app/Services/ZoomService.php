@@ -517,6 +517,11 @@ class ZoomService
             $nextUpcomingStart = null;
 
             foreach ($occurrences as $occ) {
+                // Ignore occurrences deleted or cancelled on Zoom
+                if (!empty($occ['status']) && in_array(strtolower((string) $occ['status']), ['deleted', 'cancelled', 'canceled'])) {
+                    continue;
+                }
+
                 $occStart = !empty($occ['start_time']) ? \Carbon\Carbon::parse($occ['start_time']) : null;
                 $durationMin = max(30, (int) ($occ['duration'] ?? 60));
                 $durSec = $durationMin * 60;
