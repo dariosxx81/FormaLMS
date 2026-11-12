@@ -25,6 +25,8 @@ class CourseModule extends Model
         'zoom_join_url',
         'subtitles_url',
         'duration_seconds',
+        'available_at',
+        'available_until_at',
         'is_published',
     ];
 
@@ -34,6 +36,8 @@ class CourseModule extends Model
             'sort_order' => 'integer',
             'duration_seconds' => 'integer',
             'is_published' => 'boolean',
+            'available_at' => 'datetime',
+            'available_until_at' => 'datetime',
             'zoom_scheduled_at' => 'datetime',
             'zoom_scheduled_end_at' => 'datetime',
             'zoom_occurrences_json' => 'array',
@@ -244,5 +248,42 @@ class CourseModule extends Model
     public function getHasSubtitlesAttribute(): bool
     {
         return !empty($this->subtitles_url) || $this->is_youtube || $this->is_vimeo;
+    }
+
+    public function getIsLockedByDateAttribute(): bool
+    {
+        if ($this->video_source_type === 'zoom') {
+            return false;
+        }
+
+        $now = now();
+        if ($this->available_at && $now->lt($this->available_at)) {
+            return true;
+        }
+
+        if ($this->available_until_at && $now->gt($this->available_until_at)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function getIsAvailableAttribute(): bool
+    {
+        return !$this->is_locked_by_date;
+    }
+
+    public function getLockReasonAttribute(): ?string
+    {
+        if ($this->is_locked_by_date) {
+            $now = now();
+            if ($this->available_at && $now->lt($this->available_at)) {
+                return "Disponibile a partire dal " . $this->available_at->format('d/m/Y') . " alle ore " . $this->available_at->format('H:i');
+            }
+            if ($this->available_until_at && $now->gt($this->available_until_at)) {
+                return "Periodo di fruizione scaduto il " . $this->available_until_at->format('d/m/Y') . " alle ore " . $this->available_until_at->format('H:i');
+            }
+        }
+        return null;
     }
 }

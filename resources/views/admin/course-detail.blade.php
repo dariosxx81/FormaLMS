@@ -8,7 +8,7 @@
         addModuleModal: false,
         editModuleModal: false,
         syncZoomModal: false,
-        editMod: { id: null, sort_order: 1, title: '', instructor_name: '', video_source_type: 'url', video_url: '', zoom_meeting_id: '', zoom_occurrence_id: '', zoom_passcode: '', zoom_scheduled_at: '', zoom_scheduled_end_at: '', zoom_join_url: '', subtitles_url: '', duration_minutes: 60, description: '', is_published: true },
+        editMod: { id: null, sort_order: 1, title: '', instructor_name: '', video_source_type: 'url', video_url: '', zoom_meeting_id: '', zoom_occurrence_id: '', zoom_passcode: '', zoom_scheduled_at: '', zoom_scheduled_end_at: '', zoom_join_url: '', subtitles_url: '', available_at: '', available_until_at: '', duration_minutes: 60, description: '', is_published: true },
         enrollStudentModal: false,
         zoomCsvModal: false,
         attachModalModuleId: null,
@@ -21,6 +21,14 @@
             let schedEnd = '';
             if (mod.zoom_scheduled_end_at) {
                 schedEnd = String(mod.zoom_scheduled_end_at).substring(0, 16).replace(' ', 'T');
+            }
+            let availAt = '';
+            if (mod.available_at) {
+                availAt = String(mod.available_at).substring(0, 16).replace(' ', 'T');
+            }
+            let availUntil = '';
+            if (mod.available_until_at) {
+                availUntil = String(mod.available_until_at).substring(0, 16).replace(' ', 'T');
             }
             const isZoom = (mod.video_source_type === 'zoom');
             this.editMod = {
@@ -37,6 +45,8 @@
                 zoom_scheduled_end_at: schedEnd,
                 zoom_join_url: isZoom ? (mod.zoom_join_url || '') : '',
                 subtitles_url: mod.subtitles_url || '',
+                available_at: availAt,
+                available_until_at: availUntil,
                 duration_minutes: Math.max(1, Math.round((mod.duration_seconds || 3600) / 60)),
                 description: mod.description || '',
                 is_published: !!mod.is_published
@@ -404,6 +414,22 @@
                                 <div class="text-[11px] text-slate-400 font-mono truncate max-w-2xl">
                                     Sorgente ({{ strtoupper($mod->video_source_type) }}): {{ $mod->video_url }}
                                 </div>
+                                @if($mod->available_at || $mod->available_until_at)
+                                    <div class="text-[11px] font-semibold flex flex-wrap items-center gap-2 mt-1 {{ $mod->is_locked_by_date ? 'text-amber-800 bg-amber-50 border border-amber-200' : 'text-emerald-800 bg-emerald-50 border border-emerald-200' }} px-2.5 py-1 rounded-lg w-fit">
+                                        <span>📅 <strong>Disponibilità Programmata:</strong></span>
+                                        @if($mod->available_at)
+                                            <span>dal {{ $mod->available_at->format('d/m/Y H:i') }}</span>
+                                        @endif
+                                        @if($mod->available_until_at)
+                                            <span>fino al {{ $mod->available_until_at->format('d/m/Y H:i') }}</span>
+                                        @endif
+                                        @if($mod->is_locked_by_date)
+                                            <span class="px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 font-bold text-[10px]">🔒 Non ancora accessibile ai corsisti</span>
+                                        @else
+                                            <span class="px-1.5 py-0.5 rounded bg-emerald-200 text-emerald-900 font-bold text-[10px]">✓ Attualmente fruibile</span>
+                                        @endif
+                                    </div>
+                                @endif
                             @endif
 
                             <!-- Attachments Pill List with Delete Option -->
@@ -922,6 +948,27 @@
                     </div>
                 </div>
 
+                <div x-show="sourceType !== 'zoom'" class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-extrabold text-amber-950 text-xs flex items-center gap-1.5">
+                            <span>📅 Periodo di Accesso & Disponibilità Programmata</span>
+                        </span>
+                        <span class="text-[10px] text-amber-700 font-medium">Opzionale (se vuoto = accessibile 24/7)</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Accessibile A Partire Dal (Data & Ora inizio)</label>
+                            <input type="datetime-local" name="available_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs">
+                            <p class="text-[10px] text-slate-500 mt-0.5">Prima di questo momento il modulo sarà bloccato.</p>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Disponibile Fino Al (Data & Ora fine - opzionale)</label>
+                            <input type="datetime-local" name="available_until_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs">
+                            <p class="text-[10px] text-slate-500 mt-0.5">Scadenza oltre la quale non sarà più accessibile.</p>
+                        </div>
+                    </div>
+                </div>
+
                 <div>
                     <label class="block font-bold text-slate-700 mb-1">Sottotitoli / Accessibilità (URL .vtt o note per non udenti)</label>
                     <input type="text" name="subtitles_url" placeholder="https://.../subtitles.vtt (opzionale, per corsisti non udenti)" class="w-full rounded-xl border border-slate-300 px-3 py-2">
@@ -1019,6 +1066,27 @@
                     <div>
                         <label class="block font-bold text-slate-700 mb-1">Link Stanza Zoom (opzionale se usi API S2S)</label>
                         <input type="text" name="zoom_join_url" x-model="editMod.zoom_join_url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono">
+                    </div>
+                </div>
+
+                <div x-show="editMod.video_source_type !== 'zoom'" class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200/80 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-extrabold text-amber-950 text-xs flex items-center gap-1.5">
+                            <span>📅 Periodo di Accesso & Disponibilità Programmata</span>
+                        </span>
+                        <span class="text-[10px] text-amber-700 font-medium">Opzionale (se vuoto = accessibile 24/7)</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Accessibile A Partire Dal (Data & Ora inizio)</label>
+                            <input type="datetime-local" name="available_at" x-model="editMod.available_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs">
+                            <p class="text-[10px] text-slate-500 mt-0.5">Prima di questo momento il modulo sarà bloccato.</p>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 text-[11px] mb-1">Disponibile Fino Al (Data & Ora fine - opzionale)</label>
+                            <input type="datetime-local" name="available_until_at" x-model="editMod.available_until_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs">
+                            <p class="text-[10px] text-slate-500 mt-0.5">Scadenza oltre la quale non sarà più accessibile.</p>
+                        </div>
                     </div>
                 </div>
 

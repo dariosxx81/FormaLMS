@@ -443,6 +443,8 @@ class AdminDashboardController extends Controller
             'zoom_scheduled_end_at' => ['nullable', 'date'],
             'zoom_join_url' => ['nullable', 'string', 'max:500'],
             'subtitles_url' => ['nullable', 'string', 'max:500'],
+            'available_at' => ['nullable', 'date'],
+            'available_until_at' => ['nullable', 'date'],
             'duration_minutes' => ['required', 'numeric', 'min:1'],
         ]);
 
@@ -474,6 +476,8 @@ class AdminDashboardController extends Controller
             'zoom_scheduled_end_at' => ($data['video_source_type'] === 'zoom' && !empty($data['zoom_scheduled_end_at'])) ? $data['zoom_scheduled_end_at'] : null,
             'zoom_join_url' => $data['video_source_type'] === 'zoom' ? ($data['zoom_join_url'] ?? null) : null,
             'subtitles_url' => $data['subtitles_url'] ?? null,
+            'available_at' => !empty($data['available_at']) ? $data['available_at'] : null,
+            'available_until_at' => !empty($data['available_until_at']) ? $data['available_until_at'] : null,
             'duration_seconds' => (int) round($data['duration_minutes'] * 60),
             'is_published' => true,
         ]);
@@ -510,6 +514,8 @@ class AdminDashboardController extends Controller
             'zoom_scheduled_end_at' => ['nullable', 'date'],
             'zoom_join_url' => ['nullable', 'string', 'max:500'],
             'subtitles_url' => ['nullable', 'string', 'max:500'],
+            'available_at' => ['nullable', 'date'],
+            'available_until_at' => ['nullable', 'date'],
             'duration_minutes' => ['required', 'numeric', 'min:1'],
         ]);
 
@@ -540,6 +546,8 @@ class AdminDashboardController extends Controller
             'zoom_scheduled_end_at' => ($data['video_source_type'] === 'zoom') ? (!empty($data['zoom_scheduled_end_at']) ? $data['zoom_scheduled_end_at'] : $module->zoom_scheduled_end_at) : null,
             'zoom_join_url' => $data['video_source_type'] === 'zoom' ? ($data['zoom_join_url'] ?: $module->zoom_join_url) : null,
             'subtitles_url' => !empty($data['subtitles_url']) ? trim($data['subtitles_url']) : $module->subtitles_url,
+            'available_at' => !empty($data['available_at']) ? $data['available_at'] : null,
+            'available_until_at' => !empty($data['available_until_at']) ? $data['available_until_at'] : null,
             'duration_seconds' => (int) round($data['duration_minutes'] * 60),
             'is_published' => $request->has('is_published') ? $request->boolean('is_published') : $module->is_published,
         ]);

@@ -235,6 +235,25 @@
                                 </div>
                             </div>
                         </div>
+                    @elseif($activeModule->is_locked_by_date && !auth()->user()->isAdmin())
+                        <div class="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex flex-col items-center justify-center p-6 text-center">
+                            <div class="max-w-md w-full bg-slate-900/95 border border-amber-500/30 rounded-2xl p-6 shadow-2xl space-y-3">
+                                <span class="text-4xl">🔒</span>
+                                <h3 class="text-white font-extrabold text-base sm:text-lg">Modulo Non Ancora Accessibile</h3>
+                                <div class="p-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs font-bold">
+                                    {{ $activeModule->lock_reason }}
+                                </div>
+                                <p class="text-slate-400 text-xs leading-relaxed">
+                                    Questa lezione è programmata e sarà sbloccata automaticamente per tutti i corsisti al raggiungimento della data e ora stabilita.
+                                </p>
+                                <div class="pt-2">
+                                    <a href="{{ route('student.courses.show', $course) }}"
+                                       class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs transition">
+                                        &larr; Torna alle altre lezioni
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     @elseif($activeModule->is_vimeo && $activeModule->vimeo_video_id)
                         <div class="absolute inset-0 flex items-center justify-center">
                             <div id="vimeo-player-container" class="w-full h-full"></div>
@@ -553,33 +572,51 @@
                                 $isCurrent = $mod->id === $activeModule->id;
                                 $done = $mp ? $mp->is_completed : false;
                                 $pct = $mp ? $mp->completion_percent : 0;
+                                $isLockedByDate = $mod->is_locked_by_date && !auth()->user()->isAdmin();
                             @endphp
-                            <a href="{{ route('student.courses.module', [$course, $mod]) }}"
-                               class="block p-3 rounded-xl border transition {{ $isCurrent ? 'bg-indigo-50/80 border-indigo-500 ring-2 ring-indigo-500/20' : ($done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-white border-slate-200 hover:border-slate-300') }}">
-                                <div class="flex items-center gap-2.5">
-                                    @if($done)
-                                        <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0">&check;</span>
-                                    @elseif($isCurrent)
-                                        <span class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">&#9654;</span>
-                                    @else
-                                        <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0">{{ $mod->sort_order }}</span>
-                                    @endif
-                                    <span class="text-xs font-bold {{ $isCurrent ? 'text-indigo-950 font-black' : 'text-slate-900' }} line-clamp-1">
+                            @if($isLockedByDate)
+                                <div class="block p-3 rounded-xl border border-slate-200/80 bg-slate-100/70 opacity-75 cursor-not-allowed">
+                                    <div class="flex items-center justify-between gap-1 text-[10px] font-bold mb-1">
+                                        <span class="text-slate-400 font-mono">MOD. {{ $mod->sort_order }}</span>
+                                        <span class="text-amber-800 bg-amber-100/90 border border-amber-200 px-1.5 py-0.5 rounded text-[9px] font-extrabold">
+                                            🔒 {{ $mod->available_at ? 'Dal ' . $mod->available_at->format('d/m H:i') : 'Non disponibile' }}
+                                        </span>
+                                    </div>
+                                    <div class="text-xs font-semibold text-slate-600 line-clamp-1">
                                         {{ $mod->title }}
-                                    </span>
+                                    </div>
+                                    <div class="text-[10px] text-amber-700 mt-1 font-medium">
+                                        {{ $mod->lock_reason }}
+                                    </div>
                                 </div>
+                            @else
+                                <a href="{{ route('student.courses.module', [$course, $mod]) }}"
+                                   class="block p-3 rounded-xl border transition {{ $isCurrent ? 'bg-indigo-50/80 border-indigo-500 ring-2 ring-indigo-500/20' : ($done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-white border-slate-200 hover:border-slate-300') }}">
+                                    <div class="flex items-center gap-2.5">
+                                        @if($done)
+                                            <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold shrink-0">&check;</span>
+                                        @elseif($isCurrent)
+                                            <span class="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">&#9654;</span>
+                                        @else
+                                            <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0">{{ $mod->sort_order }}</span>
+                                        @endif
+                                        <span class="text-xs font-bold {{ $isCurrent ? 'text-indigo-950 font-black' : 'text-slate-900' }} line-clamp-1">
+                                            {{ $mod->title }}
+                                        </span>
+                                    </div>
 
-                                <div class="mt-2 flex items-center justify-between text-[10px] text-slate-500">
-                                    <span>{{ $mod->formatted_duration }}</span>
-                                    <span class="font-bold {{ $done ? 'text-emerald-600' : 'text-indigo-600' }}">
-                                        {{ $done ? '100% Completato' : $pct . '%' }}
-                                    </span>
-                                </div>
+                                    <div class="mt-2 flex items-center justify-between text-[10px] text-slate-500">
+                                        <span>{{ $mod->formatted_duration }}</span>
+                                        <span class="font-bold {{ $done ? 'text-emerald-600' : 'text-indigo-600' }}">
+                                            {{ $done ? '100% Completato' : $pct . '%' }}
+                                        </span>
+                                    </div>
 
-                                <div class="mt-1.5 w-full h-1 bg-slate-200 rounded-full overflow-hidden">
-                                    <div class="h-full {{ $done ? 'progress-success-bar' : 'bg-indigo-600' }}" style="width: {{ $pct }}%"></div>
-                                </div>
-                            </a>
+                                    <div class="mt-1.5 w-full h-1 bg-slate-200 rounded-full overflow-hidden">
+                                        <div class="h-full {{ $done ? 'progress-success-bar' : 'bg-indigo-600' }}" style="width: {{ $pct }}%"></div>
+                                    </div>
+                                </a>
+                            @endif
                         @endforeach
                     </div>
                 </div>

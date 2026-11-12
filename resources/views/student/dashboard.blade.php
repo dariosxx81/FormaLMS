@@ -309,28 +309,47 @@
                                                 $mp = $progressByModule[$mod->id] ?? null;
                                                 $pct = $mp ? $mp->completion_percent : 0;
                                                 $done = $mp ? $mp->is_completed : false;
+                                                $isLockedByDate = $mod->is_locked_by_date && !auth()->user()->isAdmin();
                                             @endphp
-                                            <a href="{{ route('student.courses.module', [$course, $mod]) }}"
-                                               class="group rounded-xl p-3 border transition flex flex-col justify-between {{ $done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-slate-50/70 border-slate-200 hover:border-indigo-400 hover:bg-white' }}">
-                                                <div>
-                                                    <div class="flex items-center justify-between gap-2 text-[10px] font-bold mb-1">
-                                                        <span class="text-slate-500">
-                                                            MODULO {{ $mod->sort_order }}
-                                                        </span>
-                                                        @if($done)
-                                                            <span class="text-emerald-700">✓ 100%</span>
-                                                        @elseif($pct > 0)
-                                                            <span class="text-indigo-600">{{ $pct }}%</span>
-                                                        @else
-                                                            <span class="text-slate-400">{{ $mod->formatted_duration }}</span>
-                                                        @endif
+                                            @if($isLockedByDate)
+                                                <div class="rounded-xl p-3 border border-slate-200/80 bg-slate-100/70 opacity-80 flex flex-col justify-between cursor-not-allowed">
+                                                    <div>
+                                                        <div class="flex items-center justify-between gap-2 text-[10px] font-bold mb-1">
+                                                            <span class="text-slate-500 font-mono">MODULO {{ $mod->sort_order }}</span>
+                                                            <span class="text-amber-800 bg-amber-100/90 border border-amber-200 px-1.5 py-0.5 rounded text-[9px] font-extrabold">
+                                                                🔒 {{ $mod->available_at ? 'Dal ' . $mod->available_at->format('d/m H:i') : 'Non disponibile' }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="text-xs font-semibold text-slate-700 line-clamp-1">{{ $mod->title }}</div>
+                                                        <div class="text-[10px] text-amber-700 mt-1 font-medium leading-tight">
+                                                            {{ $mod->lock_reason }}
+                                                        </div>
                                                     </div>
-                                                    <div class="text-xs font-bold text-slate-900 group-hover:text-indigo-600 line-clamp-1">{{ $mod->title }}</div>
+                                                    <div class="mt-2 text-[10px] font-bold text-slate-400 italic">Non ancora accessibile</div>
                                                 </div>
-                                                <div class="mt-2 w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                                                    <div class="h-full rounded-full transition-all duration-300 {{ $done ? 'progress-success-bar' : 'progress-active-bar' }}" style="width: {{ $pct }}%"></div>
-                                                </div>
-                                            </a>
+                                            @else
+                                                <a href="{{ route('student.courses.module', [$course, $mod]) }}"
+                                                   class="group rounded-xl p-3 border transition flex flex-col justify-between {{ $done ? 'bg-emerald-50/40 border-emerald-200 hover:border-emerald-400' : 'bg-slate-50/70 border-slate-200 hover:border-indigo-400 hover:bg-white' }}">
+                                                    <div>
+                                                        <div class="flex items-center justify-between gap-2 text-[10px] font-bold mb-1">
+                                                            <span class="text-slate-500">
+                                                                MODULO {{ $mod->sort_order }}
+                                                            </span>
+                                                            @if($done)
+                                                                <span class="text-emerald-700">✓ 100%</span>
+                                                            @elseif($pct > 0)
+                                                                <span class="text-indigo-600">{{ $pct }}%</span>
+                                                            @else
+                                                                <span class="text-slate-400">{{ $mod->formatted_duration }}</span>
+                                                            @endif
+                                                        </div>
+                                                        <div class="text-xs font-bold text-slate-900 group-hover:text-indigo-600 line-clamp-1">{{ $mod->title }}</div>
+                                                    </div>
+                                                    <div class="mt-2 w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                                        <div class="h-full rounded-full transition-all duration-300 {{ $done ? 'progress-success-bar' : 'progress-active-bar' }}" style="width: {{ $pct }}%"></div>
+                                                    </div>
+                                                </a>
+                                            @endif
                                         @endforeach
                                     </div>
                                 </div>

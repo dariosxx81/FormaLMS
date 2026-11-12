@@ -224,15 +224,22 @@ class StudentCourseController extends Controller
             if ($liveZoom) {
                 $activeModule = $liveZoom;
             } else {
-                $activeModule = $asyncModules->first(function ($m) use ($progressMap) {
+                $activeModule = $asyncModules->first(function ($m) use ($progressMap, $user) {
+                    if (!$user->isAdmin() && $m->is_locked_by_date) {
+                        return false;
+                    }
                     return !($progressMap[$m->id]->is_completed ?? false);
-                }) ?? $modules->first();
+                }) ?? $asyncModules->first(fn($m) => $user->isAdmin() || !$m->is_locked_by_date) ?? $modules->first();
             }
         } else {
             abort_unless($module->course_id === $course->id, 404);
             if (!$module->is_published && !$user->isAdmin()) {
                 return redirect()->route('student.courses.show', $course)
                     ->withErrors(['module' => 'Questo modulo è stato nascosto o disattivato dalla segreteria.']);
+            }
+            if ($module->is_locked_by_date && !$user->isAdmin()) {
+                return redirect()->route('student.courses.show', $course)
+                    ->withErrors(['module' => "Accesso non ancora disponibile: {$module->lock_reason}."]);
             }
             $activeModule = $module;
         }
@@ -306,6 +313,13 @@ class StudentCourseController extends Controller
             return response()->json([
                 'ok' => false,
                 'error' => 'La sessione live Zoom non è ancora iniziata.',
+            ], 422);
+        }
+
+        if ($module->is_locked_by_date && !$user->isAdmin()) {
+            return response()->json([
+                'ok' => false,
+                'error' => "Questo modulo non è accessibile ({$module->lock_reason}).",
             ], 422);
         }
 
@@ -513,6 +527,10 @@ class StudentCourseController extends Controller
     {
         $user = auth()->user();
         $module = $attachment->module()->with('course')->firstOrFail();
+
+        if ($module->is_locked_by_date && !$user->isAdmin()) {
+            return back()->withErrors(['attachment' => "Dispensa didattica non accessibile: {$module->lock_reason}."]);
+        }
 
         $attachment->increment('download_count');
 
