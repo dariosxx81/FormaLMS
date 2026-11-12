@@ -154,6 +154,18 @@ class CourseModule extends Model
                 }
             }
 
+            $dayMap = [
+                'Monday' => 'Lunedì',
+                'Tuesday' => 'Martedì',
+                'Wednesday' => 'Mercoledì',
+                'Thursday' => 'Giovedì',
+                'Friday' => 'Venerdì',
+                'Saturday' => 'Sabato',
+                'Sunday' => 'Domenica',
+            ];
+            $englishDay = $start ? $start->format('l') : '';
+            $dayName = $dayMap[$englishDay] ?? $englishDay;
+
             $list[] = [
                 'index' => $idx + 1,
                 'occurrence_id' => $occ['occurrence_id'] ?? null,
@@ -163,7 +175,7 @@ class CourseModule extends Model
                 'status' => $status,
                 'formatted_date' => $start ? $start->format('d/m/Y') : 'Data da definire',
                 'formatted_time' => ($start && $end) ? ($start->format('H:i') . ' - ' . $end->format('H:i')) : '',
-                'day_name' => $start ? ucfirst($start->translatedFormat('l')) : '',
+                'day_name' => $dayName,
             ];
         }
 
