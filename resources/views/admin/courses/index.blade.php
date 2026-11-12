@@ -473,18 +473,25 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Soglia Minima Attestato (%)</label>
-                        <input type="number" name="min_attendance_percent" value="80" min="1" max="100" required class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        <label class="block font-bold text-slate-700 mb-1 text-xs">Soglia Minima (%)</label>
+                        <input type="number" name="min_attendance_percent" value="80" min="1" max="100" required class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
                     </div>
                     <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer">
                         <input type="checkbox" name="strict_tab_pause" value="1" class="rounded text-indigo-600">
-                        <span><strong>Auto-Pausa Cambio Scheda</strong></span>
+                        <span class="text-xs"><strong>Auto-Pausa Scheda</strong></span>
+                    </label>
+                    <label class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer">
+                        <input type="checkbox" name="allow_student_certificate_download" value="1" class="rounded text-indigo-600">
+                        <div class="text-xs">
+                            <strong>Download Corsista</strong>
+                            <div class="text-[10px] text-slate-500">Se spento, no mail e no download</div>
+                        </div>
                     </label>
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Popup Presenza ogni N min. (0=OFF)</label>
-                        <input type="number" name="presence_check_interval_minutes" value="0" min="0" max="60" class="w-full rounded-xl border border-slate-300 px-3 py-2">
+                        <label class="block font-bold text-slate-700 mb-1 text-xs">Popup Presenza (min, 0=OFF)</label>
+                        <input type="number" name="presence_check_interval_minutes" value="0" min="0" max="60" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs">
                     </div>
                 </div>
 
