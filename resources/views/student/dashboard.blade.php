@@ -194,7 +194,7 @@
                                         <div class="flex items-center gap-2">
                                             <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
                                             <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wide">
-                                                🎥 Sessioni Live Sincrone Zoom (Fruizione Libera Non Sequenziale)
+                                                🎥 Sessioni Live Sincrone Zoom
                                             </h3>
                                         </div>
                                         <span class="text-[11px] text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-0.5 rounded-full font-bold">
@@ -295,7 +295,7 @@
                                         <div class="flex items-center gap-2">
                                             <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
                                             <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wide">
-                                                📚 Moduli Asincroni (Video & Dispense)
+                                                📚 Moduli Asincroni
                                             </h3>
                                         </div>
                                         <span class="text-[11px] text-slate-500 font-medium">
