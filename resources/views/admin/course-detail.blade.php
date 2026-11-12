@@ -922,29 +922,39 @@
                     <input type="file" name="video_file" accept="video/mp4,video/webm" class="w-full rounded-xl border border-slate-300 px-3 py-2">
                 </div>
 
-                <div x-show="sourceType === 'zoom'" class="p-4 rounded-xl bg-sky-50/70 border border-sky-200 space-y-3">
-                    <div class="font-extrabold text-sky-900">🎥 Configurazione Aula Virtuale Sincrona Zoom</div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div x-show="sourceType === 'zoom'" class="p-4 rounded-xl bg-sky-50/70 border border-sky-200/90 space-y-3.5">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-1.5 text-xs font-extrabold text-sky-950">
+                            <span>🎥 Configurazione Aula Virtuale Zoom</span>
+                        </div>
+                        <span class="text-[10px] text-sky-800 font-semibold bg-white border border-sky-200 px-2 py-0.5 rounded-md">
+                            Sessione Sincrona Live
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Meeting ID Zoom *</label>
-                            <input type="text" name="zoom_meeting_id" placeholder="Es. 812 3456 7890" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Meeting ID Zoom *</label>
+                            <input type="text" name="zoom_meeting_id" placeholder="Es. 812 3456 7890" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-mono">
                         </div>
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Passcode (opzionale)</label>
-                            <input type="text" name="zoom_passcode" placeholder="Es. 123456" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Passcode Riunione (opz.)</label>
+                            <input type="text" name="zoom_passcode" placeholder="Es. 123456" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-mono">
                         </div>
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Inizio Lezione</label>
-                            <input type="datetime-local" name="zoom_scheduled_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Data e Ora Inizio Lezione</label>
+                            <input type="datetime-local" name="zoom_scheduled_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800">
+                            <span class="block text-[10px] text-slate-400 mt-1 leading-tight">Apertura automatica 15 min prima dell'inizio.</span>
                         </div>
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Fine Lezione (opz.)</label>
-                            <input type="datetime-local" name="zoom_scheduled_end_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Data e Ora Fine Lezione (opz.)</label>
+                            <input type="datetime-local" name="zoom_scheduled_end_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800">
+                            <span class="block text-[10px] text-slate-400 mt-1 leading-tight">Orario di chiusura programmato dell'aula.</span>
                         </div>
                     </div>
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Link Stanza Zoom (opzionale se usi API S2S)</label>
-                        <input type="text" name="zoom_join_url" placeholder="https://zoom.us/j/81234567890?pwd=..." class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono">
+                        <label class="block font-bold text-slate-700 text-xs mb-1">Link Diretto Aula Zoom (opzionale se usi API Server-to-Server)</label>
+                        <input type="text" name="zoom_join_url" placeholder="https://zoom.us/j/81234567890?pwd=..." class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-mono">
                     </div>
                 </div>
 
@@ -1052,29 +1062,39 @@
                     <input type="file" name="video_file" accept="video/mp4,video/webm" class="w-full rounded-xl border border-slate-300 px-3 py-2">
                 </div>
 
-                <div x-show="editMod.video_source_type === 'zoom'" class="p-4 rounded-xl bg-sky-50/70 border border-sky-200 space-y-3">
-                    <div class="font-extrabold text-sky-900">🎥 Configurazione Aula Virtuale Sincrona Zoom</div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div x-show="editMod.video_source_type === 'zoom'" class="p-4 rounded-xl bg-sky-50/70 border border-sky-200/90 space-y-3.5">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-1.5 text-xs font-extrabold text-sky-950">
+                            <span>🎥 Configurazione Aula Virtuale Zoom</span>
+                        </div>
+                        <span class="text-[10px] text-sky-800 font-semibold bg-white border border-sky-200 px-2 py-0.5 rounded-md">
+                            Sessione Sincrona Live
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Meeting ID Zoom *</label>
-                            <input type="text" name="zoom_meeting_id" x-model="editMod.zoom_meeting_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Meeting ID Zoom *</label>
+                            <input type="text" name="zoom_meeting_id" x-model="editMod.zoom_meeting_id" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-mono">
                         </div>
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Passcode (opzionale)</label>
-                            <input type="text" name="zoom_passcode" x-model="editMod.zoom_passcode" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Passcode Riunione (opz.)</label>
+                            <input type="text" name="zoom_passcode" x-model="editMod.zoom_passcode" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-mono">
                         </div>
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Inizio Lezione</label>
-                            <input type="datetime-local" name="zoom_scheduled_at" x-model="editMod.zoom_scheduled_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Data e Ora Inizio Lezione</label>
+                            <input type="datetime-local" name="zoom_scheduled_at" x-model="editMod.zoom_scheduled_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800">
+                            <span class="block text-[10px] text-slate-400 mt-1 leading-tight">Apertura automatica 15 min prima dell'inizio.</span>
                         </div>
                         <div>
-                            <label class="block font-bold text-slate-700 mb-1">Fine Lezione (opz.)</label>
-                            <input type="datetime-local" name="zoom_scheduled_end_at" x-model="editMod.zoom_scheduled_end_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2">
+                            <label class="block font-bold text-slate-700 text-xs mb-1">Data e Ora Fine Lezione (opz.)</label>
+                            <input type="datetime-local" name="zoom_scheduled_end_at" x-model="editMod.zoom_scheduled_end_at" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800">
+                            <span class="block text-[10px] text-slate-400 mt-1 leading-tight">Orario di chiusura programmato dell'aula.</span>
                         </div>
                     </div>
                     <div>
-                        <label class="block font-bold text-slate-700 mb-1">Link Stanza Zoom (opzionale se usi API S2S)</label>
-                        <input type="text" name="zoom_join_url" x-model="editMod.zoom_join_url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 font-mono">
+                        <label class="block font-bold text-slate-700 text-xs mb-1">Link Diretto Aula Zoom (opzionale se usi API Server-to-Server)</label>
+                        <input type="text" name="zoom_join_url" x-model="editMod.zoom_join_url" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-mono">
                     </div>
                 </div>
 
