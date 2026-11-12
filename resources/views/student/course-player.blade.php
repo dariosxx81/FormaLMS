@@ -444,7 +444,7 @@
                         <div>
                             <div class="flex items-center gap-1.5 text-xs font-extrabold text-slate-900 uppercase tracking-wide">
                                 <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                                <span>Moduli On-Demand FAD</span>
+                                <span>Moduli Asincroni</span>
                             </div>
                             <p class="text-[10px] text-slate-500 mt-0.5">{{ $asyncModules->count() }} lezioni video • Ripresa auto</p>
                         </div>
