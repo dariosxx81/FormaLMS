@@ -44,6 +44,11 @@ class CourseModule extends Model
         ];
     }
 
+    protected function serializeDate(\DateTimeInterface $date): string
+    {
+        return $date->format('Y-m-d H:i:s');
+    }
+
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);

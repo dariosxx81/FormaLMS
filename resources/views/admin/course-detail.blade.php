@@ -13,23 +13,23 @@
         zoomCsvModal: false,
         attachModalModuleId: null,
         attachModalModuleTitle: '',
+        formatDtForInput(val) {
+            if (!val) return '';
+            const s = String(val);
+            if (s.endsWith('Z')) {
+                const d = new Date(s);
+                if (!isNaN(d.getTime())) {
+                    const pad = (n) => String(n).padStart(2, '0');
+                    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                }
+            }
+            return s.substring(0, 16).replace(' ', 'T');
+        },
         openEditModule(mod) {
-            let sched = '';
-            if (mod.zoom_scheduled_at) {
-                sched = String(mod.zoom_scheduled_at).substring(0, 16).replace(' ', 'T');
-            }
-            let schedEnd = '';
-            if (mod.zoom_scheduled_end_at) {
-                schedEnd = String(mod.zoom_scheduled_end_at).substring(0, 16).replace(' ', 'T');
-            }
-            let availAt = '';
-            if (mod.available_at) {
-                availAt = String(mod.available_at).substring(0, 16).replace(' ', 'T');
-            }
-            let availUntil = '';
-            if (mod.available_until_at) {
-                availUntil = String(mod.available_until_at).substring(0, 16).replace(' ', 'T');
-            }
+            const sched = this.formatDtForInput(mod.zoom_scheduled_at);
+            const schedEnd = this.formatDtForInput(mod.zoom_scheduled_end_at);
+            const availAt = this.formatDtForInput(mod.available_at);
+            const availUntil = this.formatDtForInput(mod.available_until_at);
             const isZoom = (mod.video_source_type === 'zoom');
             this.editMod = {
                 id: mod.id,
