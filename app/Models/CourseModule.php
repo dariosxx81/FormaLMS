@@ -148,7 +148,7 @@ class CourseModule extends Model
                 continue;
             }
 
-            $start = !empty($occ['start_time']) ? \Carbon\Carbon::parse(substr((string) $occ['start_time'], 0, 19), config('app.timezone', 'Europe/Rome')) : null;
+            $start = !empty($occ['start_time']) ? \Carbon\Carbon::parse($occ['start_time'], config('app.timezone', 'Europe/Rome'))->setTimezone(config('app.timezone', 'Europe/Rome')) : null;
             $durationMin = (int) ($occ['duration_minutes'] ?? $occ['duration'] ?? 120);
             $end = $start ? $start->copy()->addMinutes($durationMin) : null;
 

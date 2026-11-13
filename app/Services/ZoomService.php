@@ -522,7 +522,7 @@ class ZoomService
                     continue;
                 }
 
-                $occStart = !empty($occ['start_time']) ? \Carbon\Carbon::parse(substr((string) $occ['start_time'], 0, 19), config('app.timezone', 'Europe/Rome')) : null;
+                $occStart = !empty($occ['start_time']) ? \Carbon\Carbon::parse($occ['start_time'], config('app.timezone', 'Europe/Rome'))->setTimezone(config('app.timezone', 'Europe/Rome')) : null;
                 $durationMin = max(30, (int) ($occ['duration'] ?? 60));
                 $durSec = $durationMin * 60;
                 $occEnd = $occStart ? $occStart->copy()->addMinutes($durationMin) : null;
@@ -620,7 +620,7 @@ class ZoomService
             $syncedCount = 1;
         } else {
             // Single Meeting
-            $start = !empty($details['start_time']) ? \Carbon\Carbon::parse(substr((string) $details['start_time'], 0, 19), config('app.timezone', 'Europe/Rome')) : null;
+            $start = !empty($details['start_time']) ? \Carbon\Carbon::parse($details['start_time'], config('app.timezone', 'Europe/Rome'))->setTimezone(config('app.timezone', 'Europe/Rome')) : null;
             $durationSec = max(1800, ((int) ($details['duration'] ?? 60)) * 60);
             $end = $start ? $start->copy()->addSeconds($durationSec) : null;
 
